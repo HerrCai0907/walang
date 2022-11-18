@@ -1,0 +1,13 @@
+# ide
+/.vscode/
+
+# python
+/venv/
+
+# antlr
+/g4/.antlr/
+/g4/generated/
+
+# cpp
+/build*/*
+/bazel-*/
