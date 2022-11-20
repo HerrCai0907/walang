@@ -11,7 +11,7 @@ void AssignStatement::update(walangParser::AssignStatementContext *ctx,
   varExpr_ = std::dynamic_pointer_cast<ast::Expression>(map.find(ctx->expression(0))->second);
   valueExpr_ = std::dynamic_pointer_cast<ast::Expression>(map.find(ctx->expression(1))->second);
 }
-std::string AssignStatement::to_string() {
+std::string AssignStatement::to_string() const {
   return fmt::format("{0} <- {1}\n", varExpr_->to_string(), valueExpr_->to_string());
 }
 

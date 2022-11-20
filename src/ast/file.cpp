@@ -18,7 +18,7 @@ void File::update(walangParser::WalangContext *ctx,
   }
 }
 
-std::string File::to_string() {
+std::string File::to_string() const {
   std::string str{};
   for (auto const &statement : statements_) {
     str += statement->to_string();
