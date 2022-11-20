@@ -1,8 +1,7 @@
 #pragma once
 
-#include <exception>
-#include <iostream>
-#include <string_view>
+#include "generated/walangParser.h"
+#include <string>
 
 namespace walang {
 namespace ast {
@@ -12,17 +11,11 @@ enum class Op {
   MUL,
 };
 
-class OpChecker {
+class Operator {
 public:
-  static Op getOp(std::string_view str) noexcept {
-    if (str == "+") {
-      return Op::ADD;
-    } else if (str == "*") {
-      return Op::MUL;
-    }
-    std::cerr << "unknown operator " << str << std::endl;
-    std::terminate();
-  }
+  static Op getOp(walangParser::BinaryOperatorContext *ctx) noexcept;
+  static int getOpPriority(Op op) noexcept;
+  static std::string to_string(Op op);
 };
 
 } // namespace ast

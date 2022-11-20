@@ -12,6 +12,8 @@ set(CMAKE_CXX_STANDARD 17)
 set(ANTLR_BUILD_CPP_TESTS 0)
 add_subdirectory(third_party/antlr/runtime/Cpp)
 
+add_subdirectory(third_party/fmt)
+
 # source
 add_subdirectory(g4)
 add_subdirectory(src)
