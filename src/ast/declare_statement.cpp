@@ -10,7 +10,7 @@ void DeclareStatement::update(walangParser::DeclareStatementContext *ctx,
   assert(map.count(ctx->expression()) == 1);
   initExpr_ = std::dynamic_pointer_cast<ast::Expression>(map.find(ctx->expression())->second);
 }
-std::string DeclareStatement::to_string() {
+std::string DeclareStatement::to_string() const {
   return fmt::format("declare '{0}' <- {1}\n", name_, initExpr_->to_string());
 }
 

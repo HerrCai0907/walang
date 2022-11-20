@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 namespace walang {
@@ -22,13 +23,13 @@ class Identifier final : public Expression {
 public:
   virtual ~Identifier() = default;
   void update(walangParser::IdentifierContext *ctx,
-              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &) {
-    name_ = ctx->getText();
-  }
-  virtual std::string to_string() override { return name_; }
+              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &);
+  virtual std::string to_string() const override;
+
+  std::variant<uint64_t, double, std::string> const &id() const noexcept { return id_; }
 
 private:
-  std::string name_;
+  std::variant<uint64_t, double, std::string> id_;
 };
 
 class PrefixExpression : public Expression {
@@ -45,7 +46,10 @@ public:
   virtual ~BinaryExpression() = default;
   void update(walangParser::BinaryExpressionContext *ctx,
               std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
-  virtual std::string to_string() override;
+  virtual std::string to_string() const override;
+  Op op() const noexcept { return op_; }
+  std::shared_ptr<Expression> const &leftExpr() const noexcept { return leftExpr_; }
+  std::shared_ptr<Expression> const &rightExpr() const noexcept { return rightExpr_; }
 
 private:
   Op op_;

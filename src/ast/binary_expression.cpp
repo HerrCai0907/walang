@@ -42,7 +42,7 @@ void BinaryExpression::update(walangParser::BinaryExpressionContext *ctx,
   }
 }
 
-std::string BinaryExpression::to_string() {
+std::string BinaryExpression::to_string() const {
   return fmt::format("({0} {1} {2})", Operator::to_string(op_), rightExpr_->to_string(), leftExpr_->to_string());
 }
 

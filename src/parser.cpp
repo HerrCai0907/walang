@@ -9,7 +9,6 @@
 #include "generated/walangParser.h"
 #include "tree/ParseTreeWalker.h"
 #include <cassert>
-#include <cstddef>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -21,10 +20,7 @@ class Listener : public walangBaseListener {
 public:
   explicit Listener(std::shared_ptr<ast::File> file) : file_{file} {}
 
-  virtual void exitWalang(walangParser::WalangContext *ctx) override {
-    file_->update(ctx, astNodes_);
-    std::cout << file_->to_string();
-  }
+  virtual void exitWalang(walangParser::WalangContext *ctx) override { file_->update(ctx, astNodes_); }
 
   virtual void exitDeclareStatement(walangParser::DeclareStatementContext *ctx) override {
     auto declareStatement = std::make_shared<ast::DeclareStatement>();

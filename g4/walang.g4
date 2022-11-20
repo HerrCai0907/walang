@@ -2,7 +2,7 @@ grammar walang;
 
 walang: statement* EOF;
 
-identifier: Constant | Identifier; // TODO
+identifier: IntNumber | HexNumber | Identifier; // TODO
 
 // statement
 
@@ -119,8 +119,6 @@ Dot: '.';
 // Token
 
 Identifier: NonDigit ( NonDigit | Digit)*;
-Constant: Number;
-Number: IntNumber | HexNumber;
 
 IntNumber: [0-9]+;
 HexNumber: '0' [xX] HexDigit+;
