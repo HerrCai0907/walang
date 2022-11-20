@@ -7,3 +7,6 @@
 [submodule "third_party/binaryen"]
 	path = third_party/binaryen
 	url = https://github.com/WebAssembly/binaryen.git
+[submodule "third_party/fmt"]
+	path = third_party/fmt
+	url = https://github.com/fmtlib/fmt.git
