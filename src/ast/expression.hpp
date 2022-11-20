@@ -1,20 +1,31 @@
 #pragma once
 
+#include "generated/walangParser.h"
+#include "node.hpp"
 #include "op.hpp"
+#include <cassert>
+#include <iostream>
 #include <memory>
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace walang {
 namespace ast {
 
-class Expression {
+class Expression : public Node {
 public:
-  virtual ~Expression() = 0;
+  virtual ~Expression() = default;
 };
 
-class Identifier : public Expression {
+class Identifier final : public Expression {
 public:
-  virtual ~Identifier() {}
+  virtual ~Identifier() = default;
+  void update(walangParser::IdentifierContext *ctx,
+              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &) {
+    name_ = ctx->getText();
+  }
+  virtual std::string to_string() override { return name_; }
 
 private:
   std::string name_;
@@ -29,9 +40,12 @@ private:
   std::shared_ptr<Expression> expr_;
 };
 
-class BinaryExpression : public Expression {
+class BinaryExpression final : public Expression {
 public:
-  virtual ~BinaryExpression() override {}
+  virtual ~BinaryExpression() = default;
+  void update(walangParser::BinaryExpressionContext *ctx,
+              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+  virtual std::string to_string() override;
 
 private:
   Op op_;

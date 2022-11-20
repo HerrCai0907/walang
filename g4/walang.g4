@@ -54,13 +54,13 @@ prefixExpression: prefixOperator expression;
 parenthesesExpression: '(' expression ')';
 
 binaryExpressionRight: binaryOperator expression;
-binaryExpression: identifier binaryExpressionRight*;
+binaryExpression: identifier binaryExpressionRight+;
 
 ternaryExpressionRight: '?' expression ':' expression;
-ternaryExpression: identifier ternaryExpressionRight*;
+ternaryExpression: identifier ternaryExpressionRight+;
 
 callExpressionRight: '(' expression (',' expression)* ')';
-callExpression: identifier callExpressionRight*;
+callExpression: identifier callExpressionRight+;
 
 expression:
 	identifier
