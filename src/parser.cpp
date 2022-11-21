@@ -23,14 +23,13 @@ public:
   virtual void exitWalang(walangParser::WalangContext *ctx) override { file_->update(ctx, astNodes_); }
 
   virtual void exitDeclareStatement(walangParser::DeclareStatementContext *ctx) override {
-    auto declareStatement = std::make_shared<ast::DeclareStatement>();
-    declareStatement->update(ctx, astNodes_);
-    astNodes_.emplace(ctx, declareStatement);
+    astNodes_.emplace(ctx, std::make_shared<ast::DeclareStatement>(ctx, astNodes_));
   }
   virtual void exitAssignStatement(walangParser::AssignStatementContext *ctx) override {
-    auto assignStatement = std::make_shared<ast::AssignStatement>();
-    assignStatement->update(ctx, astNodes_);
-    astNodes_.emplace(ctx, assignStatement);
+    astNodes_.emplace(ctx, std::make_shared<ast::AssignStatement>(ctx, astNodes_));
+  }
+  virtual void exitExpressionStatement(walangParser::ExpressionStatementContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::ExpressionStatement>(ctx, astNodes_));
   }
 
   virtual void exitExpression(walangParser::ExpressionContext *ctx) override {
@@ -44,14 +43,10 @@ public:
     astNodes_.emplace(ctx, astNodes_.find(child)->second);
   }
   virtual void exitIdentifier(walangParser::IdentifierContext *ctx) override {
-    auto identiferNode = std::make_shared<ast::Identifier>();
-    identiferNode->update(ctx, astNodes_);
-    astNodes_.emplace(ctx, identiferNode);
+    astNodes_.emplace(ctx, std::make_shared<ast::Identifier>(ctx, astNodes_));
   }
   virtual void exitBinaryExpression(walangParser::BinaryExpressionContext *ctx) override {
-    auto binaryExpression = std::make_shared<ast::BinaryExpression>();
-    binaryExpression->update(ctx, astNodes_);
-    astNodes_.emplace(ctx, binaryExpression);
+    astNodes_.emplace(ctx, std::make_shared<ast::BinaryExpression>(ctx, astNodes_));
   }
 
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override {
