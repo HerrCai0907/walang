@@ -12,6 +12,8 @@ void File::update(walangParser::WalangContext *ctx,
       child = statement->assignStatement();
     } else if (statement->declareStatement() != nullptr) {
       child = statement->declareStatement();
+    } else if (statement->expressionStatement() != nullptr) {
+      child = statement->expressionStatement();
     }
     assert(map.count(child) == 1);
     statements_.push_back(std::dynamic_pointer_cast<ast::Statement>(map.find(child)->second));

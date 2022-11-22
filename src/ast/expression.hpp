@@ -21,9 +21,9 @@ public:
 
 class Identifier final : public Expression {
 public:
+  Identifier(walangParser::IdentifierContext *ctx,
+             std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &);
   virtual ~Identifier() = default;
-  void update(walangParser::IdentifierContext *ctx,
-              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &);
   virtual std::string to_string() const override;
 
   std::variant<uint64_t, double, std::string> const &id() const noexcept { return id_; }
@@ -43,9 +43,10 @@ private:
 
 class BinaryExpression final : public Expression {
 public:
+  BinaryExpression() noexcept;
+  BinaryExpression(walangParser::BinaryExpressionContext *ctx,
+                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   virtual ~BinaryExpression() = default;
-  void update(walangParser::BinaryExpressionContext *ctx,
-              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   virtual std::string to_string() const override;
   Op op() const noexcept { return op_; }
   std::shared_ptr<Expression> const &leftExpr() const noexcept { return leftExpr_; }
@@ -55,6 +56,8 @@ private:
   Op op_;
   std::shared_ptr<Expression> leftExpr_;
   std::shared_ptr<Expression> rightExpr_;
+
+  void appendExpr(Op op, std::shared_ptr<Expression> rightExpr);
 };
 
 class TernaryExpression : public Expression {

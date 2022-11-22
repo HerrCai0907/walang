@@ -19,9 +19,9 @@ private:
 
 class DeclareStatement final : public Statement {
 public:
+  DeclareStatement(walangParser::DeclareStatementContext *ctx,
+                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   virtual ~DeclareStatement() = default;
-  void update(walangParser::DeclareStatementContext *ctx,
-              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   std::string to_string() const override;
   std::string name() const noexcept { return name_; }
   std::shared_ptr<Expression> init() const noexcept { return initExpr_; }
@@ -33,9 +33,9 @@ private:
 
 class AssignStatement final : public Statement {
 public:
+  AssignStatement(walangParser::AssignStatementContext *ctx,
+                  std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   virtual ~AssignStatement() = default;
-  void update(walangParser::AssignStatementContext *ctx,
-              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   std::string to_string() const override;
   std::shared_ptr<Expression> variant() const noexcept { return varExpr_; }
   std::shared_ptr<Expression> value() const noexcept { return valueExpr_; }
@@ -47,7 +47,11 @@ private:
 
 class ExpressionStatement : public Statement {
 public:
+  ExpressionStatement(walangParser::ExpressionStatementContext *ctx,
+                      std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   virtual ~ExpressionStatement() = default;
+  std::string to_string() const;
+  std::shared_ptr<Expression> expr() const noexcept { return expr_; }
 
 private:
   std::shared_ptr<Expression> expr_;

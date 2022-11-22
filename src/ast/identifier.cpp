@@ -6,8 +6,8 @@
 namespace walang {
 namespace ast {
 
-void Identifier::update(walangParser::IdentifierContext *ctx,
-                        std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &) {
+Identifier::Identifier(walangParser::IdentifierContext *ctx,
+                       std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &) {
   if (ctx->Identifier() != nullptr) {
     id_ = ctx->getText();
   } else if (ctx->IntNumber() != nullptr) {
@@ -17,9 +17,8 @@ void Identifier::update(walangParser::IdentifierContext *ctx,
   }
 }
 std::string Identifier::to_string() const {
-  return std::visit(overloaded{[](uint64_t i) { return "int:" + std::to_string(i); },
-                               [](double d) { return "double:" + std::to_string(d); },
-                               [](const std::string &s) { return "str:" + s; }},
+  return std::visit(overloaded{[](uint64_t i) { return std::to_string(i); }, [](double d) { return std::to_string(d); },
+                               [](const std::string &s) { return s; }},
                     id_);
 }
 
