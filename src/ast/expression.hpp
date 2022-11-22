@@ -56,6 +56,8 @@ private:
   Op op_;
   std::shared_ptr<Expression> leftExpr_;
   std::shared_ptr<Expression> rightExpr_;
+
+  void appendExpr(Op op, std::shared_ptr<Expression> rightExpr);
 };
 
 class TernaryExpression : public Expression {

@@ -21,25 +21,30 @@ BinaryExpression::BinaryExpression(
       op_ = op;
       rightExpr_ = rightExpr;
     } else {
-      if (Operator::getOpPriority(op_) <= Operator::getOpPriority(op)) {
-        // self as new operator's left
-        auto newLeft = std::make_shared<BinaryExpression>();
-        newLeft->op_ = this->op_;
-        newLeft->leftExpr_ = this->leftExpr_;
-        newLeft->rightExpr_ = this->rightExpr_;
-
-        this->op_ = op;
-        this->leftExpr_ = newLeft;
-        this->rightExpr_ = rightExpr;
-      } else {
-        // combine new operator with right as new right
-        auto newRight = std::make_shared<BinaryExpression>();
-        newRight->op_ = op;
-        newRight->leftExpr_ = this->rightExpr_;
-        newRight->rightExpr_ = rightExpr;
-
-        this->rightExpr_ = newRight;
-      }
+      appendExpr(op, rightExpr);
+    }
+  }
+}
+void BinaryExpression::appendExpr(Op op, std::shared_ptr<Expression> rightExpr) {
+  if (Operator::getOpPriority(op_) <= Operator::getOpPriority(op)) {
+    // self as new operator's left
+    auto newLeft = std::make_shared<BinaryExpression>();
+    newLeft->op_ = this->op_;
+    newLeft->leftExpr_ = this->leftExpr_;
+    newLeft->rightExpr_ = this->rightExpr_;
+    this->op_ = op;
+    this->leftExpr_ = newLeft;
+    this->rightExpr_ = rightExpr;
+  } else {
+    // combine new operator with right as new right
+    if (std::dynamic_pointer_cast<BinaryExpression>(this->rightExpr_) != nullptr) {
+      std::dynamic_pointer_cast<BinaryExpression>(this->rightExpr_)->appendExpr(op, rightExpr);
+    } else {
+      auto newRight = std::make_shared<BinaryExpression>();
+      newRight->op_ = op;
+      newRight->leftExpr_ = this->rightExpr_;
+      newRight->rightExpr_ = rightExpr;
+      this->rightExpr_ = newRight;
     }
   }
 }

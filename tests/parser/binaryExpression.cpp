@@ -91,3 +91,39 @@ a != 4;
   EXPECT_EQ(file->statement()[4]->to_string(), "(EQUAL a 4)\n");
   EXPECT_EQ(file->statement()[5]->to_string(), "(NOT_EQUAL a 4)\n");
 }
+
+TEST(parser_binary_expression, priority_1) {
+  FileParser parser("test.wa", R"(
+a * 2 + 3;
+  )");
+  auto file = parser.parse();
+  EXPECT_EQ(file->statement()[0]->to_string(), "(ADD (MUL a 2) 3)\n");
+}
+TEST(parser_binary_expression, priority_2) {
+  FileParser parser("test.wa", R"(
+a + 2 * 3;
+  )");
+  auto file = parser.parse();
+  EXPECT_EQ(file->statement()[0]->to_string(), "(ADD a (MUL 2 3))\n");
+}
+TEST(parser_binary_expression, priority_3) {
+  FileParser parser("test.wa", R"(
+a + 2 + 3 + 4;
+  )");
+  auto file = parser.parse();
+  EXPECT_EQ(file->statement()[0]->to_string(), "(ADD (ADD (ADD a 2) 3) 4)\n");
+}
+TEST(parser_binary_expression, priority_4) {
+  FileParser parser("test.wa", R"(
+a > a + 2 * 3;
+  )");
+  auto file = parser.parse();
+  EXPECT_EQ(file->statement()[0]->to_string(), "(GREATER_THAN a (ADD a (MUL 2 3)))\n");
+}
+TEST(parser_binary_expression, priority_5) {
+  FileParser parser("test.wa", R"(
+a * 1 + 2 > 3;
+  )");
+  auto file = parser.parse();
+  EXPECT_EQ(file->statement()[0]->to_string(), "(GREATER_THAN (ADD (MUL a 1) 2) 3)\n");
+}
