@@ -25,10 +25,15 @@ void Compiler::compile() {
 }
 
 BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement> const &statement) {
-  if (std::dynamic_pointer_cast<ast::DeclareStatement>(statement) != nullptr) {
+  switch (statement->type()) {
+  case ast::Statement::DeclareStatement:
     return compileDeclareStatement(std::dynamic_pointer_cast<ast::DeclareStatement>(statement));
-  } else if (std::dynamic_pointer_cast<ast::AssignStatement>(statement) != nullptr) {
+  case ast::Statement::AssignStatement:
     return compileAssignStatement(std::dynamic_pointer_cast<ast::AssignStatement>(statement));
+  case ast::Statement::ExpressionStatement:
+    return compileExpressionStatement(std::dynamic_pointer_cast<ast::ExpressionStatement>(statement));
+  }
+  if (std::dynamic_pointer_cast<ast::DeclareStatement>(statement) != nullptr) {
   }
   throw std::runtime_error("not support");
 }
@@ -42,6 +47,9 @@ BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::Dec
 }
 BinaryenExpressionRef Compiler::compileAssignStatement(std::shared_ptr<ast::AssignStatement> const &statement) {
   return compileAssignment(statement->variant(), compileExpression(statement->value()));
+}
+BinaryenExpressionRef Compiler::compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> const &statement) {
+  return compileExpression(statement->expr());
 }
 
 BinaryenExpressionRef Compiler::compileExpression(std::shared_ptr<ast::Expression> const &expression) {
