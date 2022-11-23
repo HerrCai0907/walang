@@ -4,7 +4,8 @@
 namespace walang {
 namespace ast {
 
-BinaryExpression::BinaryExpression() noexcept : op_(static_cast<Op>(0)), leftExpr_(nullptr), rightExpr_(nullptr) {}
+BinaryExpression::BinaryExpression() noexcept
+    : op_(static_cast<BinaryOp>(0)), leftExpr_(nullptr), rightExpr_(nullptr) {}
 BinaryExpression::BinaryExpression(
     walangParser::BinaryExpressionContext *ctx,
     std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map) {
@@ -13,7 +14,7 @@ BinaryExpression::BinaryExpression(
   std::vector<walangParser::BinaryExpressionRightContext *> binaryRights = ctx->binaryExpressionRight();
   bool firstRight = true;
   for (auto binaryRight : binaryRights) {
-    Op op = Operator::getOp(binaryRight->binaryOperator());
+    BinaryOp op = Operator::getOp(binaryRight->binaryOperator());
     assert(map.count(binaryRight->expression()) == 1);
     auto rightExpr = std::dynamic_pointer_cast<Expression>(map.find(binaryRight->expression())->second);
     if (firstRight) {
@@ -25,7 +26,7 @@ BinaryExpression::BinaryExpression(
     }
   }
 }
-void BinaryExpression::appendExpr(Op op, std::shared_ptr<Expression> rightExpr) {
+void BinaryExpression::appendExpr(BinaryOp op, std::shared_ptr<Expression> rightExpr) {
   if (Operator::getOpPriority(op_) <= Operator::getOpPriority(op)) {
     // self as new operator's left
     auto newLeft = std::make_shared<BinaryExpression>();

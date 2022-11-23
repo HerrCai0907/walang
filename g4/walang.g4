@@ -27,7 +27,7 @@ whileStatement: 'while' '(' expression ')' '{' statement+ '}';
 
 // expression
 
-prefixOperator: 'not';
+prefixOperator: 'not' | '+' | '-';
 binaryOperator:
 	'*'
 	| '/'

@@ -7,86 +7,101 @@
 namespace walang {
 namespace ast {
 
-Op Operator::getOp(walangParser::BinaryOperatorContext *ctx) noexcept {
+BinaryOp Operator::getOp(walangParser::BinaryOperatorContext *ctx) noexcept {
   if (ctx->Plus() != nullptr) {
-    return Op::ADD;
+    return BinaryOp::ADD;
   } else if (ctx->Minus() != nullptr) {
-    return Op::SUB;
+    return BinaryOp::SUB;
   } else if (ctx->Star() != nullptr) {
-    return Op::MUL;
+    return BinaryOp::MUL;
   } else if (ctx->Div() != nullptr) {
-    return Op::DIV;
+    return BinaryOp::DIV;
   } else if (ctx->Mod() != nullptr) {
-    return Op::MOD;
+    return BinaryOp::MOD;
   } else if (ctx->LeftShift() != nullptr) {
-    return Op::LEFT_SHIFT;
+    return BinaryOp::LEFT_SHIFT;
   } else if (ctx->RightShift() != nullptr) {
-    return Op::RIGHT_SHIFT;
+    return BinaryOp::RIGHT_SHIFT;
   } else if (ctx->Less() != nullptr) {
-    return Op::LESS_THAN;
+    return BinaryOp::LESS_THAN;
   } else if (ctx->Greater() != nullptr) {
-    return Op::GREATER_THAN;
+    return BinaryOp::GREATER_THAN;
   } else if (ctx->LessEqual() != nullptr) {
-    return Op::NO_GREATER_THAN;
+    return BinaryOp::NO_GREATER_THAN;
   } else if (ctx->GreaterEqual() != nullptr) {
-    return Op::NO_LESS_THAN;
+    return BinaryOp::NO_LESS_THAN;
   } else if (ctx->Equal() != nullptr) {
-    return Op::EQUAL;
+    return BinaryOp::EQUAL;
   } else if (ctx->NotEqual() != nullptr) {
-    return Op::NOT_EQUAL;
+    return BinaryOp::NOT_EQUAL;
   } else if (ctx->And() != nullptr) {
-    return Op::AND;
+    return BinaryOp::AND;
   } else if (ctx->Caret() != nullptr) {
-    return Op::XOR;
+    return BinaryOp::XOR;
   } else if (ctx->Or() != nullptr) {
-    return Op::OR;
+    return BinaryOp::OR;
   } else if (ctx->AndAnd() != nullptr) {
-    return Op::LOGIC_AND;
+    return BinaryOp::LOGIC_AND;
   } else if (ctx->OrOr() != nullptr) {
-    return Op::LOGIC_OR;
+    return BinaryOp::LOGIC_OR;
   } else if (ctx->Dot() != nullptr) {
-    return Op::MEMBER;
+    return BinaryOp::MEMBER;
   }
   std::cerr << "unknown operator " << ctx->getText() << std::endl;
   std::terminate();
 }
-int Operator::getOpPriority(Op op) noexcept {
+
+PrefixOp Operator::getOp(walangParser::PrefixOperatorContext *ctx) noexcept {
+  if (ctx->NOT() != nullptr) {
+    return PrefixOp::NOT;
+  } else if (ctx->Plus() != nullptr) {
+    return PrefixOp::ADD;
+  } else if (ctx->Minus() != nullptr) {
+    return PrefixOp::SUB;
+  }
+  std::cerr << "unknown operator " << ctx->getText() << std::endl;
+  std::terminate();
+}
+
+int Operator::getOpPriority(BinaryOp op) noexcept {
   switch (op) {
-  case Op::MEMBER:
+  case BinaryOp::MEMBER:
     return 1;
-  case Op::MUL:
-  case Op::DIV:
-  case Op::MOD:
+  case BinaryOp::MUL:
+  case BinaryOp::DIV:
+  case BinaryOp::MOD:
     return 3;
-  case Op::ADD:
-  case Op::SUB:
+  case BinaryOp::ADD:
+  case BinaryOp::SUB:
     return 4;
-  case Op::LEFT_SHIFT:
-  case Op::RIGHT_SHIFT:
+  case BinaryOp::LEFT_SHIFT:
+  case BinaryOp::RIGHT_SHIFT:
     return 5;
-  case Op::LESS_THAN:
-  case Op::GREATER_THAN:
-  case Op::NO_LESS_THAN:
-  case Op::NO_GREATER_THAN:
+  case BinaryOp::LESS_THAN:
+  case BinaryOp::GREATER_THAN:
+  case BinaryOp::NO_LESS_THAN:
+  case BinaryOp::NO_GREATER_THAN:
     return 6;
-  case Op::EQUAL:
-  case Op::NOT_EQUAL:
+  case BinaryOp::EQUAL:
+  case BinaryOp::NOT_EQUAL:
     return 7;
-  case Op::AND:
+  case BinaryOp::AND:
     return 8;
-  case Op::XOR:
+  case BinaryOp::XOR:
     return 9;
-  case Op::OR:
+  case BinaryOp::OR:
     return 10;
-  case Op::LOGIC_AND:
+  case BinaryOp::LOGIC_AND:
     return 11;
-  case Op::LOGIC_OR:
+  case BinaryOp::LOGIC_OR:
     return 12;
   }
   std::cerr << "unknown operator " << magic_enum::enum_integer(op) << std::endl;
   std::terminate();
 }
-std::string Operator::to_string(Op op) { return std::string{magic_enum::enum_name(op)}; }
+
+std::string Operator::to_string(BinaryOp op) { return std::string{magic_enum::enum_name(op)}; }
+std::string Operator::to_string(PrefixOp op) { return std::string{magic_enum::enum_name(op)}; }
 
 } // namespace ast
 } // namespace walang

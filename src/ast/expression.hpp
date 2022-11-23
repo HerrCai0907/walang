@@ -34,10 +34,13 @@ private:
 
 class PrefixExpression : public Expression {
 public:
+  PrefixExpression(walangParser::PrefixExpressionContext *ctx,
+                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   virtual ~PrefixExpression() override {}
+  virtual std::string to_string() const override;
 
 private:
-  Op op_;
+  PrefixOp op_;
   std::shared_ptr<Expression> expr_;
 };
 
@@ -48,16 +51,16 @@ public:
                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   virtual ~BinaryExpression() = default;
   virtual std::string to_string() const override;
-  Op op() const noexcept { return op_; }
+  BinaryOp op() const noexcept { return op_; }
   std::shared_ptr<Expression> const &leftExpr() const noexcept { return leftExpr_; }
   std::shared_ptr<Expression> const &rightExpr() const noexcept { return rightExpr_; }
 
 private:
-  Op op_;
+  BinaryOp op_;
   std::shared_ptr<Expression> leftExpr_;
   std::shared_ptr<Expression> rightExpr_;
 
-  void appendExpr(Op op, std::shared_ptr<Expression> rightExpr);
+  void appendExpr(BinaryOp op, std::shared_ptr<Expression> rightExpr);
 };
 
 class TernaryExpression : public Expression {

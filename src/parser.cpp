@@ -38,6 +38,8 @@ public:
       child = ctx->identifier();
     } else if (ctx->binaryExpression() != nullptr) {
       child = ctx->binaryExpression();
+    } else if (ctx->prefixExpression() != nullptr) {
+      child = ctx->prefixExpression();
     }
     assert(astNodes_.count(child) == 1);
     astNodes_.emplace(ctx, astNodes_.find(child)->second);
@@ -47,6 +49,9 @@ public:
   }
   virtual void exitBinaryExpression(walangParser::BinaryExpressionContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::BinaryExpression>(ctx, astNodes_));
+  }
+  virtual void exitPrefixExpression(walangParser::PrefixExpressionContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::PrefixExpression>(ctx, astNodes_));
   }
 
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override {
