@@ -33,12 +33,7 @@ public:
   }
 
   virtual void exitExpression(walangParser::ExpressionContext *ctx) override {
-    antlr4::ParserRuleContext *child = nullptr;
-    if (ctx->identifier() != nullptr) {
-      child = ctx->identifier();
-    } else if (ctx->binaryExpression() != nullptr) {
-      child = ctx->binaryExpression();
-    }
+    antlr4::ParserRuleContext *child = dynamic_cast<antlr4::ParserRuleContext *>(ctx->children.at(0));
     assert(astNodes_.count(child) == 1);
     astNodes_.emplace(ctx, astNodes_.find(child)->second);
   }
@@ -48,9 +43,19 @@ public:
   virtual void exitBinaryExpression(walangParser::BinaryExpressionContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::BinaryExpression>(ctx, astNodes_));
   }
+  virtual void exitTernaryExpression(walangParser::TernaryExpressionContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::TernaryExpression>(ctx, astNodes_));
+  }
+  virtual void exitPrefixExpression(walangParser::PrefixExpressionContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::PrefixExpression>(ctx, astNodes_));
+  }
+  virtual void exitParenthesesExpression(walangParser::ParenthesesExpressionContext *ctx) override {
+    assert(astNodes_.count(ctx->expression()) == 1);
+    astNodes_.emplace(ctx, astNodes_.find(ctx->expression())->second);
+  }
 
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override {
-    std::cerr << "unexcepted " << node->getText() << std::endl;
+    std::cerr << "unexpected " << node->getText() << std::endl;
     std::terminate();
   }
 

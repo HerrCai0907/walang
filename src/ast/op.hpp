@@ -6,7 +6,7 @@
 namespace walang {
 namespace ast {
 
-enum class Op {
+enum class BinaryOp {
   ADD = 1,
   SUB,
   MUL,
@@ -28,11 +28,21 @@ enum class Op {
   MEMBER,
 };
 
+enum class PrefixOp {
+  ADD = 1,
+  SUB,
+  NOT,
+};
+
 class Operator {
 public:
-  static Op getOp(walangParser::BinaryOperatorContext *ctx) noexcept;
-  static int getOpPriority(Op op) noexcept;
-  static std::string to_string(Op op);
+  static BinaryOp getOp(walangParser::BinaryOperatorContext *ctx) noexcept;
+  static PrefixOp getOp(walangParser::PrefixOperatorContext *ctx) noexcept;
+
+  static int getOpPriority(BinaryOp op) noexcept;
+
+  static std::string to_string(BinaryOp op);
+  static std::string to_string(PrefixOp op);
 };
 
 } // namespace ast

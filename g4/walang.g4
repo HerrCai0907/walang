@@ -27,7 +27,7 @@ whileStatement: 'while' '(' expression ')' '{' statement+ '}';
 
 // expression
 
-prefixOperator: 'not';
+prefixOperator: 'not' | '+' | '-';
 binaryOperator:
 	'*'
 	| '/'
@@ -46,18 +46,40 @@ binaryOperator:
 	| '^'
 	| '|'
 	| '&&'
-	| '||'
-	| '.';
+	| '||';
 
 prefixExpression: prefixOperator expression;
 
 parenthesesExpression: '(' expression ')';
 
-binaryExpressionRight: binaryOperator expression;
-binaryExpression: identifier binaryExpressionRight+;
+binaryExpressionRightWithOp:
+	binaryOperator binaryExpressionRight;
+binaryExpressionLeft:
+	identifier
+	| prefixExpression
+	| parenthesesExpression
+	// | binaryExpression | ternaryExpression
+	| callExpression;
+binaryExpressionRight:
+	identifier
+	| prefixExpression
+	| parenthesesExpression
+	| binaryExpression
+	//| ternaryExpression
+	| callExpression;
+binaryExpression:
+	binaryExpressionLeft binaryExpressionRightWithOp+;
 
-ternaryExpressionRight: '?' expression ':' expression;
-ternaryExpression: identifier ternaryExpressionRight+;
+ternaryExpressionBody: '?' expression ':' expression;
+ternaryExpressionCondition:
+	identifier
+	| prefixExpression
+	| parenthesesExpression
+	| binaryExpression
+	// | ternaryExpression
+	| callExpression;
+ternaryExpression:
+	ternaryExpressionCondition ternaryExpressionBody+;
 
 callExpressionRight: '(' expression (',' expression)* ')';
 callExpression: identifier callExpressionRight+;

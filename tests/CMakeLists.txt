@@ -23,6 +23,8 @@ function(TESTCASE test_name test_file)
 endfunction()
 
 TESTCASE(parserBinaryExpression parser/binaryExpression.cpp)
+TESTCASE(parserPrefixExpression parser/prefixExpression.cpp)
+TESTCASE(parserTernaryExpression parser/ternaryExpression.cpp)
 
 if(ENABLE_COV)
   # Coverage setup

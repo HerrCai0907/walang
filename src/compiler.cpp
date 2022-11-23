@@ -71,10 +71,10 @@ BinaryenExpressionRef Compiler::compileBinaryExpression(std::shared_ptr<ast::Bin
   BinaryenExpressionRef rightExprRef = compileExpression(expression->rightExpr());
   BinaryenOp op;
   switch (expression->op()) {
-  case ast::Op::ADD:
+  case ast::BinaryOp::ADD:
     op = BinaryenAddInt32();
     break;
-  case ast::Op::MUL:
+  case ast::BinaryOp::MUL:
     op = BinaryenMulInt32();
     break;
   default:

@@ -1,21 +1,28 @@
 #include "expression.hpp"
+#include <cassert>
 #include <fmt/core.h>
 
 namespace walang {
 namespace ast {
 
-BinaryExpression::BinaryExpression() noexcept : op_(static_cast<Op>(0)), leftExpr_(nullptr), rightExpr_(nullptr) {}
+BinaryExpression::BinaryExpression() noexcept
+    : op_(static_cast<BinaryOp>(0)), leftExpr_(nullptr), rightExpr_(nullptr) {}
 BinaryExpression::BinaryExpression(
     walangParser::BinaryExpressionContext *ctx,
     std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map) {
-  assert(map.count(ctx->identifier()) == 1);
-  leftExpr_ = std::dynamic_pointer_cast<Expression>(map.find(ctx->identifier())->second);
-  std::vector<walangParser::BinaryExpressionRightContext *> binaryRights = ctx->binaryExpressionRight();
+
+  auto leftChild = dynamic_cast<antlr4::ParserRuleContext *>(ctx->binaryExpressionLeft()->children.at(0));
+  assert(map.count(leftChild) == 1);
+  leftExpr_ = std::dynamic_pointer_cast<Expression>(map.find(leftChild)->second);
+
+  auto binaryRightWithOps = ctx->binaryExpressionRightWithOp();
   bool firstRight = true;
-  for (auto binaryRight : binaryRights) {
-    Op op = Operator::getOp(binaryRight->binaryOperator());
-    assert(map.count(binaryRight->expression()) == 1);
-    auto rightExpr = std::dynamic_pointer_cast<Expression>(map.find(binaryRight->expression())->second);
+  for (auto binaryRightWithOp : binaryRightWithOps) {
+    BinaryOp op = Operator::getOp(binaryRightWithOp->binaryOperator());
+    auto rightCtx =
+        dynamic_cast<antlr4::ParserRuleContext *>(binaryRightWithOp->binaryExpressionRight()->children.at(0));
+    assert(map.count(rightCtx) == 1);
+    auto rightExpr = std::dynamic_pointer_cast<Expression>(map.find(rightCtx)->second);
     if (firstRight) {
       firstRight = false;
       op_ = op;
@@ -25,7 +32,7 @@ BinaryExpression::BinaryExpression(
     }
   }
 }
-void BinaryExpression::appendExpr(Op op, std::shared_ptr<Expression> rightExpr) {
+void BinaryExpression::appendExpr(BinaryOp op, std::shared_ptr<Expression> rightExpr) {
   if (Operator::getOpPriority(op_) <= Operator::getOpPriority(op)) {
     // self as new operator's left
     auto newLeft = std::make_shared<BinaryExpression>();
