@@ -1,4 +1,5 @@
 #include "expression.hpp"
+#include <cassert>
 #include <fmt/core.h>
 
 namespace walang {
@@ -9,8 +10,20 @@ BinaryExpression::BinaryExpression() noexcept
 BinaryExpression::BinaryExpression(
     walangParser::BinaryExpressionContext *ctx,
     std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map) {
-  assert(map.count(ctx->identifier()) == 1);
-  leftExpr_ = std::dynamic_pointer_cast<Expression>(map.find(ctx->identifier())->second);
+  antlr4::ParserRuleContext *leftChild;
+  if (ctx->binaryExpressionLeft()->identifier()) {
+    leftChild = ctx->binaryExpressionLeft()->identifier();
+  } else if (ctx->binaryExpressionLeft()->prefixExpression()) {
+    leftChild = ctx->binaryExpressionLeft()->prefixExpression();
+  } else if (ctx->binaryExpressionLeft()->parenthesesExpression()) {
+    leftChild = ctx->binaryExpressionLeft()->parenthesesExpression();
+  } else if (ctx->binaryExpressionLeft()->callExpression()) {
+    leftChild = ctx->binaryExpressionLeft()->callExpression();
+  } else {
+    assert(false);
+  }
+  assert(map.count(leftChild) == 1);
+  leftExpr_ = std::dynamic_pointer_cast<Expression>(map.find(leftChild)->second);
   std::vector<walangParser::BinaryExpressionRightContext *> binaryRights = ctx->binaryExpressionRight();
   bool firstRight = true;
   for (auto binaryRight : binaryRights) {

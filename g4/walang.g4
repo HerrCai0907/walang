@@ -46,15 +46,20 @@ binaryOperator:
 	| '^'
 	| '|'
 	| '&&'
-	| '||'
-	| '.';
+	| '||';
 
 prefixExpression: prefixOperator expression;
 
 parenthesesExpression: '(' expression ')';
 
 binaryExpressionRight: binaryOperator expression;
-binaryExpression: identifier binaryExpressionRight+;
+binaryExpressionLeft:
+	identifier
+	| prefixExpression
+	| parenthesesExpression
+	// | binaryExpression | ternaryExpression
+	| callExpression;
+binaryExpression: binaryExpressionLeft binaryExpressionRight+;
 
 ternaryExpressionRight: '?' expression ':' expression;
 ternaryExpression: identifier ternaryExpressionRight+;

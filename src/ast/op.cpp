@@ -44,8 +44,6 @@ BinaryOp Operator::getOp(walangParser::BinaryOperatorContext *ctx) noexcept {
     return BinaryOp::LOGIC_AND;
   } else if (ctx->OrOr() != nullptr) {
     return BinaryOp::LOGIC_OR;
-  } else if (ctx->Dot() != nullptr) {
-    return BinaryOp::MEMBER;
   }
   std::cerr << "unknown operator " << ctx->getText() << std::endl;
   std::terminate();
