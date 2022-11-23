@@ -127,3 +127,10 @@ a * 1 + 2 > 3;
   auto file = parser.parse();
   EXPECT_EQ(file->statement()[0]->to_string(), "(GREATER_THAN (ADD (MUL a 1) 2) 3)\n");
 }
+TEST(parser_binary_expression, parentheses) {
+  FileParser parser("test.wa", R"(
+a * (1 + 2);
+  )");
+  auto file = parser.parse();
+  EXPECT_EQ(file->statement()[0]->to_string(), "(MUL a (ADD 1 2))\n");
+}

@@ -38,3 +38,11 @@ TEST(parser_ternary_expression, priority) {
   ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
   ASSERT_EQ(file->statement()[0]->to_string(), "((EQUAL 1 2) ? (MUL a b) : (ADD 3 4))\n");
 }
+
+TEST(parser_prefix_expression, parentheses) {
+  FileParser parser("test.wa", R"(
+(a ? 1 : 2) + 1;
+  )");
+  auto file = parser.parse();
+  EXPECT_EQ(file->statement()[0]->to_string(), "(ADD (a ? 1 : 2) 1)\n");
+}

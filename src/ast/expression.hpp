@@ -68,7 +68,7 @@ public:
   TernaryExpression() noexcept;
   TernaryExpression(walangParser::TernaryExpressionContext *ctx,
                     std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
-  virtual ~TernaryExpression() override {}
+  virtual ~TernaryExpression() = default;
   virtual std::string to_string() const override;
 
 private:

@@ -27,3 +27,11 @@ TEST(parser_prefix_expression, priority) {
   EXPECT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
   EXPECT_EQ(file->statement()[0]->to_string(), "(ADD (ADD 1 (NOT a)) 2)\n");
 }
+
+TEST(parser_prefix_expression, parentheses) {
+  FileParser parser("test.wa", R"(
+not(1 + 2);
+  )");
+  auto file = parser.parse();
+  EXPECT_EQ(file->statement()[0]->to_string(), "(NOT (ADD 1 2))\n");
+}

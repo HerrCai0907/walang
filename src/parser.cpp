@@ -49,6 +49,10 @@ public:
   virtual void exitPrefixExpression(walangParser::PrefixExpressionContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::PrefixExpression>(ctx, astNodes_));
   }
+  virtual void exitParenthesesExpression(walangParser::ParenthesesExpressionContext *ctx) override {
+    assert(astNodes_.count(ctx->expression()) == 1);
+    astNodes_.emplace(ctx, astNodes_.find(ctx->expression())->second);
+  }
 
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override {
     std::cerr << "unexpected " << node->getText() << std::endl;
