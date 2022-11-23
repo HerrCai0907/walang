@@ -10,26 +10,19 @@ BinaryExpression::BinaryExpression() noexcept
 BinaryExpression::BinaryExpression(
     walangParser::BinaryExpressionContext *ctx,
     std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map) {
-  antlr4::ParserRuleContext *leftChild;
-  if (ctx->binaryExpressionLeft()->identifier()) {
-    leftChild = ctx->binaryExpressionLeft()->identifier();
-  } else if (ctx->binaryExpressionLeft()->prefixExpression()) {
-    leftChild = ctx->binaryExpressionLeft()->prefixExpression();
-  } else if (ctx->binaryExpressionLeft()->parenthesesExpression()) {
-    leftChild = ctx->binaryExpressionLeft()->parenthesesExpression();
-  } else if (ctx->binaryExpressionLeft()->callExpression()) {
-    leftChild = ctx->binaryExpressionLeft()->callExpression();
-  } else {
-    assert(false);
-  }
+
+  auto leftChild = dynamic_cast<antlr4::ParserRuleContext *>(ctx->binaryExpressionLeft()->children.at(0));
   assert(map.count(leftChild) == 1);
   leftExpr_ = std::dynamic_pointer_cast<Expression>(map.find(leftChild)->second);
-  std::vector<walangParser::BinaryExpressionRightContext *> binaryRights = ctx->binaryExpressionRight();
+
+  auto binaryRightWithOps = ctx->binaryExpressionRightWithOp();
   bool firstRight = true;
-  for (auto binaryRight : binaryRights) {
-    BinaryOp op = Operator::getOp(binaryRight->binaryOperator());
-    assert(map.count(binaryRight->expression()) == 1);
-    auto rightExpr = std::dynamic_pointer_cast<Expression>(map.find(binaryRight->expression())->second);
+  for (auto binaryRightWithOp : binaryRightWithOps) {
+    BinaryOp op = Operator::getOp(binaryRightWithOp->binaryOperator());
+    auto rightCtx =
+        dynamic_cast<antlr4::ParserRuleContext *>(binaryRightWithOp->binaryExpressionRight()->children.at(0));
+    assert(map.count(rightCtx) == 1);
+    auto rightExpr = std::dynamic_pointer_cast<Expression>(map.find(rightCtx)->second);
     if (firstRight) {
       firstRight = false;
       op_ = op;

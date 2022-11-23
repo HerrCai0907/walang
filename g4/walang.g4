@@ -52,17 +52,34 @@ prefixExpression: prefixOperator expression;
 
 parenthesesExpression: '(' expression ')';
 
-binaryExpressionRight: binaryOperator expression;
+binaryExpressionRightWithOp:
+	binaryOperator binaryExpressionRight;
 binaryExpressionLeft:
 	identifier
 	| prefixExpression
 	| parenthesesExpression
 	// | binaryExpression | ternaryExpression
 	| callExpression;
-binaryExpression: binaryExpressionLeft binaryExpressionRight+;
+binaryExpressionRight:
+	identifier
+	| prefixExpression
+	| parenthesesExpression
+	| binaryExpression
+	//| ternaryExpression
+	| callExpression;
+binaryExpression:
+	binaryExpressionLeft binaryExpressionRightWithOp+;
 
-ternaryExpressionRight: '?' expression ':' expression;
-ternaryExpression: identifier ternaryExpressionRight+;
+ternaryExpressionBody: '?' expression ':' expression;
+ternaryExpressionCondition:
+	identifier
+	| prefixExpression
+	| parenthesesExpression
+	| binaryExpression
+	// | ternaryExpression
+	| callExpression;
+ternaryExpression:
+	ternaryExpressionCondition ternaryExpressionBody+;
 
 callExpressionRight: '(' expression (',' expression)* ')';
 callExpression: identifier callExpressionRight+;

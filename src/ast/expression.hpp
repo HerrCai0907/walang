@@ -65,7 +65,11 @@ private:
 
 class TernaryExpression : public Expression {
 public:
+  TernaryExpression() noexcept;
+  TernaryExpression(walangParser::TernaryExpressionContext *ctx,
+                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   virtual ~TernaryExpression() override {}
+  virtual std::string to_string() const override;
 
 private:
   std::shared_ptr<Expression> conditionExpr_;
