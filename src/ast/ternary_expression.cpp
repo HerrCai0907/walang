@@ -9,11 +9,13 @@
 namespace walang {
 namespace ast {
 
-TernaryExpression::TernaryExpression() noexcept : conditionExpr_(nullptr), leftExpr_(nullptr), rightExpr_(nullptr) {}
+TernaryExpression::TernaryExpression() noexcept
+    : Expression(Type::TernaryExpression), conditionExpr_(nullptr), leftExpr_(nullptr), rightExpr_(nullptr) {}
 
 TernaryExpression::TernaryExpression(
     walangParser::TernaryExpressionContext *ctx,
-    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map) {
+    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+    : Expression(Type::TernaryExpression) {
   antlr4::ParserRuleContext *conditionCtx =
       dynamic_cast<antlr4::ParserRuleContext *>(ctx->ternaryExpressionCondition()->children.at(0));
   assert(map.count(conditionCtx) == 1);

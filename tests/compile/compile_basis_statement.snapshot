@@ -1,0 +1,49 @@
+<snapshots>
+    <binaryExpression>
+(module
+ (type $none_=&gt;_none (func))
+ (func $_start
+  (drop
+   (i32.shl
+    (i32.const 1)
+    (i32.const 4)
+   )
+  )
+ )
+)
+</binaryExpression>
+    <logicAndExpression>
+(module
+ (type $none_=&gt;_none (func))
+ (func $_start
+  (local $0 i32)
+  (drop
+   (if (result i32)
+    (local.tee $0
+     (i32.const 0)
+    )
+    (i32.const 4)
+    (local.get $0)
+   )
+  )
+ )
+)
+</logicAndExpression>
+    <logicOrExpression>
+(module
+ (type $none_=&gt;_none (func))
+ (func $_start
+  (local $0 i32)
+  (drop
+   (if (result i32)
+    (local.tee $0
+     (i32.const 1)
+    )
+    (local.get $0)
+    (i32.const 5)
+   )
+  )
+ )
+)
+</logicOrExpression>
+</snapshots>

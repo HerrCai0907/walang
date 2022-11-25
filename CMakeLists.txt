@@ -23,6 +23,10 @@ add_subdirectory(third_party/binaryen)
 unset(BUILD_TESTS)
 unset(BUILD_TOOLS)
 
+set(tinyxml2_BUILD_TESTING off)
+add_subdirectory(third_party/tinyxml2)
+unset(tinyxml2_BUILD_TESTING)
+
 # include magic_enum
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/magic_enum/include

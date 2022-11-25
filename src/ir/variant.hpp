@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ast/statement.hpp"
+#include <_types/_uint32_t.h>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -15,6 +17,19 @@ public:
   std::string name() const noexcept { return name_; }
 
 private:
+  std::string name_;
+  std::shared_ptr<ast::Expression> init_;
+};
+
+class Local {
+public:
+  explicit Local(uint32_t index) : index_{index}, name_{}, init_{nullptr} {}
+
+  uint32_t index() const noexcept { return index_; }
+  std::string name() const noexcept { return name_; }
+
+private:
+  uint32_t index_;
   std::string name_;
   std::shared_ptr<ast::Expression> init_;
 };

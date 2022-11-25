@@ -25,7 +25,6 @@ enum class BinaryOp {
   XOR,
   LOGIC_AND,
   LOGIC_OR,
-  MEMBER,
 };
 
 enum class PrefixOp {

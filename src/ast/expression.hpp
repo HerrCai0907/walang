@@ -16,7 +16,14 @@ namespace ast {
 
 class Expression : public Node {
 public:
+  enum Type { Identifier, PrefixExpression, BinaryExpression, TernaryExpression };
+  Expression(Type type) : type_(type) {}
   virtual ~Expression() = default;
+
+  Type type() const noexcept { return type_; }
+
+private:
+  Type type_;
 };
 
 class Identifier final : public Expression {
@@ -38,6 +45,8 @@ public:
                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
   virtual ~PrefixExpression() override {}
   virtual std::string to_string() const override;
+  PrefixOp op() const noexcept { return op_; }
+  std::shared_ptr<Expression> const &expr() const noexcept { return expr_; }
 
 private:
   PrefixOp op_;

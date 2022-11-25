@@ -12,11 +12,7 @@ namespace ast {
 
 class Statement : public Node {
 public:
-  enum Type {
-    DeclareStatement,
-    AssignStatement,
-    ExpressionStatement,
-  };
+  enum Type { DeclareStatement, AssignStatement, ExpressionStatement };
   Statement(Type type) noexcept : type_(type) {}
   virtual ~Statement() = default;
 
