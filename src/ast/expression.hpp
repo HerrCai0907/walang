@@ -80,6 +80,10 @@ public:
   virtual ~TernaryExpression() = default;
   virtual std::string to_string() const override;
 
+  std::shared_ptr<Expression> const &conditionExpr() { return conditionExpr_; }
+  std::shared_ptr<Expression> const &leftExpr() { return leftExpr_; }
+  std::shared_ptr<Expression> const &rightExpr() { return rightExpr_; }
+
 private:
   std::shared_ptr<Expression> conditionExpr_;
   std::shared_ptr<Expression> leftExpr_;

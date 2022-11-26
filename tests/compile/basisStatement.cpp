@@ -83,3 +83,14 @@ TEST_F(compileBasisStatement, prefixExpression) {
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(getCurrentTestName(), wasm2wat(compile.module()));
 }
+
+TEST_F(compileBasisStatement, ternaryExpression) {
+  FileParser parser("test.wa", R"(
+  1 ? 0 : 2;
+    )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(getCurrentTestName(), wasm2wat(compile.module()));
+}

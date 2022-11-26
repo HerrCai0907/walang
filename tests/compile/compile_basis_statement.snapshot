@@ -71,4 +71,18 @@
  )
 )
 </prefixExpression>
+    <ternaryExpression>
+(module
+ (type $none_=&gt;_none (func))
+ (func $_start
+  (drop
+   (if (result i32)
+    (i32.const 1)
+    (i32.const 0)
+    (i32.const 2)
+   )
+  )
+ )
+)
+</ternaryExpression>
 </snapshots>

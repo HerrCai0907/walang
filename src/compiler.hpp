@@ -35,6 +35,7 @@ private:
   BinaryenExpressionRef compileIdentifier(std::shared_ptr<ast::Identifier> const &expression);
   BinaryenExpressionRef compilePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression);
   BinaryenExpressionRef compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression);
+  BinaryenExpressionRef compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression);
 
   BinaryenExpressionRef compileAssignment(std::shared_ptr<ast::Expression> const &expression,
                                           BinaryenExpressionRef value);

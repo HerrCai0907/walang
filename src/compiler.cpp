@@ -65,7 +65,7 @@ BinaryenExpressionRef Compiler::compileExpression(std::shared_ptr<ast::Expressio
   case ast::Expression::BinaryExpression:
     return compileBinaryExpression(std::dynamic_pointer_cast<ast::BinaryExpression>(expression));
   case ast::Expression::TernaryExpression:
-    break;
+    return compileTernaryExpression(std::dynamic_pointer_cast<ast::TernaryExpression>(expression));
   }
   throw std::runtime_error("not support");
 }
@@ -181,6 +181,10 @@ BinaryenExpressionRef Compiler::compileBinaryExpression(std::shared_ptr<ast::Bin
   }
   }
   throw std::runtime_error("unknown");
+}
+BinaryenExpressionRef Compiler::compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression) {
+  return BinaryenIf(module_, compileExpression(expression->conditionExpr()), compileExpression(expression->leftExpr()),
+                    compileExpression(expression->rightExpr()));
 }
 
 BinaryenExpressionRef Compiler::compileAssignment(std::shared_ptr<ast::Expression> const &expression,
