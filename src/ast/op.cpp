@@ -63,8 +63,6 @@ PrefixOp Operator::getOp(walangParser::PrefixOperatorContext *ctx) noexcept {
 
 int Operator::getOpPriority(BinaryOp op) noexcept {
   switch (op) {
-  case BinaryOp::MEMBER:
-    return 1;
   case BinaryOp::MUL:
   case BinaryOp::DIV:
   case BinaryOp::MOD:

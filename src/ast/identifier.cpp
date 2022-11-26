@@ -7,7 +7,8 @@ namespace walang {
 namespace ast {
 
 Identifier::Identifier(walangParser::IdentifierContext *ctx,
-                       std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &) {
+                       std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &)
+    : Expression(Type::Identifier) {
   if (ctx->Identifier() != nullptr) {
     id_ = ctx->getText();
   } else if (ctx->IntNumber() != nullptr) {
