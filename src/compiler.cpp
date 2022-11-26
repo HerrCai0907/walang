@@ -4,6 +4,8 @@
 #include "binaryen-c.h"
 #include "helper/overload.hpp"
 #include "ir/function.hpp"
+#include <_types/_uint32_t.h>
+#include <_types/_uint8_t.h>
 #include <cassert>
 #include <exception>
 #include <memory>
@@ -26,6 +28,21 @@ void Compiler::compile() {
     currentFunction_->finialize(
         module_, BinaryenBlock(module_, nullptr, expressions.data(), expressions.size(), BinaryenTypeNone()));
   }
+}
+std::string Compiler::wat() const {
+  BinaryenSetColorsEnabled(false);
+  std::string watBuf{};
+  watBuf.resize(1024 * 1024);
+  while (true) {
+    uint32_t size = BinaryenModuleWriteText(module_, watBuf.data(), watBuf.size());
+    if (size == watBuf.size()) {
+      watBuf.resize(watBuf.size() * 2);
+    } else {
+      watBuf.resize(size);
+      break;
+    }
+  }
+  return watBuf;
 }
 
 BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement> const &statement) {
