@@ -69,3 +69,17 @@ TEST_F(compileBasisStatement, logicOrExpression) {
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(getCurrentTestName(), wasm2wat(compile.module()));
 }
+
+TEST_F(compileBasisStatement, prefixExpression) {
+  FileParser parser("test.wa", R"(
+  let a = 0;
+  +a;
+  -a;
+  not a;
+    )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(getCurrentTestName(), wasm2wat(compile.module()));
+}

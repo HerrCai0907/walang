@@ -46,4 +46,29 @@
  )
 )
 </logicOrExpression>
+    <prefixExpression>
+(module
+ (type $none_=&gt;_none (func))
+ (global $a (mut i32) (i32.const 0))
+ (func $_start
+  (global.set $a
+   (i32.const 0)
+  )
+  (drop
+   (global.get $a)
+  )
+  (drop
+   (i32.sub
+    (i32.const 0)
+    (global.get $a)
+   )
+  )
+  (drop
+   (i32.eqz
+    (global.get $a)
+   )
+  )
+ )
+)
+</prefixExpression>
 </snapshots>

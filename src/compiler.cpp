@@ -94,7 +94,7 @@ BinaryenExpressionRef Compiler::compilePrefixExpression(std::shared_ptr<ast::Pre
     return BinaryenBinary(module_, BinaryenSubInt32(), leftRef, exprRef);
   }
   case ast::PrefixOp::NOT: {
-    return BinaryenUnary(module_, BinaryenNeInt32(), exprRef);
+    return BinaryenUnary(module_, BinaryenEqZInt32(), exprRef);
   }
   }
   throw std::runtime_error("unknown");

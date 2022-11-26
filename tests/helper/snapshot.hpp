@@ -62,10 +62,12 @@ public:
     } else {
       checked_.insert(key);
       if (isUpdate()) {
-        std::cout << "update snapshot " << key << std::endl;
-        element->second->SetText(text.data());
-        auto err = doc.SaveFile(std::filesystem::absolute(filename_).c_str());
-        assert(err == tinyxml2::XML_SUCCESS);
+        if (element->second->GetText() == nullptr || element->second->GetText() != text) {
+          std::cout << "update snapshot " << key << std::endl;
+          element->second->SetText(text.data());
+          auto err = doc.SaveFile(std::filesystem::absolute(filename_).c_str());
+          assert(err == tinyxml2::XML_SUCCESS);
+        }
       } else {
         ASSERT_NE(element->second->GetText(), nullptr);
         EXPECT_EQ(element->second->GetText(), text);
