@@ -22,6 +22,7 @@ function(TESTCASE test_name test_file)
   set(TESTCASES ${TESTCASES} ${test_name} PARENT_SCOPE)
 endfunction()
 
+TESTCASE(parserBasisStatement parser/basisStatement.cpp)
 TESTCASE(parserBinaryExpression parser/binaryExpression.cpp)
 TESTCASE(parserPrefixExpression parser/prefixExpression.cpp)
 TESTCASE(parserTernaryExpression parser/ternaryExpression.cpp)
