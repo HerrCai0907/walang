@@ -24,6 +24,7 @@ public:
   void compile();
   void dumpModule() { BinaryenModulePrint(module_); }
   BinaryenModuleRef module() const noexcept { return module_; }
+  std::string wat() const;
 
 private:
   BinaryenExpressionRef compileStatement(std::shared_ptr<ast::Statement> const &statement);
