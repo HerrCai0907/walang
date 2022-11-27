@@ -2,42 +2,20 @@
 #include "binaryen-c.h"
 #include "compiler.hpp"
 #include "parser.hpp"
-#include <array>
 #include <filesystem>
 #include <gtest/gtest.h>
-#include <memory>
-#include <sstream>
-#include <string>
-#include <string_view>
 
 using namespace walang;
 using namespace walang::ast;
 
-const char *getCurrentTestName() {
-  const testing::TestInfo *const test_info = testing::UnitTest::GetInstance()->current_test_info();
-  return test_info->name();
-}
-
-std::string wasm2wat(BinaryenModuleRef module) {
-  std::array<char, 65535> wat{};
-  BinaryenSetColorsEnabled(false);
-  auto size = BinaryenModuleWriteText(module, wat.data(), wat.size());
-  return std::string{wat.data(), size};
-}
-
-class compileBasisStatement : public ::testing::Test {
+class CompileBasisStatementTest : public ::testing::Test {
 public:
-  static void TearDownTestSuite() {
-    if (testing::UnitTest::GetInstance()->failed_test_suite_count() == 0) {
-      snapshot.removeUsedItem();
-    }
-  }
   static test_helper::SnapShot snapshot;
 };
-test_helper::SnapShot compileBasisStatement::snapshot{
+test_helper::SnapShot CompileBasisStatementTest::snapshot{
     std::filesystem::path(__FILE__).parent_path().append("compile_basis_statement.snapshot")};
 
-TEST_F(compileBasisStatement, binaryExpression) {
+TEST_F(CompileBasisStatementTest, binaryExpression) {
   FileParser parser("test.wa", R"(
   1 << 4;
     )");
@@ -45,10 +23,10 @@ TEST_F(compileBasisStatement, binaryExpression) {
   Compiler compile{{file}};
   compile.compile();
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
-  snapshot.check(getCurrentTestName(), wasm2wat(compile.module()));
+  snapshot.check(compile.wat());
 }
 
-TEST_F(compileBasisStatement, logicAndExpression) {
+TEST_F(CompileBasisStatementTest, logicAndExpression) {
   FileParser parser("test.wa", R"(
   0 && 4;
     )");
@@ -56,10 +34,10 @@ TEST_F(compileBasisStatement, logicAndExpression) {
   Compiler compile{{file}};
   compile.compile();
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
-  snapshot.check(getCurrentTestName(), wasm2wat(compile.module()));
+  snapshot.check(compile.wat());
 }
 
-TEST_F(compileBasisStatement, logicOrExpression) {
+TEST_F(CompileBasisStatementTest, logicOrExpression) {
   FileParser parser("test.wa", R"(
   1 || 5;
     )");
@@ -67,10 +45,10 @@ TEST_F(compileBasisStatement, logicOrExpression) {
   Compiler compile{{file}};
   compile.compile();
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
-  snapshot.check(getCurrentTestName(), wasm2wat(compile.module()));
+  snapshot.check(compile.wat());
 }
 
-TEST_F(compileBasisStatement, prefixExpression) {
+TEST_F(CompileBasisStatementTest, prefixExpression) {
   FileParser parser("test.wa", R"(
   let a = 0;
   +a;
@@ -81,10 +59,10 @@ TEST_F(compileBasisStatement, prefixExpression) {
   Compiler compile{{file}};
   compile.compile();
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
-  snapshot.check(getCurrentTestName(), wasm2wat(compile.module()));
+  snapshot.check(compile.wat());
 }
 
-TEST_F(compileBasisStatement, ternaryExpression) {
+TEST_F(CompileBasisStatementTest, ternaryExpression) {
   FileParser parser("test.wa", R"(
   1 ? 0 : 2;
     )");
@@ -92,5 +70,5 @@ TEST_F(compileBasisStatement, ternaryExpression) {
   Compiler compile{{file}};
   compile.compile();
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
-  snapshot.check(getCurrentTestName(), wasm2wat(compile.module()));
+  snapshot.check(compile.wat());
 }
