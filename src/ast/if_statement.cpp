@@ -22,14 +22,11 @@ IfStatement::IfStatement(walangParser::IfStatementContext *ctx,
   if (blockStatements.size() == 2U) {
     // if - then - else
     elseBlock_ = std::dynamic_pointer_cast<BlockStatement>(map.find(blockStatements.at(0))->second);
-    elseif_ = nullptr;
   } else if (ctx->ifStatement() != nullptr) {
     // if - then - else if ...
-    elseBlock_ = nullptr;
-    elseif_ = std::dynamic_pointer_cast<IfStatement>(map.find(ctx->ifStatement())->second);
+    elseBlock_ = std::dynamic_pointer_cast<IfStatement>(map.find(ctx->ifStatement())->second);
   } else {
     elseBlock_ = nullptr;
-    elseif_ = nullptr;
   }
 }
 
@@ -37,8 +34,6 @@ std::string IfStatement::to_string() const {
   std::string elseStr;
   if (elseBlock_ != nullptr) {
     elseStr = fmt::format(" else {0}", elseBlock_->to_string());
-  } else if (elseif_ != nullptr) {
-    elseStr = fmt::format(" else {0}", elseif_->to_string());
   } else {
     elseStr = "";
   }

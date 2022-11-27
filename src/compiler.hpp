@@ -31,6 +31,9 @@ private:
   BinaryenExpressionRef compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement);
   BinaryenExpressionRef compileAssignStatement(std::shared_ptr<ast::AssignStatement> const &statement);
   BinaryenExpressionRef compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> const &statement);
+  BinaryenExpressionRef compileBlockStatement(std::shared_ptr<ast::BlockStatement> const &statement);
+  BinaryenExpressionRef compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement);
+  BinaryenExpressionRef compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement);
 
   BinaryenExpressionRef compileExpression(std::shared_ptr<ast::Expression> const &expression);
   BinaryenExpressionRef compileIdentifier(std::shared_ptr<ast::Identifier> const &expression);

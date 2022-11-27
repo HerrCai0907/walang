@@ -4,10 +4,11 @@
 #include "binaryen-c.h"
 #include "helper/overload.hpp"
 #include "ir/function.hpp"
-#include <_types/_uint32_t.h>
-#include <_types/_uint8_t.h>
+#include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <exception>
+#include <iterator>
 #include <memory>
 #include <stdexcept>
 #include <variant>
@@ -45,6 +46,12 @@ std::string Compiler::wat() const {
   return watBuf;
 }
 
+// ███████ ████████  █████  ████████ ███████ ███    ███ ███████ ███    ██ ████████
+// ██         ██    ██   ██    ██    ██      ████  ████ ██      ████   ██    ██
+// ███████    ██    ███████    ██    █████   ██ ████ ██ █████   ██ ██  ██    ██
+//      ██    ██    ██   ██    ██    ██      ██  ██  ██ ██      ██  ██ ██    ██
+// ███████    ██    ██   ██    ██    ███████ ██      ██ ███████ ██   ████    ██
+
 BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement> const &statement) {
   switch (statement->type()) {
   case ast::Statement::_DeclareStatement:
@@ -53,8 +60,12 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
     return compileAssignStatement(std::dynamic_pointer_cast<ast::AssignStatement>(statement));
   case ast::Statement::_ExpressionStatement:
     return compileExpressionStatement(std::dynamic_pointer_cast<ast::ExpressionStatement>(statement));
-  default: // TODO()
-    break;
+  case ast::Statement::_BlockStatement:
+    return compileBlockStatement(std::dynamic_pointer_cast<ast::BlockStatement>(statement));
+  case ast::Statement::_IfStatement:
+    return compileIfStatement(std::dynamic_pointer_cast<ast::IfStatement>(statement));
+  case ast::Statement::_WhileStatement:
+    return compileWhileStatement(std::dynamic_pointer_cast<ast::WhileStatement>(statement));
   }
   if (std::dynamic_pointer_cast<ast::DeclareStatement>(statement) != nullptr) {
   }
@@ -74,6 +85,27 @@ BinaryenExpressionRef Compiler::compileAssignStatement(std::shared_ptr<ast::Assi
 BinaryenExpressionRef Compiler::compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> const &statement) {
   return BinaryenDrop(module_, compileExpression(statement->expr()));
 }
+BinaryenExpressionRef Compiler::compileBlockStatement(std::shared_ptr<ast::BlockStatement> const &statement) {
+  std::vector<BinaryenExpressionRef> statementRefs{};
+  auto statements = statement->statements();
+  std::transform(
+      statements.cbegin(), statements.cend(), std::back_inserter(statementRefs),
+      [this](std::shared_ptr<ast::Statement> const &innerStatement) { return compileStatement(innerStatement); });
+  return BinaryenBlock(module_, nullptr, statementRefs.data(), statementRefs.size(), BinaryenTypeNone());
+}
+BinaryenExpressionRef Compiler::compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement) {
+  return BinaryenIf(module_, compileExpression(statement->condition()), compileBlockStatement(statement->thenBlock()),
+                    statement->elseBlock() == nullptr ? nullptr : compileStatement(statement->elseBlock()));
+}
+BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement) {
+  return nullptr; // TODO
+}
+
+// ███████ ██   ██ ██████  ██████  ███████ ███████ ███████ ██  ██████  ███    ██
+// ██       ██ ██  ██   ██ ██   ██ ██      ██      ██      ██ ██    ██ ████   ██
+// █████     ███   ██████  ██████  █████   ███████ ███████ ██ ██    ██ ██ ██  ██
+// ██       ██ ██  ██      ██   ██ ██           ██      ██ ██ ██    ██ ██  ██ ██
+// ███████ ██   ██ ██      ██   ██ ███████ ███████ ███████ ██  ██████  ██   ████
 
 BinaryenExpressionRef Compiler::compileExpression(std::shared_ptr<ast::Expression> const &expression) {
   switch (expression->type()) {

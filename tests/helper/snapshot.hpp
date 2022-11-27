@@ -32,7 +32,8 @@ public:
     if (isUpdate()) {
       doc.Parse("<snapshots></snapshots>");
     } else {
-      throw std::runtime_error("cannot parser xml");
+      std::cerr << "cannot parser xml" << std::endl;
+      std::exit(-1);
     }
   }
   void check(std::string_view value) {

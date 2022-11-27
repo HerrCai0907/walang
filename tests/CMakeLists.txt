@@ -30,6 +30,7 @@ TESTCASE(parserPrefixExpression parser/prefixExpression.cpp)
 TESTCASE(parserTernaryExpression parser/ternaryExpression.cpp)
 
 TESTCASE(compileBasis compile/basisStatement.cpp)
+TESTCASE(compileIf compile/ifStatement.cpp)
 
 if(ENABLE_COV)
   # Coverage setup

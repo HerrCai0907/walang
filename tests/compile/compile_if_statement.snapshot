@@ -1,0 +1,65 @@
+<snapshots>
+    <basis>
+(module
+ (type $none_=&gt;_none (func))
+ (global $a (mut i32) (i32.const 0))
+ (func $_start
+  (global.set $a
+   (i32.const 0)
+  )
+  (if
+   (global.get $a)
+   (global.set $a
+    (i32.const 1)
+   )
+  )
+ )
+)
+</basis>
+    <IfWithElse>
+(module
+ (type $none_=&gt;_none (func))
+ (global $a (mut i32) (i32.const 0))
+ (func $_start
+  (global.set $a
+   (i32.const 0)
+  )
+  (if
+   (global.get $a)
+   (global.set $a
+    (i32.const 1)
+   )
+   (global.set $a
+    (i32.const 1)
+   )
+  )
+ )
+)
+</IfWithElse>
+    <IfWithElseIf>
+(module
+ (type $none_=&gt;_none (func))
+ (global $a (mut i32) (i32.const 0))
+ (func $_start
+  (global.set $a
+   (i32.const 0)
+  )
+  (if
+   (global.get $a)
+   (global.set $a
+    (i32.const 1)
+   )
+   (if
+    (global.get $a)
+    (global.set $a
+     (i32.const 2)
+    )
+    (global.set $a
+     (i32.const 2)
+    )
+   )
+  )
+ )
+)
+</IfWithElseIf>
+</snapshots>

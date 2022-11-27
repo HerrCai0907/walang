@@ -13,11 +13,14 @@ public:
   static test_helper::SnapShot snapshot;
 };
 test_helper::SnapShot CompileIfStatementTest::snapshot{
-    std::filesystem::path(__FILE__).parent_path().append("compile_basis_statement.snapshot")};
+    std::filesystem::path(__FILE__).parent_path().append("compile_if_statement.snapshot")};
 
-TEST_F(CompileIfStatementTest, binaryExpression) {
+TEST_F(CompileIfStatementTest, basis) {
   FileParser parser("test.wa", R"(
-  1 << 4;
+let a = 0;
+if (a) {
+  a = 1;
+}
     )");
   auto file = parser.parse();
   Compiler compile{{file}};
@@ -26,9 +29,14 @@ TEST_F(CompileIfStatementTest, binaryExpression) {
   snapshot.check(compile.wat());
 }
 
-TEST_F(CompileIfStatementTest, logicAndExpression) {
+TEST_F(CompileIfStatementTest, IfWithElse) {
   FileParser parser("test.wa", R"(
-  0 && 4;
+let a = 0;
+if (a) {
+  a = 1;
+} else {
+  a = 2;
+}
     )");
   auto file = parser.parse();
   Compiler compile{{file}};
@@ -37,34 +45,16 @@ TEST_F(CompileIfStatementTest, logicAndExpression) {
   snapshot.check(compile.wat());
 }
 
-TEST_F(CompileIfStatementTest, logicOrExpression) {
+TEST_F(CompileIfStatementTest, IfWithElseIf) {
   FileParser parser("test.wa", R"(
-  1 || 5;
-    )");
-  auto file = parser.parse();
-  Compiler compile{{file}};
-  compile.compile();
-  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
-  snapshot.check(compile.wat());
+let a = 0;
+if (a) {
+  a = 1;
+} else if (a) {
+  a = 2;
+} else {
+  a = 3;
 }
-
-TEST_F(CompileIfStatementTest, prefixExpression) {
-  FileParser parser("test.wa", R"(
-  let a = 0;
-  +a;
-  -a;
-  not a;
-    )");
-  auto file = parser.parse();
-  Compiler compile{{file}};
-  compile.compile();
-  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
-  snapshot.check(compile.wat());
-}
-
-TEST_F(CompileIfStatementTest, ternaryExpression) {
-  FileParser parser("test.wa", R"(
-  1 ? 0 : 2;
     )");
   auto file = parser.parse();
   Compiler compile{{file}};
