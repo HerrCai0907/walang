@@ -32,27 +32,12 @@ public:
     if (isUpdate()) {
       doc.Parse("<snapshots></snapshots>");
     } else {
-      throw std::runtime_error("cannot parser xml");
+      std::cerr << "cannot parser xml" << std::endl;
+      std::exit(-1);
     }
   }
-  void removeUsedItem() {
-    if (isRemove()) {
-      for (auto const &checkedKey : checked_) {
-        auto it = map_.find(checkedKey);
-        assert(it != map_.end() && "unknown snapshot behavior");
-        map_.erase(checkedKey);
-      }
-      if (map_.size() > 0) {
-        for (auto const &it : map_) {
-          std::cout << "remove snapshot " << it.first << std::endl;
-          doc.FirstChild()->ToElement()->DeleteChild(it.second);
-        }
-        auto err = doc.SaveFile(std::filesystem::absolute(filename_).c_str());
-        assert(err == tinyxml2::XML_SUCCESS);
-      }
-    }
-  }
-  void check(std::string const &key, std::string_view value) {
+  void check(std::string_view value) {
+    std::string key{testing::UnitTest::GetInstance()->current_test_info()->name()};
     std::string text{value};
     text = "\n" + text;
     auto element = map_.find(key);
@@ -85,10 +70,6 @@ private:
 
   static bool isUpdate() {
     auto env = getenv("UPDATE_SNAPSHOT");
-    return env && env == std::string("yes");
-  }
-  static bool isRemove() {
-    auto env = getenv("FORCE_UPDATE_SNAPSHOT");
     return env && env == std::string("yes");
   }
 };

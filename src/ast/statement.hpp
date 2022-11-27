@@ -91,14 +91,12 @@ public:
   std::string to_string() const;
   std::shared_ptr<Expression> const &condition() const noexcept { return condition_; }
   std::shared_ptr<BlockStatement> const &thenBlock() const noexcept { return thenBlock_; }
-  std::shared_ptr<BlockStatement> const &elseBlock() const noexcept { return elseBlock_; }
-  std::shared_ptr<IfStatement> const &elseIfStatement() const noexcept { return elseif_; }
+  std::shared_ptr<Statement> const &elseBlock() const noexcept { return elseBlock_; }
 
 private:
   std::shared_ptr<Expression> condition_;
   std::shared_ptr<BlockStatement> thenBlock_;
-  std::shared_ptr<BlockStatement> elseBlock_;
-  std::shared_ptr<IfStatement> elseif_;
+  std::shared_ptr<Statement> elseBlock_;
 };
 
 class WhileStatement : public Statement {
