@@ -1,8 +1,9 @@
 #pragma once
 
 #include "ast/statement.hpp"
-#include "binaryen-c.h"
 #include "ir/variant.hpp"
+#include "ir/variant_type.hpp"
+#include <binaryen-c.h>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -17,12 +18,14 @@ public:
 
   std::string name() const noexcept { return name_; }
 
-  std::shared_ptr<Local> &addTempLocal() { return locals_.emplace_back(std::make_shared<Local>(locals_.size())); }
+  std::shared_ptr<Local> &addTempLocal(std::shared_ptr<VariantType> const &localType) {
+    return locals_.emplace_back(std::make_shared<Local>(locals_.size(), localType));
+  }
 
   BinaryenFunctionRef finialize(BinaryenModuleRef module, BinaryenExpressionRef body) {
     std::vector<BinaryenType> types{};
     for (auto const &local : locals_) {
-      types.emplace_back(BinaryenTypeInt32());
+      types.emplace_back(local->variantType()->underlyingTypeName());
     }
     return BinaryenAddFunction(module, name_.c_str(), BinaryenTypeNone(), BinaryenTypeNone(), types.data(),
                                types.size(), body);
