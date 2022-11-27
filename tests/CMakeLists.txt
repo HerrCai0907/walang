@@ -23,7 +23,7 @@ function(TESTCASE test_name test_file)
 endfunction()
 
 TESTCASE(parserBasisStatement parser/basisStatement.cpp)
-TESTCASE(parserIfStatement parser/ifStatement.cpp)
+TESTCASE(parserFlowStatement parser/flowStatement.cpp)
 
 TESTCASE(parserBinaryExpression parser/binaryExpression.cpp)
 TESTCASE(parserPrefixExpression parser/prefixExpression.cpp)

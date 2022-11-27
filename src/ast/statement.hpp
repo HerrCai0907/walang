@@ -4,6 +4,7 @@
 #include "generated/walangParser.h"
 #include "node.hpp"
 #include <cassert>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -13,7 +14,14 @@ namespace ast {
 
 class Statement : public Node {
 public:
-  enum Type { _DeclareStatement, _AssignStatement, _ExpressionStatement, _BlockStatement, _IfStatement };
+  enum Type {
+    _DeclareStatement,
+    _AssignStatement,
+    _ExpressionStatement,
+    _BlockStatement,
+    _IfStatement,
+    _WhileStatement,
+  };
   Statement(Type type) noexcept : type_(type) {}
   virtual ~Statement() = default;
 
@@ -91,6 +99,20 @@ private:
   std::shared_ptr<BlockStatement> thenBlock_;
   std::shared_ptr<BlockStatement> elseBlock_;
   std::shared_ptr<IfStatement> elseif_;
+};
+
+class WhileStatement : public Statement {
+public:
+  WhileStatement(walangParser::WhileStatementContext *ctx,
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+  virtual ~WhileStatement() = default;
+  std::string to_string() const;
+  std::shared_ptr<Expression> const &condition() const noexcept { return condition_; }
+  std::shared_ptr<BlockStatement> const &block() const noexcept { return block_; }
+
+private:
+  std::shared_ptr<Expression> condition_;
+  std::shared_ptr<BlockStatement> block_;
 };
 
 } // namespace ast

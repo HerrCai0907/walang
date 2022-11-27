@@ -10,6 +10,7 @@ statement:
 	expressionStatement
 	| declareStatement
 	| assignStatement
+	| blockStatement
 	| ifStatement
 	| whileStatement;
 
@@ -24,7 +25,7 @@ ifStatement:
 	'if' '(' expression ')' blockStatement (
 		'else' (blockStatement | ifStatement)
 	)?;
-whileStatement: 'while' '(' expression ')' '{' statement+ '}';
+whileStatement: 'while' '(' expression ')' blockStatement;
 
 // expression
 

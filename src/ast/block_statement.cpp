@@ -24,7 +24,7 @@ std::string BlockStatement::to_string() const {
   std::vector<std::string> statementStrs{};
   std::transform(statements_.cbegin(), statements_.cend(), std::back_inserter(statementStrs),
                  [](std::shared_ptr<Statement> const &statement) { return statement->to_string(); });
-  return fmt::format("{{\n{0}}}", fmt::join(statementStrs, "\t"));
+  return fmt::format("{{\n{0}}}", fmt::join(statementStrs, ""));
 }
 
 } // namespace ast
