@@ -17,7 +17,7 @@
 namespace walang {
 
 Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files)
-    : module_{BinaryenModuleCreate()}, files_{files}, globals_{} {}
+    : module_{BinaryenModuleCreate()}, files_{files}, globals_{}, loopIndex_{0U} {}
 
 void Compiler::compile() {
   for (auto const &file : files_) {
@@ -94,11 +94,35 @@ BinaryenExpressionRef Compiler::compileBlockStatement(std::shared_ptr<ast::Block
   return BinaryenBlock(module_, nullptr, statementRefs.data(), statementRefs.size(), BinaryenTypeNone());
 }
 BinaryenExpressionRef Compiler::compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement) {
-  return BinaryenIf(module_, compileExpression(statement->condition()), compileBlockStatement(statement->thenBlock()),
-                    statement->elseBlock() == nullptr ? nullptr : compileStatement(statement->elseBlock()));
+  BinaryenExpressionRef condition = compileExpression(statement->condition());
+  BinaryenExpressionRef ifTrue = compileBlockStatement(statement->thenBlock());
+  BinaryenExpressionRef ifElse = statement->elseBlock() == nullptr ? nullptr : compileStatement(statement->elseBlock());
+  return BinaryenIf(module_, condition, ifTrue, ifElse);
 }
 BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement) {
-  return nullptr; // TODO
+  /**
+    loop A (
+      if (
+        this->condition
+        block (
+          this->block
+          br A
+        )
+      )
+    )
+   */
+
+  std::string loopName = std::to_string(loopIndex_);
+  ++loopIndex_;
+  BinaryenExpressionRef condition = compileExpression(statement->condition());
+  std::vector<BinaryenExpressionRef> block = {
+      compileBlockStatement(statement->block()),
+      BinaryenBreak(module_, loopName.c_str(), nullptr, nullptr),
+  };
+  BinaryenExpressionRef body = BinaryenIf(
+      module_, condition, BinaryenBlock(module_, nullptr, block.data(), block.size(), BinaryenTypeNone()), nullptr);
+
+  return BinaryenLoop(module_, loopName.c_str(), body);
 }
 
 // ███████ ██   ██ ██████  ██████  ███████ ███████ ███████ ██  ██████  ███    ██

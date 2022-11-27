@@ -8,14 +8,14 @@
 using namespace walang;
 using namespace walang::ast;
 
-class CompileIfStatementTest : public ::testing::Test {
+class CompileWhileStatementTest : public ::testing::Test {
 public:
   static test_helper::SnapShot snapshot;
 };
-test_helper::SnapShot CompileIfStatementTest::snapshot{
+test_helper::SnapShot CompileWhileStatementTest::snapshot{
     std::filesystem::path(__FILE__).parent_path().append("compile_basis_statement.snapshot")};
 
-TEST_F(CompileIfStatementTest, binaryExpression) {
+TEST_F(CompileWhileStatementTest, binaryExpression) {
   FileParser parser("test.wa", R"(
   1 << 4;
     )");
@@ -26,7 +26,7 @@ TEST_F(CompileIfStatementTest, binaryExpression) {
   snapshot.check(compile.wat());
 }
 
-TEST_F(CompileIfStatementTest, logicAndExpression) {
+TEST_F(CompileWhileStatementTest, logicAndExpression) {
   FileParser parser("test.wa", R"(
   0 && 4;
     )");
@@ -37,7 +37,7 @@ TEST_F(CompileIfStatementTest, logicAndExpression) {
   snapshot.check(compile.wat());
 }
 
-TEST_F(CompileIfStatementTest, logicOrExpression) {
+TEST_F(CompileWhileStatementTest, logicOrExpression) {
   FileParser parser("test.wa", R"(
   1 || 5;
     )");
@@ -48,7 +48,7 @@ TEST_F(CompileIfStatementTest, logicOrExpression) {
   snapshot.check(compile.wat());
 }
 
-TEST_F(CompileIfStatementTest, prefixExpression) {
+TEST_F(CompileWhileStatementTest, prefixExpression) {
   FileParser parser("test.wa", R"(
   let a = 0;
   +a;
@@ -62,7 +62,7 @@ TEST_F(CompileIfStatementTest, prefixExpression) {
   snapshot.check(compile.wat());
 }
 
-TEST_F(CompileIfStatementTest, ternaryExpression) {
+TEST_F(CompileWhileStatementTest, ternaryExpression) {
   FileParser parser("test.wa", R"(
   1 ? 0 : 2;
     )");

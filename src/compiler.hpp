@@ -51,6 +51,8 @@ private:
   std::unordered_map<std::string, std::shared_ptr<ir::Global>> globals_;
 
   std::shared_ptr<ir::Function> currentFunction_;
+
+  uint32_t loopIndex_;
 };
 
 } // namespace walang
