@@ -11,13 +11,13 @@
 #include <iterator>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <variant>
 #include <vector>
 
 namespace walang {
 
-Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files)
-    : module_{BinaryenModuleCreate()}, files_{files}, globals_{}, loopIndex_{0U} {}
+Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files) : module_{BinaryenModuleCreate()}, files_{files} {}
 
 void Compiler::compile() {
   for (auto const &file : files_) {
@@ -66,10 +66,14 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
     return compileIfStatement(std::dynamic_pointer_cast<ast::IfStatement>(statement));
   case ast::Statement::_WhileStatement:
     return compileWhileStatement(std::dynamic_pointer_cast<ast::WhileStatement>(statement));
+  case ast::Statement::_BreakStatement:
+    return compileBreakStatement(std::dynamic_pointer_cast<ast::BreakStatement>(statement));
+  case ast::Statement::_ContinueStatement:
+    return compileContinueStatement(std::dynamic_pointer_cast<ast::ContinueStatement>(statement));
   }
   if (std::dynamic_pointer_cast<ast::DeclareStatement>(statement) != nullptr) {
   }
-  throw std::runtime_error("not support");
+  throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
   BinaryenExpressionRef init = compileExpression(statement->init());
@@ -111,18 +115,31 @@ BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::While
       )
     )
    */
-
-  std::string loopName = std::to_string(loopIndex_);
-  ++loopIndex_;
+  auto breakLabel = createBreakLabel("while");
+  auto continueLabel = createContinueLabel("while");
   BinaryenExpressionRef condition = compileExpression(statement->condition());
   std::vector<BinaryenExpressionRef> block = {
       compileBlockStatement(statement->block()),
-      BinaryenBreak(module_, loopName.c_str(), nullptr, nullptr),
+      BinaryenBreak(module_, continueLabel.c_str(), nullptr, nullptr),
   };
   BinaryenExpressionRef body = BinaryenIf(
       module_, condition, BinaryenBlock(module_, nullptr, block.data(), block.size(), BinaryenTypeNone()), nullptr);
-
-  return BinaryenLoop(module_, loopName.c_str(), body);
+  freeBreakLabel();
+  freeContinueLabel();
+  BinaryenExpressionRef loop = BinaryenLoop(module_, continueLabel.c_str(), body);
+  return BinaryenBlock(module_, breakLabel.c_str(), &loop, 1U, BinaryenTypeNone());
+}
+BinaryenExpressionRef Compiler::compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement) {
+  if (currentBreakLabel_.size() == 0) {
+    throw std::runtime_error("invalid break statement");
+  }
+  return BinaryenBreak(module_, currentBreakLabel_.top().c_str(), nullptr, nullptr);
+}
+BinaryenExpressionRef Compiler::compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement) {
+  if (currentContinueLabel_.size() == 0) {
+    throw std::runtime_error("invalid continue statement");
+  }
+  return BinaryenBreak(module_, currentContinueLabel_.top().c_str(), nullptr, nullptr);
 }
 
 // ███████ ██   ██ ██████  ██████  ███████ ███████ ███████ ██  ██████  ███    ██
@@ -154,7 +171,7 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                  if (globals_.find(s) != globals_.end()) {
                                    return BinaryenGlobalGet(module_, s.c_str(), BinaryenTypeInt32());
                                  }
-                                 throw std::runtime_error("not support");
+                                 throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
                                }},
                     expression->id());
 }
@@ -172,7 +189,7 @@ BinaryenExpressionRef Compiler::compilePrefixExpression(std::shared_ptr<ast::Pre
     return BinaryenUnary(module_, BinaryenEqZInt32(), exprRef);
   }
   }
-  throw std::runtime_error("unknown");
+  throw std::runtime_error("unknown" __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression) {
   BinaryenExpressionRef leftExprRef = compileExpression(expression->leftExpr());
@@ -255,7 +272,7 @@ BinaryenExpressionRef Compiler::compileBinaryExpression(std::shared_ptr<ast::Bin
     return BinaryenIf(module_, conditionalExprRef, loadLeftRexprResult, rightExprRef);
   }
   }
-  throw std::runtime_error("unknown");
+  throw std::runtime_error("unknown" __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression) {
   return BinaryenIf(module_, compileExpression(expression->conditionExpr()), compileExpression(expression->leftExpr()),
@@ -273,11 +290,24 @@ BinaryenExpressionRef Compiler::compileAssignment(std::shared_ptr<ast::Expressio
                      if (globals_.find(s) != globals_.end()) {
                        return BinaryenGlobalSet(module_, s.c_str(), value);
                      }
-                     throw std::runtime_error("not support");
+                     throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
                    }},
         std::dynamic_pointer_cast<ast::Identifier>(expression)->id());
   }
-  throw std::runtime_error("not support");
+  throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
 }
+
+std::string const &Compiler::createBreakLabel(std::string const &prefix) {
+  std::string const &str = currentBreakLabel_.emplace(prefix + "|break|" + std::to_string(breakLabelIndex_));
+  breakLabelIndex_++;
+  return str;
+}
+std::string const &Compiler::createContinueLabel(std::string const &prefix) {
+  std::string const &str = currentContinueLabel_.emplace(prefix + "|continue|" + std::to_string(continueLabelIndex_));
+  continueLabelIndex_++;
+  return str;
+}
+void Compiler::freeBreakLabel() { currentBreakLabel_.pop(); }
+void Compiler::freeContinueLabel() { currentContinueLabel_.pop(); }
 
 } // namespace walang

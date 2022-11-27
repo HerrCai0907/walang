@@ -1,22 +1,130 @@
 <snapshots>
-    <basis>
+    <Basis>
 (module
  (type $none_=&gt;_none (func))
  (func $_start
-  (loop $0
-   (if
-    (i32.const 1)
-    (block
+  (block $while|break|0
+   (loop $while|continue|0
+    (if
+     (i32.const 1)
      (block
-      (drop
-       (i32.const 2)
+      (block
+       (drop
+        (i32.const 2)
+       )
       )
+      (br $while|continue|0)
      )
-     (br $0)
     )
    )
   )
  )
 )
-</basis>
+</Basis>
+    <Break>
+(module
+ (type $none_=&gt;_none (func))
+ (func $_start
+  (block $while|break|0
+   (loop $while|continue|0
+    (if
+     (i32.const 1)
+     (block
+      (block
+       (br $while|break|0)
+      )
+      (br $while|continue|0)
+     )
+    )
+   )
+  )
+ )
+)
+</Break>
+    <Continue>
+(module
+ (type $none_=&gt;_none (func))
+ (func $_start
+  (block $while|break|0
+   (loop $while|continue|0
+    (if
+     (i32.const 1)
+     (block
+      (block
+       (br $while|continue|0)
+      )
+      (br $while|continue|0)
+     )
+    )
+   )
+  )
+ )
+)
+</Continue>
+    <MutipleLevlBreak>
+(module
+ (type $none_=&gt;_none (func))
+ (func $_start
+  (block $while|break|0
+   (loop $while|continue|0
+    (if
+     (i32.const 1)
+     (block
+      (block
+       (block $while|break|1
+        (loop $while|continue|1
+         (if
+          (i32.const 2)
+          (block
+           (block
+            (br $while|break|1)
+           )
+           (br $while|continue|1)
+          )
+         )
+        )
+       )
+       (br $while|break|0)
+      )
+      (br $while|continue|0)
+     )
+    )
+   )
+  )
+ )
+)
+</MutipleLevlBreak>
+    <MutipleLevlContinue>
+(module
+ (type $none_=&gt;_none (func))
+ (func $_start
+  (block $while|break|0
+   (loop $while|continue|0
+    (if
+     (i32.const 1)
+     (block
+      (block
+       (block $while|break|1
+        (loop $while|continue|1
+         (if
+          (i32.const 2)
+          (block
+           (block
+            (br $while|continue|1)
+           )
+           (br $while|continue|1)
+          )
+         )
+        )
+       )
+       (br $while|continue|0)
+      )
+      (br $while|continue|0)
+     )
+    )
+   )
+  )
+ )
+)
+</MutipleLevlContinue>
 </snapshots>

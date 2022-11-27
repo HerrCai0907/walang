@@ -7,6 +7,7 @@
 #include "ir/variant.hpp"
 #include <binaryen-c.h>
 #include <memory>
+#include <stack>
 #include <vector>
 
 namespace walang {
@@ -34,6 +35,8 @@ private:
   BinaryenExpressionRef compileBlockStatement(std::shared_ptr<ast::BlockStatement> const &statement);
   BinaryenExpressionRef compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement);
   BinaryenExpressionRef compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement);
+  BinaryenExpressionRef compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement);
+  BinaryenExpressionRef compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement);
 
   BinaryenExpressionRef compileExpression(std::shared_ptr<ast::Expression> const &expression);
   BinaryenExpressionRef compileIdentifier(std::shared_ptr<ast::Identifier> const &expression);
@@ -44,15 +47,23 @@ private:
   BinaryenExpressionRef compileAssignment(std::shared_ptr<ast::Expression> const &expression,
                                           BinaryenExpressionRef value);
 
+  std::string const &createBreakLabel(std::string const &prefix);
+  std::string const &createContinueLabel(std::string const &prefix);
+  void freeBreakLabel();
+  void freeContinueLabel();
+
 private:
   BinaryenModuleRef module_;
 
   std::vector<std::shared_ptr<ast::File>> files_;
-  std::unordered_map<std::string, std::shared_ptr<ir::Global>> globals_;
+  std::unordered_map<std::string, std::shared_ptr<ir::Global>> globals_{};
 
-  std::shared_ptr<ir::Function> currentFunction_;
+  std::shared_ptr<ir::Function> currentFunction_{};
 
-  uint32_t loopIndex_;
+  std::stack<std::string> currentBreakLabel_{};
+  uint32_t breakLabelIndex_{0U};
+  std::stack<std::string> currentContinueLabel_{};
+  uint32_t continueLabelIndex_{0U};
 };
 
 } // namespace walang
