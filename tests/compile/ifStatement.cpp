@@ -13,7 +13,7 @@ public:
   static test_helper::SnapShot snapshot;
 };
 test_helper::SnapShot CompileIfStatementTest::snapshot{
-    std::filesystem::path(__FILE__).parent_path().append("compile_if_statement.snapshot")};
+    std::filesystem::path(__FILE__).parent_path().append("compile_if_statement.snapshot.xml")};
 
 TEST_F(CompileIfStatementTest, basis) {
   FileParser parser("test.wa", R"(

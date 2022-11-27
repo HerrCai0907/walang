@@ -13,7 +13,7 @@ public:
   static test_helper::SnapShot snapshot;
 };
 test_helper::SnapShot CompileWhileStatementTest::snapshot{
-    std::filesystem::path(__FILE__).parent_path().append("compile_while_statement.snapshot")};
+    std::filesystem::path(__FILE__).parent_path().append("compile_while_statement.snapshot.xml")};
 
 TEST_F(CompileWhileStatementTest, Basis) {
   FileParser parser("test.wa", R"(
