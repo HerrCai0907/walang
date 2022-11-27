@@ -14,6 +14,15 @@ TEST(ParseBasisStatement, DeclareStatement) {
   EXPECT_EQ(file->statement()[0]->to_string(), "declare 'a' <- 4\n");
 }
 
+TEST(ParseBasisStatement, TypedDeclareStatement) {
+  FileParser parser("test.wa", "let a:i32 = 4;");
+  auto file = parser.parse();
+
+  EXPECT_EQ(file->statement().size(), 1);
+  ASSERT_NE(std::dynamic_pointer_cast<DeclareStatement>(file->statement()[0]), nullptr);
+  EXPECT_EQ(file->statement()[0]->to_string(), "declare i32'a' <- 4\n");
+}
+
 TEST(ParseBasisStatement, ExpressionStatement) {
   FileParser parser("test.wa", "4;");
   auto file = parser.parse();

@@ -4,6 +4,8 @@ walang: statement* EOF;
 
 identifier: IntNumber | HexNumber | Identifier; // TODO
 
+type: Identifier;
+
 // statement
 
 statement:
@@ -18,7 +20,8 @@ statement:
 
 expressionStatement: expression ';';
 
-declareStatement: 'let' Identifier '=' expression ';';
+declareStatement:
+	'let' Identifier (':' type)? '=' expression ';';
 
 assignStatement: expression '=' expression ';';
 

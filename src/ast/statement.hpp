@@ -40,10 +40,12 @@ public:
   virtual ~DeclareStatement() = default;
   std::string to_string() const override;
   std::string name() const noexcept { return name_; }
+  std::string type() const noexcept { return type_; }
   std::shared_ptr<Expression> init() const noexcept { return initExpr_; }
 
 private:
   std::string name_;
+  std::string type_;
   std::shared_ptr<Expression> initExpr_;
 };
 
