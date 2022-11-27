@@ -21,6 +21,8 @@ public:
     _BlockStatement,
     _IfStatement,
     _WhileStatement,
+    _BreakStatement,
+    _ContinueStatement,
   };
   Statement(Type type) noexcept : type_(type) {}
   virtual ~Statement() = default;
@@ -111,6 +113,24 @@ public:
 private:
   std::shared_ptr<Expression> condition_;
   std::shared_ptr<BlockStatement> block_;
+};
+
+class BreakStatement : public Statement {
+public:
+  BreakStatement(walangParser::BreakStatementContext *ctx,
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+      : Statement(Type::_BreakStatement) {}
+  virtual ~BreakStatement() = default;
+  std::string to_string() const { return "break\n"; }
+};
+
+class ContinueStatement : public Statement {
+public:
+  ContinueStatement(walangParser::ContinueStatementContext *ctx,
+                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+      : Statement(Type::_ContinueStatement) {}
+  virtual ~ContinueStatement() = default;
+  std::string to_string() const { return "continue\n"; }
 };
 
 } // namespace ast

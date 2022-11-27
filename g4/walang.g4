@@ -12,7 +12,9 @@ statement:
 	| assignStatement
 	| blockStatement
 	| ifStatement
-	| whileStatement;
+	| whileStatement
+	| breakStatement
+	| continueStatement;
 
 expressionStatement: expression ';';
 
@@ -26,9 +28,10 @@ ifStatement:
 		'else' (blockStatement | ifStatement)
 	)?;
 whileStatement: 'while' '(' expression ')' blockStatement;
+breakStatement: 'break' ';';
+continueStatement: 'continue' ';';
 
 // expression
-
 prefixOperator: 'not' | '+' | '-';
 binaryOperator:
 	'*'
@@ -99,6 +102,8 @@ expression:
 IF: 'if';
 ELSE: 'else';
 WHILE: 'while';
+BREAK: 'break';
+CONTINUE: 'continue';
 LET: 'let';
 NOT: 'not';
 
