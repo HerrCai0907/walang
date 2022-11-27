@@ -19,9 +19,10 @@ declareStatement: 'let' Identifier '=' expression ';';
 
 assignStatement: expression '=' expression ';';
 
+blockStatement: '{' statement* '}';
 ifStatement:
-	'if' '{' statement+ '}' ('else' 'if' '{' statement+ '}')* (
-		'else' '{' statement+ '}'
+	'if' '(' expression ')' blockStatement (
+		'else' (blockStatement | ifStatement)
 	)?;
 whileStatement: 'while' '(' expression ')' '{' statement+ '}';
 

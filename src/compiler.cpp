@@ -47,12 +47,14 @@ std::string Compiler::wat() const {
 
 BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement> const &statement) {
   switch (statement->type()) {
-  case ast::Statement::DeclareStatement:
+  case ast::Statement::_DeclareStatement:
     return compileDeclareStatement(std::dynamic_pointer_cast<ast::DeclareStatement>(statement));
-  case ast::Statement::AssignStatement:
+  case ast::Statement::_AssignStatement:
     return compileAssignStatement(std::dynamic_pointer_cast<ast::AssignStatement>(statement));
-  case ast::Statement::ExpressionStatement:
+  case ast::Statement::_ExpressionStatement:
     return compileExpressionStatement(std::dynamic_pointer_cast<ast::ExpressionStatement>(statement));
+  default: // TODO()
+    break;
   }
   if (std::dynamic_pointer_cast<ast::DeclareStatement>(statement) != nullptr) {
   }

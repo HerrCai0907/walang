@@ -7,7 +7,7 @@ namespace ast {
 DeclareStatement::DeclareStatement(
     walangParser::DeclareStatementContext *ctx,
     std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
-    : Statement(Statement::Type::DeclareStatement) {
+    : Statement(Statement::Type::_DeclareStatement) {
   name_ = ctx->Identifier()->getText();
   assert(map.count(ctx->expression()) == 1);
   initExpr_ = std::dynamic_pointer_cast<ast::Expression>(map.find(ctx->expression())->second);

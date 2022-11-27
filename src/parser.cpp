@@ -22,6 +22,11 @@ public:
 
   virtual void exitWalang(walangParser::WalangContext *ctx) override { file_->update(ctx, astNodes_); }
 
+  virtual void exitStatement(walangParser::StatementContext *ctx) override {
+    antlr4::ParserRuleContext *child = dynamic_cast<antlr4::ParserRuleContext *>(ctx->children.at(0));
+    assert(astNodes_.count(child) == 1);
+    astNodes_.emplace(ctx, astNodes_.find(child)->second);
+  }
   virtual void exitDeclareStatement(walangParser::DeclareStatementContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::DeclareStatement>(ctx, astNodes_));
   }
@@ -30,6 +35,12 @@ public:
   }
   virtual void exitExpressionStatement(walangParser::ExpressionStatementContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::ExpressionStatement>(ctx, astNodes_));
+  }
+  virtual void exitBlockStatement(walangParser::BlockStatementContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::BlockStatement>(ctx, astNodes_));
+  }
+  virtual void exitIfStatement(walangParser::IfStatementContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::IfStatement>(ctx, astNodes_));
   }
 
   virtual void exitExpression(walangParser::ExpressionContext *ctx) override {
