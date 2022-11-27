@@ -10,6 +10,7 @@ statement:
 	expressionStatement
 	| declareStatement
 	| assignStatement
+	| blockStatement
 	| ifStatement
 	| whileStatement;
 
@@ -19,11 +20,12 @@ declareStatement: 'let' Identifier '=' expression ';';
 
 assignStatement: expression '=' expression ';';
 
+blockStatement: '{' statement* '}';
 ifStatement:
-	'if' '{' statement+ '}' ('else' 'if' '{' statement+ '}')* (
-		'else' '{' statement+ '}'
+	'if' '(' expression ')' blockStatement (
+		'else' (blockStatement | ifStatement)
 	)?;
-whileStatement: 'while' '(' expression ')' '{' statement+ '}';
+whileStatement: 'while' '(' expression ')' blockStatement;
 
 // expression
 

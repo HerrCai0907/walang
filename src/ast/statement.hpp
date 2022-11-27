@@ -4,15 +4,24 @@
 #include "generated/walangParser.h"
 #include "node.hpp"
 #include <cassert>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace walang {
 namespace ast {
 
 class Statement : public Node {
 public:
-  enum Type { DeclareStatement, AssignStatement, ExpressionStatement };
+  enum Type {
+    _DeclareStatement,
+    _AssignStatement,
+    _ExpressionStatement,
+    _BlockStatement,
+    _IfStatement,
+    _WhileStatement,
+  };
   Statement(Type type) noexcept : type_(type) {}
   virtual ~Statement() = default;
 
@@ -60,6 +69,50 @@ public:
 
 private:
   std::shared_ptr<Expression> expr_;
+};
+
+class BlockStatement : public Statement {
+public:
+  BlockStatement(walangParser::BlockStatementContext *ctx,
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+  virtual ~BlockStatement() = default;
+  std::string to_string() const;
+  std::vector<std::shared_ptr<Statement>> const &statements() const noexcept { return statements_; }
+
+private:
+  std::vector<std::shared_ptr<Statement>> statements_;
+};
+
+class IfStatement : public Statement {
+public:
+  IfStatement(walangParser::IfStatementContext *ctx,
+              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+  virtual ~IfStatement() = default;
+  std::string to_string() const;
+  std::shared_ptr<Expression> const &condition() const noexcept { return condition_; }
+  std::shared_ptr<BlockStatement> const &thenBlock() const noexcept { return thenBlock_; }
+  std::shared_ptr<BlockStatement> const &elseBlock() const noexcept { return elseBlock_; }
+  std::shared_ptr<IfStatement> const &elseIfStatement() const noexcept { return elseif_; }
+
+private:
+  std::shared_ptr<Expression> condition_;
+  std::shared_ptr<BlockStatement> thenBlock_;
+  std::shared_ptr<BlockStatement> elseBlock_;
+  std::shared_ptr<IfStatement> elseif_;
+};
+
+class WhileStatement : public Statement {
+public:
+  WhileStatement(walangParser::WhileStatementContext *ctx,
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+  virtual ~WhileStatement() = default;
+  std::string to_string() const;
+  std::shared_ptr<Expression> const &condition() const noexcept { return condition_; }
+  std::shared_ptr<BlockStatement> const &block() const noexcept { return block_; }
+
+private:
+  std::shared_ptr<Expression> condition_;
+  std::shared_ptr<BlockStatement> block_;
 };
 
 } // namespace ast

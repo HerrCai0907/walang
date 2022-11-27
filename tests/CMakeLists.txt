@@ -23,9 +23,12 @@ function(TESTCASE test_name test_file)
 endfunction()
 
 TESTCASE(parserBasisStatement parser/basisStatement.cpp)
+TESTCASE(parserFlowStatement parser/flowStatement.cpp)
+
 TESTCASE(parserBinaryExpression parser/binaryExpression.cpp)
 TESTCASE(parserPrefixExpression parser/prefixExpression.cpp)
 TESTCASE(parserTernaryExpression parser/ternaryExpression.cpp)
+
 TESTCASE(compileBasis compile/basisStatement.cpp)
 
 if(ENABLE_COV)
