@@ -18,7 +18,7 @@ a + 4;
 }
 TEST(parser_binary_expression, sub) {
   FileParser parser("test.wa", R"(
-a - 4;
+a - 0x4;
   )");
   auto file = parser.parse();
 
@@ -28,23 +28,23 @@ a - 4;
 }
 TEST(parser_binary_expression, mul) {
   FileParser parser("test.wa", R"(
-a * 4;
+a * 4.2;
   )");
   auto file = parser.parse();
 
   EXPECT_EQ(file->statement().size(), 1);
   EXPECT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), "(MUL a 4)\n");
+  EXPECT_EQ(file->statement()[0]->to_string(), "(MUL a 4.2)\n");
 }
 TEST(parser_binary_expression, div) {
   FileParser parser("test.wa", R"(
-a / 4;
+a / 4.1;
   )");
   auto file = parser.parse();
 
   EXPECT_EQ(file->statement().size(), 1);
   EXPECT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), "(DIV a 4)\n");
+  EXPECT_EQ(file->statement()[0]->to_string(), "(DIV a 4.1)\n");
 }
 TEST(parser_binary_expression, mod) {
   FileParser parser("test.wa", R"(

@@ -44,9 +44,7 @@ std::shared_ptr<VariantType> VariantType::inferType(std::shared_ptr<ast::Express
   if (initExpr->type() == ast::Expression::Type::Identifier) {
     auto identifer = std::dynamic_pointer_cast<ast::Identifier>(initExpr);
     return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<VariantType> { return std::make_shared<TypeI32>(); },
-                                 [](double d) -> std::shared_ptr<VariantType> {
-                                   throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
-                                 },
+                                 [](double d) -> std::shared_ptr<VariantType> { return std::make_shared<TypeF32>(); },
                                  [](const std::string &s) -> std::shared_ptr<VariantType> {
                                    throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
                                  }},

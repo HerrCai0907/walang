@@ -81,7 +81,7 @@ let b:u64 = 0;
 +b;
 -b;
 not b;
-let c:f32 = 0;
+let c = 0.0;
 +c;
 -c;
 let d:f64 = 0;
