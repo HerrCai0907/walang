@@ -1,13 +1,15 @@
 #include "compiler.hpp"
 #include "ast/expression.hpp"
 #include "ast/statement.hpp"
-#include "binaryen-c.h"
 #include "helper/overload.hpp"
 #include "ir/function.hpp"
+#include "ir/variant_type.hpp"
 #include <algorithm>
+#include <binaryen-c.h>
 #include <cassert>
 #include <cstdint>
 #include <exception>
+#include <fmt/core.h>
 #include <iterator>
 #include <memory>
 #include <stdexcept>
@@ -71,23 +73,24 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
   case ast::Statement::_ContinueStatement:
     return compileContinueStatement(std::dynamic_pointer_cast<ast::ContinueStatement>(statement));
   }
-  if (std::dynamic_pointer_cast<ast::DeclareStatement>(statement) != nullptr) {
-  }
   throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
-  BinaryenExpressionRef init = compileExpression(statement->init());
-  BinaryenGlobalRef globalRef = BinaryenAddGlobal(module_, statement->name().c_str(), BinaryenTypeInt32(), true,
-                                                  BinaryenConst(module_, BinaryenLiteralInt32(0)));
   auto global = std::make_shared<ir::Global>(*statement);
+  std::shared_ptr<ir::VariantType> const &variantType = global->variantType();
+  BinaryenExpressionRef init = compileExpression(statement->init(), global->variantType());
+  BinaryenGlobalRef globalRef = BinaryenAddGlobal(module_, global->name().c_str(), variantType->underlyingTypeName(),
+                                                  true, variantType->underlyingDefaultValue(module_));
   globals_.emplace(statement->name(), global);
   return BinaryenGlobalSet(module_, statement->name().c_str(), init);
 }
 BinaryenExpressionRef Compiler::compileAssignStatement(std::shared_ptr<ast::AssignStatement> const &statement) {
-  return compileAssignment(statement->variant(), compileExpression(statement->value()));
+  auto variant = resolveVariant(statement->variant());
+  auto exprRef = compileExpression(statement->value(), variant->variantType());
+  return variant->makeAssign(module_, exprRef);
 }
 BinaryenExpressionRef Compiler::compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> const &statement) {
-  return BinaryenDrop(module_, compileExpression(statement->expr()));
+  return BinaryenDrop(module_, compileExpression(statement->expr(), std::make_shared<ir::TypeAuto>()));
 }
 BinaryenExpressionRef Compiler::compileBlockStatement(std::shared_ptr<ast::BlockStatement> const &statement) {
   std::vector<BinaryenExpressionRef> statementRefs{};
@@ -98,7 +101,7 @@ BinaryenExpressionRef Compiler::compileBlockStatement(std::shared_ptr<ast::Block
   return BinaryenBlock(module_, nullptr, statementRefs.data(), statementRefs.size(), BinaryenTypeNone());
 }
 BinaryenExpressionRef Compiler::compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement) {
-  BinaryenExpressionRef condition = compileExpression(statement->condition());
+  BinaryenExpressionRef condition = compileExpression(statement->condition(), std::make_shared<ir::TypeCondition>());
   BinaryenExpressionRef ifTrue = compileBlockStatement(statement->thenBlock());
   BinaryenExpressionRef ifElse = statement->elseBlock() == nullptr ? nullptr : compileStatement(statement->elseBlock());
   return BinaryenIf(module_, condition, ifTrue, ifElse);
@@ -117,7 +120,7 @@ BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::While
    */
   auto breakLabel = createBreakLabel("while");
   auto continueLabel = createContinueLabel("while");
-  BinaryenExpressionRef condition = compileExpression(statement->condition());
+  BinaryenExpressionRef condition = compileExpression(statement->condition(), std::make_shared<ir::TypeCondition>());
   std::vector<BinaryenExpressionRef> block = {
       compileBlockStatement(statement->block()),
       BinaryenBreak(module_, continueLabel.c_str(), nullptr, nullptr),
@@ -148,147 +151,80 @@ BinaryenExpressionRef Compiler::compileContinueStatement(std::shared_ptr<ast::Co
 // ██       ██ ██  ██      ██   ██ ██           ██      ██ ██ ██    ██ ██  ██ ██
 // ███████ ██   ██ ██      ██   ██ ███████ ███████ ███████ ██  ██████  ██   ████
 
-BinaryenExpressionRef Compiler::compileExpression(std::shared_ptr<ast::Expression> const &expression) {
+BinaryenExpressionRef Compiler::compileExpression(std::shared_ptr<ast::Expression> const &expression,
+                                                  std::shared_ptr<ir::VariantType> const &expectedType) {
   switch (expression->type()) {
   case ast::Expression::Identifier:
-    return compileIdentifier(std::dynamic_pointer_cast<ast::Identifier>(expression));
+    return compileIdentifier(std::dynamic_pointer_cast<ast::Identifier>(expression), expectedType);
   case ast::Expression::PrefixExpression:
-    return compilePrefixExpression(std::dynamic_pointer_cast<ast::PrefixExpression>(expression));
+    return compilePrefixExpression(std::dynamic_pointer_cast<ast::PrefixExpression>(expression), expectedType);
   case ast::Expression::BinaryExpression:
-    return compileBinaryExpression(std::dynamic_pointer_cast<ast::BinaryExpression>(expression));
+    return compileBinaryExpression(std::dynamic_pointer_cast<ast::BinaryExpression>(expression), expectedType);
   case ast::Expression::TernaryExpression:
-    return compileTernaryExpression(std::dynamic_pointer_cast<ast::TernaryExpression>(expression));
+    return compileTernaryExpression(std::dynamic_pointer_cast<ast::TernaryExpression>(expression), expectedType);
   }
   throw std::runtime_error("not support");
 }
 
-BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifier> const &expression) {
-  return std::visit(overloaded{[this](uint64_t i) -> BinaryenExpressionRef {
-                                 return BinaryenConst(module_, BinaryenLiteralInt32(static_cast<int>(i)));
+BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifier> const &expression,
+                                                  std::shared_ptr<ir::VariantType> const &expectedType) {
+  return std::visit(overloaded{[this, &expectedType](uint64_t i) -> BinaryenExpressionRef {
+                                 auto pendingType = std::dynamic_pointer_cast<ir::PendingResolveType>(expectedType);
+                                 if (pendingType != nullptr && !pendingType->isResolved()) {
+                                   // not resolve, default i32
+                                   pendingType->tryResolveTo(std::make_shared<ir::TypeI32>());
+                                 }
+                                 return expectedType->underlyingConst(module_, static_cast<int64_t>(i));
                                },
-                               [](double d) -> BinaryenExpressionRef { throw std::runtime_error("not support"); },
-                               [this](const std::string &s) -> BinaryenExpressionRef {
-                                 if (globals_.find(s) != globals_.end()) {
-                                   return BinaryenGlobalGet(module_, s.c_str(), BinaryenTypeInt32());
+                               [this, &expectedType](double d) -> BinaryenExpressionRef {
+                                 auto pendingType = std::dynamic_pointer_cast<ir::PendingResolveType>(expectedType);
+                                 if (pendingType != nullptr && !pendingType->isResolved()) {
+                                   // not resolve, default f32
+                                   pendingType->tryResolveTo(std::make_shared<ir::TypeF32>());
+                                 }
+                                 return expectedType->underlyingConst(module_, d);
+                               },
+                               [this, &expectedType](const std::string &s) -> BinaryenExpressionRef {
+                                 auto globalIt = globals_.find(s);
+                                 if (globalIt != globals_.end()) {
+                                   if (!expectedType->tryResolveTo(globalIt->second->variantType())) {
+                                     throw std::runtime_error(fmt::format("invalid convert from {0} to {1}",
+                                                                          globalIt->second->variantType()->to_string(),
+                                                                          expectedType->to_string()));
+                                   }
+                                   return BinaryenGlobalGet(module_, s.c_str(), expectedType->underlyingTypeName());
                                  }
                                  throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
                                }},
                     expression->id());
 }
-BinaryenExpressionRef Compiler::compilePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression) {
-  BinaryenExpressionRef exprRef = compileExpression(expression->expr());
-  switch (expression->op()) {
-  case ast::PrefixOp::ADD: {
-    return exprRef;
-  }
-  case ast::PrefixOp::SUB: {
-    BinaryenExpressionRef leftRef = BinaryenConst(module_, BinaryenLiteralInt32(0));
-    return BinaryenBinary(module_, BinaryenSubInt32(), leftRef, exprRef);
-  }
-  case ast::PrefixOp::NOT: {
-    return BinaryenUnary(module_, BinaryenEqZInt32(), exprRef);
-  }
-  }
-  throw std::runtime_error("unknown" __FILE__ "#" + std::to_string(__LINE__));
+BinaryenExpressionRef Compiler::compilePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression,
+                                                        std::shared_ptr<ir::VariantType> const &expectedType) {
+  BinaryenExpressionRef exprRef = compileExpression(expression->expr(), expectedType);
+  return expectedType->handlePrefixOp(module_, expression->op(), exprRef);
 }
-BinaryenExpressionRef Compiler::compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression) {
-  BinaryenExpressionRef leftExprRef = compileExpression(expression->leftExpr());
-  BinaryenExpressionRef rightExprRef = compileExpression(expression->rightExpr());
-  switch (expression->op()) {
-  case ast::BinaryOp::ADD: {
-    BinaryenOp op = BinaryenAddInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::SUB: {
-    BinaryenOp op = BinaryenSubInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::MUL: {
-    BinaryenOp op = BinaryenMulInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::DIV: {
-    BinaryenOp op = BinaryenDivUInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::MOD: {
-    BinaryenOp op = BinaryenRemUInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::LEFT_SHIFT: {
-    BinaryenOp op = BinaryenShlInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::RIGHT_SHIFT: {
-    BinaryenOp op = BinaryenShrUInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::LESS_THAN: {
-    BinaryenOp op = BinaryenLtUInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::GREATER_THAN: {
-    BinaryenOp op = BinaryenGtUInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::NO_LESS_THAN: {
-    BinaryenOp op = BinaryenGeUInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::NO_GREATER_THAN: {
-    BinaryenOp op = BinaryenLeUInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::EQUAL: {
-    BinaryenOp op = BinaryenEqInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::NOT_EQUAL: {
-    BinaryenOp op = BinaryenNeInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::AND: {
-    BinaryenOp op = BinaryenAndInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::OR: {
-    BinaryenOp op = BinaryenOrInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::XOR: {
-    BinaryenOp op = BinaryenXorInt32();
-    return BinaryenBinary(module_, op, leftExprRef, rightExprRef);
-  }
-  case ast::BinaryOp::LOGIC_AND: {
-    auto tempLocal = currentFunction_->addTempLocal();
-    auto conditionalExprRef = BinaryenLocalTee(module_, tempLocal->index(), leftExprRef, BinaryenTypeInt32());
-    auto loadLeftRexprResult = BinaryenLocalGet(module_, tempLocal->index(), BinaryenTypeInt32());
-    return BinaryenIf(module_, conditionalExprRef, rightExprRef, loadLeftRexprResult);
-  }
-  case ast::BinaryOp::LOGIC_OR: {
-    auto tempLocal = currentFunction_->addTempLocal();
-    auto conditionalExprRef = BinaryenLocalTee(module_, tempLocal->index(), leftExprRef, BinaryenTypeInt32());
-    auto loadLeftRexprResult = BinaryenLocalGet(module_, tempLocal->index(), BinaryenTypeInt32());
-    return BinaryenIf(module_, conditionalExprRef, loadLeftRexprResult, rightExprRef);
-  }
-  }
-  throw std::runtime_error("unknown" __FILE__ "#" + std::to_string(__LINE__));
+BinaryenExpressionRef Compiler::compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression,
+                                                        std::shared_ptr<ir::VariantType> const &expectedType) {
+  BinaryenExpressionRef leftExprRef = compileExpression(expression->leftExpr(), expectedType);
+  BinaryenExpressionRef rightExprRef = compileExpression(expression->rightExpr(), expectedType);
+  return expectedType->handleBinaryOp(module_, expression->op(), leftExprRef, rightExprRef, currentFunction_);
 }
-BinaryenExpressionRef Compiler::compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression) {
-  return BinaryenIf(module_, compileExpression(expression->conditionExpr()), compileExpression(expression->leftExpr()),
-                    compileExpression(expression->rightExpr()));
+BinaryenExpressionRef Compiler::compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression,
+                                                         std::shared_ptr<ir::VariantType> const &expectedType) {
+  return BinaryenIf(module_, compileExpression(expression->conditionExpr(), std::make_shared<ir::TypeCondition>()),
+                    compileExpression(expression->leftExpr(), expectedType),
+                    compileExpression(expression->rightExpr(), expectedType));
 }
 
-BinaryenExpressionRef Compiler::compileAssignment(std::shared_ptr<ast::Expression> const &expression,
-                                                  BinaryenExpressionRef value) {
+std::shared_ptr<ir::Variant> Compiler::resolveVariant(std::shared_ptr<ast::Expression> const &expression) {
   if (std::dynamic_pointer_cast<ast::Identifier>(expression) != nullptr) {
-
     return std::visit(
-        overloaded{[this](uint64_t i) -> BinaryenExpressionRef { throw std::runtime_error("not support"); },
-                   [](double d) -> BinaryenExpressionRef { throw std::runtime_error("not support"); },
-                   [this, value](const std::string &s) -> BinaryenExpressionRef {
-                     if (globals_.find(s) != globals_.end()) {
-                       return BinaryenGlobalSet(module_, s.c_str(), value);
+        overloaded{[this](uint64_t i) -> std::shared_ptr<ir::Variant> { throw std::runtime_error("not support"); },
+                   [](double d) -> std::shared_ptr<ir::Variant> { throw std::runtime_error("not support"); },
+                   [this](const std::string &s) -> std::shared_ptr<ir::Variant> {
+                     auto it = globals_.find(s);
+                     if (it != globals_.end()) {
+                       return it->second;
                      }
                      throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
                    }},

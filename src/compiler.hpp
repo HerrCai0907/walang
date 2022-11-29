@@ -5,6 +5,7 @@
 #include "ast/statement.hpp"
 #include "ir/function.hpp"
 #include "ir/variant.hpp"
+#include "ir/variant_type.hpp"
 #include <binaryen-c.h>
 #include <memory>
 #include <stack>
@@ -38,14 +39,18 @@ private:
   BinaryenExpressionRef compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement);
   BinaryenExpressionRef compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement);
 
-  BinaryenExpressionRef compileExpression(std::shared_ptr<ast::Expression> const &expression);
-  BinaryenExpressionRef compileIdentifier(std::shared_ptr<ast::Identifier> const &expression);
-  BinaryenExpressionRef compilePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression);
-  BinaryenExpressionRef compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression);
-  BinaryenExpressionRef compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression);
+  BinaryenExpressionRef compileExpression(std::shared_ptr<ast::Expression> const &expression,
+                                          std::shared_ptr<ir::VariantType> const &expectedType);
+  BinaryenExpressionRef compileIdentifier(std::shared_ptr<ast::Identifier> const &expression,
+                                          std::shared_ptr<ir::VariantType> const &expectedType);
+  BinaryenExpressionRef compilePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression,
+                                                std::shared_ptr<ir::VariantType> const &expectedType);
+  BinaryenExpressionRef compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression,
+                                                std::shared_ptr<ir::VariantType> const &expectedType);
+  BinaryenExpressionRef compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression,
+                                                 std::shared_ptr<ir::VariantType> const &expectedType);
 
-  BinaryenExpressionRef compileAssignment(std::shared_ptr<ast::Expression> const &expression,
-                                          BinaryenExpressionRef value);
+  std::shared_ptr<ir::Variant> resolveVariant(std::shared_ptr<ast::Expression> const &expression);
 
   std::string const &createBreakLabel(std::string const &prefix);
   std::string const &createContinueLabel(std::string const &prefix);

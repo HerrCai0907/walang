@@ -2,11 +2,25 @@
     <binaryExpression>
 (module
  (type $none_=&gt;_none (func))
+ (global $a (mut i32) (i32.const 0))
+ (global $b (mut f64) (f64.const 0))
  (func $_start
   (drop
-   (i32.shl
+   (i32.shr_s
     (i32.const 1)
+    (i32.const 2)
+   )
+  )
+  (global.set $a
+   (i32.shr_u
+    (i32.const 3)
     (i32.const 4)
+   )
+  )
+  (global.set $b
+   (f64.mul
+    (f64.const 5)
+    (f64.const 6)
    )
   )
  )
@@ -50,6 +64,9 @@
 (module
  (type $none_=&gt;_none (func))
  (global $a (mut i32) (i32.const 0))
+ (global $b (mut i64) (i64.const 0))
+ (global $c (mut f32) (f32.const 0))
+ (global $d (mut f64) (f64.const 0))
  (func $_start
   (global.set $a
    (i32.const 0)
@@ -66,6 +83,47 @@
   (drop
    (i32.eqz
     (global.get $a)
+   )
+  )
+  (global.set $b
+   (i64.const 0)
+  )
+  (drop
+   (global.get $b)
+  )
+  (drop
+   (i64.sub
+    (i64.const 0)
+    (global.get $b)
+   )
+  )
+  (drop
+   (i64.eqz
+    (global.get $b)
+   )
+  )
+  (global.set $c
+   (f32.const 0)
+  )
+  (drop
+   (global.get $c)
+  )
+  (drop
+   (f32.sub
+    (f32.const 0)
+    (global.get $c)
+   )
+  )
+  (global.set $d
+   (f64.const 0)
+  )
+  (drop
+   (global.get $d)
+  )
+  (drop
+   (f64.sub
+    (f64.const 0)
+    (global.get $d)
    )
   )
  )
@@ -85,4 +143,31 @@
  )
 )
 </ternaryExpression>
+    <DeclareStatement>
+(module
+ (type $none_=&gt;_none (func))
+ (global $a (mut i32) (i32.const 0))
+ (global $b (mut i32) (i32.const 0))
+ (global $c (mut i32) (i32.const 0))
+ (global $d (mut i64) (i64.const 0))
+ (global $e (mut i64) (i64.const 0))
+ (func $_start
+  (global.set $a
+   (i32.const 1)
+  )
+  (global.set $b
+   (i32.const 2)
+  )
+  (global.set $c
+   (i32.const 3)
+  )
+  (global.set $d
+   (i64.const 4)
+  )
+  (global.set $e
+   (i64.const 5)
+  )
+ )
+)
+</DeclareStatement>
 </snapshots>

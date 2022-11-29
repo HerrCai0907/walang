@@ -1,5 +1,6 @@
 #include "expression.hpp"
 #include "helper/overload.hpp"
+#include <fmt/core.h>
 #include <string>
 #include <variant>
 
@@ -14,12 +15,16 @@ Identifier::Identifier(walangParser::IdentifierContext *ctx,
   } else if (ctx->IntNumber() != nullptr) {
     id_ = std::stoull(ctx->getText());
   } else if (ctx->HexNumber() != nullptr) {
+    id_ = std::stoull(ctx->getText(), nullptr, 16);
+  } else if (ctx->FloatNumber() != nullptr) {
     id_ = std::stod(ctx->getText());
+  } else {
+    assert(false);
   }
 }
 std::string Identifier::to_string() const {
-  return std::visit(overloaded{[](uint64_t i) { return std::to_string(i); }, [](double d) { return std::to_string(d); },
-                               [](const std::string &s) { return s; }},
+  return std::visit(overloaded{[](uint64_t i) { return std::to_string(i); },
+                               [](double d) { return fmt::format("{}", d); }, [](const std::string &s) { return s; }},
                     id_);
 }
 

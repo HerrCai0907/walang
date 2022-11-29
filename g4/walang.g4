@@ -2,7 +2,13 @@ grammar walang;
 
 walang: statement* EOF;
 
-identifier: IntNumber | HexNumber | Identifier; // TODO
+identifier:
+	IntNumber
+	| HexNumber
+	| FloatNumber
+	| Identifier; // TODO
+
+type: Identifier;
 
 // statement
 
@@ -18,7 +24,8 @@ statement:
 
 expressionStatement: expression ';';
 
-declareStatement: 'let' Identifier '=' expression ';';
+declareStatement:
+	'let' Identifier (':' type)? '=' expression ';';
 
 assignStatement: expression '=' expression ';';
 
@@ -149,10 +156,11 @@ Dot: '.';
 
 Identifier: NonDigit ( NonDigit | Digit)*;
 
-IntNumber: [0-9]+;
+IntNumber: Digit+;
 HexNumber: '0' [xX] HexDigit+;
+FloatNumber: Digit+ '.' Digit+;
 
-fragment Digit: [0-9a-fA-F];
+fragment Digit: [0-9];
 fragment HexDigit: [0-9a-fA-F];
 
 fragment NonDigit:
