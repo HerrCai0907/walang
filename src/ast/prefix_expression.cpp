@@ -9,9 +9,8 @@
 namespace walang {
 namespace ast {
 
-PrefixExpression::PrefixExpression(
-    walangParser::PrefixExpressionContext *ctx,
-    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+PrefixExpression::PrefixExpression(walangParser::PrefixExpressionContext *ctx,
+                                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
     : Expression(Type::PrefixExpression) {
   this->op_ = Operator::getOp(ctx->prefixOperator());
   assert(map.count(ctx->expression()) == 1);

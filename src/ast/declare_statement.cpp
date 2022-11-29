@@ -4,9 +4,8 @@
 namespace walang {
 namespace ast {
 
-DeclareStatement::DeclareStatement(
-    walangParser::DeclareStatementContext *ctx,
-    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+DeclareStatement::DeclareStatement(walangParser::DeclareStatementContext *ctx,
+                                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
     : Statement(Statement::Type::_DeclareStatement) {
   name_ = ctx->Identifier()->getText();
   if (ctx->type()) {

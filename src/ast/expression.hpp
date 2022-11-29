@@ -42,7 +42,7 @@ private:
 class PrefixExpression : public Expression {
 public:
   PrefixExpression(walangParser::PrefixExpressionContext *ctx,
-                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   virtual ~PrefixExpression() override {}
   virtual std::string to_string() const override;
   PrefixOp op() const noexcept { return op_; }
@@ -57,7 +57,7 @@ class BinaryExpression final : public Expression {
 public:
   BinaryExpression() noexcept;
   BinaryExpression(walangParser::BinaryExpressionContext *ctx,
-                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   virtual ~BinaryExpression() = default;
   virtual std::string to_string() const override;
   BinaryOp op() const noexcept { return op_; }
@@ -76,7 +76,7 @@ class TernaryExpression : public Expression {
 public:
   TernaryExpression() noexcept;
   TernaryExpression(walangParser::TernaryExpressionContext *ctx,
-                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   virtual ~TernaryExpression() = default;
   virtual std::string to_string() const override;
 

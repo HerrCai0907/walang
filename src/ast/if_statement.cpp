@@ -11,7 +11,7 @@ namespace walang {
 namespace ast {
 
 IfStatement::IfStatement(walangParser::IfStatementContext *ctx,
-                         std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+                         std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
     : Statement(Statement::Type::_IfStatement) {
   assert(map.count(ctx->expression()) == 1);
   condition_ = std::dynamic_pointer_cast<Expression>(map.find(ctx->expression())->second);
