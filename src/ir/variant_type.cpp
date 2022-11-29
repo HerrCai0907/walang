@@ -66,13 +66,13 @@ std::shared_ptr<VariantType> const &VariantType::resolveType(std::string const &
 }
 std::shared_ptr<VariantType> const &VariantType::inferType(std::shared_ptr<ast::Expression> const &initExpr) {
   if (initExpr->type() == ast::Expression::Type::Identifier) {
-    auto identifer = std::dynamic_pointer_cast<ast::Identifier>(initExpr);
+    auto identifier = std::dynamic_pointer_cast<ast::Identifier>(initExpr);
     return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<VariantType> const & { return resolveType("i32"); },
                                  [](double d) -> std::shared_ptr<VariantType> const & { return resolveType("f32"); },
                                  [](const std::string &s) -> std::shared_ptr<VariantType> const & {
                                    throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
                                  }},
-                      identifer->id());
+                      identifier->id());
   }
   throw std::runtime_error("cannot infer type from " + initExpr->to_string());
 }
@@ -307,14 +307,14 @@ BinaryenExpressionRef TypeI32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
     auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftRexprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
-    return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftRexprResult);
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
     auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftRexprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
-    return BinaryenIf(module, conditionalExprRef, loadLeftRexprResult, rightRef);
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
   assert(false);
@@ -390,14 +390,14 @@ BinaryenExpressionRef TypeU32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
     auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftRexprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
-    return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftRexprResult);
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
     auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftRexprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
-    return BinaryenIf(module, conditionalExprRef, loadLeftRexprResult, rightRef);
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
   assert(false);
@@ -473,14 +473,14 @@ BinaryenExpressionRef TypeI64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
     auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftRexprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
-    return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftRexprResult);
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
     auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftRexprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
-    return BinaryenIf(module, conditionalExprRef, loadLeftRexprResult, rightRef);
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
   assert(false);
@@ -556,14 +556,14 @@ BinaryenExpressionRef TypeU64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
     auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftRexprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
-    return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftRexprResult);
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
     auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftRexprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
-    return BinaryenIf(module, conditionalExprRef, loadLeftRexprResult, rightRef);
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
   assert(false);

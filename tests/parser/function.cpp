@@ -11,9 +11,9 @@ function foo() {}
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
-  EXPECT_NE(std::dynamic_pointer_cast<FunctionStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), "fn foo () -> __unknown__ {\n}\n");
+  ASSERT_EQ(file->statement().size(), 1);
+  ASSERT_NE(std::dynamic_pointer_cast<FunctionStatement>(file->statement()[0]), nullptr);
+  ASSERT_EQ(file->statement()[0]->to_string(), "fn foo () -> __unknown__ {\n}\n");
 }
 
 TEST(ParseFunction, FunctionStatementWithArgument) {
@@ -22,9 +22,9 @@ function foo(a1:t1,a2:t2) {}
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
-  EXPECT_NE(std::dynamic_pointer_cast<FunctionStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), "fn foo (a1:t1, a2:t2) -> __unknown__ {\n}\n");
+  ASSERT_EQ(file->statement().size(), 1);
+  ASSERT_NE(std::dynamic_pointer_cast<FunctionStatement>(file->statement()[0]), nullptr);
+  ASSERT_EQ(file->statement()[0]->to_string(), "fn foo (a1:t1, a2:t2) -> __unknown__ {\n}\n");
 }
 
 TEST(ParseFunction, FunctionStatementWithReturnType) {
@@ -33,7 +33,7 @@ function foo() : i32 {}
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
-  EXPECT_NE(std::dynamic_pointer_cast<FunctionStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), "fn foo () -> i32 {\n}\n");
+  ASSERT_EQ(file->statement().size(), 1);
+  ASSERT_NE(std::dynamic_pointer_cast<FunctionStatement>(file->statement()[0]), nullptr);
+  ASSERT_EQ(file->statement()[0]->to_string(), "fn foo () -> i32 {\n}\n");
 }

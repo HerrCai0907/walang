@@ -22,7 +22,7 @@ public:
     return locals_.emplace_back(std::make_shared<Local>(locals_.size(), localType));
   }
 
-  BinaryenFunctionRef finialize(BinaryenModuleRef module, BinaryenExpressionRef body) {
+  BinaryenFunctionRef finalize(BinaryenModuleRef module, BinaryenExpressionRef body) {
     std::vector<BinaryenType> types{};
     for (auto const &local : locals_) {
       types.emplace_back(local->variantType()->underlyingTypeName());

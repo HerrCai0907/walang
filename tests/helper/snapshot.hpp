@@ -57,7 +57,7 @@ public:
         }
       } else {
         ASSERT_NE(element->second->GetText(), nullptr);
-        EXPECT_EQ(element->second->GetText(), text);
+        ASSERT_EQ(element->second->GetText(), text);
       }
     }
   }

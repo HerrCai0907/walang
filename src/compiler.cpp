@@ -28,7 +28,7 @@ void Compiler::compile() {
     for (auto &statement : file->statement()) {
       expressions.emplace_back(compileStatement(statement));
     }
-    currentFunction_->finialize(
+    currentFunction_->finalize(
         module_, BinaryenBlock(module_, nullptr, expressions.data(), expressions.size(), BinaryenTypeNone()));
   }
 }
