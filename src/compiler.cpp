@@ -72,6 +72,8 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
     return compileBreakStatement(std::dynamic_pointer_cast<ast::BreakStatement>(statement));
   case ast::Statement::_ContinueStatement:
     return compileContinueStatement(std::dynamic_pointer_cast<ast::ContinueStatement>(statement));
+  case ast::Statement::_FunctionStatement:
+    break; // TODO
   }
   throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
 }

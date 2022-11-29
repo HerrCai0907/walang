@@ -20,15 +20,16 @@ statement:
 	| ifStatement
 	| whileStatement
 	| breakStatement
-	| continueStatement;
+	| continueStatement
+	| functionStatement;
 
+// basis statement
 expressionStatement: expression ';';
-
 declareStatement:
 	'let' Identifier (':' type)? '=' expression ';';
-
 assignStatement: expression '=' expression ';';
 
+// flow statement
 blockStatement: '{' statement* '}';
 ifStatement:
 	'if' '(' expression ')' blockStatement (
@@ -37,6 +38,12 @@ ifStatement:
 whileStatement: 'while' '(' expression ')' blockStatement;
 breakStatement: 'break' ';';
 continueStatement: 'continue' ';';
+
+// function statement
+parameter: Identifier ':' type;
+parameterList: (parameter (',' parameter)*)?;
+functionStatement:
+	'function' Identifier '(' parameterList ')' (':' type)? blockStatement;
 
 // expression
 prefixOperator: 'not' | '+' | '-';
@@ -113,6 +120,7 @@ BREAK: 'break';
 CONTINUE: 'continue';
 LET: 'let';
 NOT: 'not';
+FUNCTION: 'function';
 
 // Operator
 LParenthesis: '(';

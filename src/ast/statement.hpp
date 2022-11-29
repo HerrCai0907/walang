@@ -6,6 +6,7 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -135,6 +136,25 @@ public:
       : Statement(Type::_ContinueStatement) {}
   virtual ~ContinueStatement() = default;
   std::string to_string() const { return "continue\n"; }
+};
+
+class FunctionStatement : public Statement {
+public:
+  struct Argument {
+    std::string name_;
+    std::string type_;
+  };
+
+  FunctionStatement(walangParser::FunctionStatementContext *ctx,
+                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
+  virtual ~FunctionStatement() = default;
+  std::string to_string() const;
+
+private:
+  std::string name_;
+  std::vector<Argument> arguments_;
+  std::optional<std::string> returnType_;
+  std::shared_ptr<BlockStatement> body_;
 };
 
 } // namespace ast

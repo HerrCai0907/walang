@@ -51,6 +51,9 @@ public:
   virtual void exitContinueStatement(walangParser::ContinueStatementContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::ContinueStatement>(ctx, astNodes_));
   }
+  virtual void exitFunctionStatement(walangParser::FunctionStatementContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::FunctionStatement>(ctx, astNodes_));
+  }
 
   virtual void exitExpression(walangParser::ExpressionContext *ctx) override {
     antlr4::ParserRuleContext *child = dynamic_cast<antlr4::ParserRuleContext *>(ctx->children.at(0));
