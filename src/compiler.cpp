@@ -23,13 +23,18 @@ Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files) : module_{Bina
 
 void Compiler::compile() {
   for (auto const &file : files_) {
-    currentFunction_ = std::make_shared<ir::Function>("_start");
+    startFunction_ = std::make_shared<ir::Function>("_start", std::vector<std::string>{},
+                                                    std::vector<std::shared_ptr<ir::VariantType>>{},
+                                                    ir::VariantType::resolveType("void"));
+    currentFunction_.push(startFunction_);
     std::vector<BinaryenExpressionRef> expressions{};
     for (auto &statement : file->statement()) {
       expressions.emplace_back(compileStatement(statement));
     }
-    currentFunction_->finalize(
-        module_, BinaryenBlock(module_, nullptr, expressions.data(), expressions.size(), BinaryenTypeNone()));
+    BinaryenExpressionRef body =
+        BinaryenBlock(module_, nullptr, expressions.data(), expressions.size(), startFunction_->returnType());
+    BinaryenFunctionRef startFunctionRef = startFunction_->finalize(module_, body);
+    BinaryenSetStart(module_, startFunctionRef);
   }
 }
 std::string Compiler::wat() const {
@@ -73,18 +78,25 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
   case ast::Statement::_ContinueStatement:
     return compileContinueStatement(std::dynamic_pointer_cast<ast::ContinueStatement>(statement));
   case ast::Statement::_FunctionStatement:
-    break; // TODO
+    return compileFunctionStatement(std::dynamic_pointer_cast<ast::FunctionStatement>(statement));
   }
   throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
-  auto global = std::make_shared<ir::Global>(*statement);
-  std::shared_ptr<ir::VariantType> const &variantType = global->variantType();
-  BinaryenExpressionRef init = compileExpression(statement->init(), global->variantType());
-  BinaryenGlobalRef globalRef = BinaryenAddGlobal(module_, global->name().c_str(), variantType->underlyingTypeName(),
-                                                  true, variantType->underlyingDefaultValue(module_));
-  globals_.emplace(statement->name(), global);
-  return BinaryenGlobalSet(module_, statement->name().c_str(), init);
+  std::shared_ptr<ir::VariantType> const &variantType = ir::VariantType::getTypeFromDeclare(*statement);
+  BinaryenExpressionRef init = compileExpression(statement->init(), variantType);
+  if (currentFunction() == startFunction_) {
+    // in global
+    auto global = std::make_shared<ir::Global>(statement->name(), variantType);
+    BinaryenAddGlobal(module_, global->name().c_str(), variantType->underlyingTypeName(), true,
+                      variantType->underlyingDefaultValue(module_));
+    globals_.emplace(statement->name(), global);
+    return global->makeAssign(module_, init);
+  } else {
+    // in function
+    auto local = currentFunction()->addLocal(statement->name(), variantType);
+    return local->makeAssign(module_, init);
+  }
 }
 BinaryenExpressionRef Compiler::compileAssignStatement(std::shared_ptr<ast::AssignStatement> const &statement) {
   auto variant = resolveVariant(statement->variant());
@@ -120,8 +132,8 @@ BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::While
       )
     )
    */
-  auto breakLabel = createBreakLabel("while");
-  auto continueLabel = createContinueLabel("while");
+  auto breakLabel = currentFunction()->createBreakLabel("while");
+  auto continueLabel = currentFunction()->createContinueLabel("while");
   BinaryenExpressionRef condition = compileExpression(statement->condition(), std::make_shared<ir::TypeCondition>());
   std::vector<BinaryenExpressionRef> block = {
       compileBlockStatement(statement->block()),
@@ -129,22 +141,32 @@ BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::While
   };
   BinaryenExpressionRef body = BinaryenIf(
       module_, condition, BinaryenBlock(module_, nullptr, block.data(), block.size(), BinaryenTypeNone()), nullptr);
-  freeBreakLabel();
-  freeContinueLabel();
+  currentFunction()->freeBreakLabel();
+  currentFunction()->freeContinueLabel();
   BinaryenExpressionRef loop = BinaryenLoop(module_, continueLabel.c_str(), body);
   return BinaryenBlock(module_, breakLabel.c_str(), &loop, 1U, BinaryenTypeNone());
 }
 BinaryenExpressionRef Compiler::compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement) {
-  if (currentBreakLabel_.size() == 0) {
-    throw std::runtime_error("invalid break statement");
-  }
-  return BinaryenBreak(module_, currentBreakLabel_.top().c_str(), nullptr, nullptr);
+  return BinaryenBreak(module_, currentFunction()->topBreakLabel().c_str(), nullptr, nullptr);
 }
 BinaryenExpressionRef Compiler::compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement) {
-  if (currentContinueLabel_.size() == 0) {
-    throw std::runtime_error("invalid continue statement");
+  return BinaryenBreak(module_, currentFunction()->topContinueLabel().c_str(), nullptr, nullptr);
+}
+BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement) {
+  std::vector<std::string> argumentNames{};
+  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
+  for (auto const &argument : statement->arguments()) {
+    argumentNames.push_back(argument.name_);
+    argumentTypes.push_back(ir::VariantType::resolveType(argument.type_));
   }
-  return BinaryenBreak(module_, currentContinueLabel_.top().c_str(), nullptr, nullptr);
+  std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
+                                                    ? ir::VariantType::resolveType(statement->returnType().value())
+                                                    : std::make_shared<ir::TypeAuto>();
+  currentFunction_.push(std::make_shared<ir::Function>(statement->name(), argumentNames, argumentTypes, returnType));
+  BinaryenExpressionRef body = compileBlockStatement(statement->body());
+  currentFunction()->finalize(module_, body);
+  currentFunction_.pop();
+  return BinaryenNop(module_);
 }
 
 // ███████ ██   ██ ██████  ██████  ███████ ███████ ███████ ██  ██████  ███    ██
@@ -187,6 +209,15 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                  return expectedType->underlyingConst(module_, d);
                                },
                                [this, &expectedType](const std::string &s) -> BinaryenExpressionRef {
+                                 auto local = currentFunction()->findLocalByName(s);
+                                 if (local != nullptr) {
+                                   if (!expectedType->tryResolveTo(local->variantType())) {
+                                     throw std::runtime_error(fmt::format("invalid convert from {0} to {1}",
+                                                                          local->variantType()->to_string(),
+                                                                          expectedType->to_string()));
+                                   }
+                                   return local->makeGet(module_);
+                                 }
                                  auto globalIt = globals_.find(s);
                                  if (globalIt != globals_.end()) {
                                    if (!expectedType->tryResolveTo(globalIt->second->variantType())) {
@@ -194,7 +225,7 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                                                           globalIt->second->variantType()->to_string(),
                                                                           expectedType->to_string()));
                                    }
-                                   return BinaryenGlobalGet(module_, s.c_str(), expectedType->underlyingTypeName());
+                                   return globalIt->second->makeGet(module_);
                                  }
                                  throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
                                }},
@@ -209,7 +240,7 @@ BinaryenExpressionRef Compiler::compileBinaryExpression(std::shared_ptr<ast::Bin
                                                         std::shared_ptr<ir::VariantType> const &expectedType) {
   BinaryenExpressionRef leftExprRef = compileExpression(expression->leftExpr(), expectedType);
   BinaryenExpressionRef rightExprRef = compileExpression(expression->rightExpr(), expectedType);
-  return expectedType->handleBinaryOp(module_, expression->op(), leftExprRef, rightExprRef, currentFunction_);
+  return expectedType->handleBinaryOp(module_, expression->op(), leftExprRef, rightExprRef, currentFunction());
 }
 BinaryenExpressionRef Compiler::compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression,
                                                          std::shared_ptr<ir::VariantType> const &expectedType) {
@@ -224,9 +255,13 @@ std::shared_ptr<ir::Variant> Compiler::resolveVariant(std::shared_ptr<ast::Expre
         overloaded{[this](uint64_t i) -> std::shared_ptr<ir::Variant> { throw std::runtime_error("not support"); },
                    [](double d) -> std::shared_ptr<ir::Variant> { throw std::runtime_error("not support"); },
                    [this](const std::string &s) -> std::shared_ptr<ir::Variant> {
-                     auto it = globals_.find(s);
-                     if (it != globals_.end()) {
-                       return it->second;
+                     auto local = currentFunction()->findLocalByName(s);
+                     if (local != nullptr) {
+                       return local;
+                     }
+                     auto globalIt = globals_.find(s);
+                     if (globalIt != globals_.end()) {
+                       return globalIt->second;
                      }
                      throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
                    }},
@@ -234,18 +269,5 @@ std::shared_ptr<ir::Variant> Compiler::resolveVariant(std::shared_ptr<ast::Expre
   }
   throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
 }
-
-std::string const &Compiler::createBreakLabel(std::string const &prefix) {
-  std::string const &str = currentBreakLabel_.emplace(prefix + "|break|" + std::to_string(breakLabelIndex_));
-  breakLabelIndex_++;
-  return str;
-}
-std::string const &Compiler::createContinueLabel(std::string const &prefix) {
-  std::string const &str = currentContinueLabel_.emplace(prefix + "|continue|" + std::to_string(continueLabelIndex_));
-  continueLabelIndex_++;
-  return str;
-}
-void Compiler::freeBreakLabel() { currentBreakLabel_.pop(); }
-void Compiler::freeContinueLabel() { currentContinueLabel_.pop(); }
 
 } // namespace walang

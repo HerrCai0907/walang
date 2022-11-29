@@ -150,6 +150,11 @@ public:
   virtual ~FunctionStatement() = default;
   std::string to_string() const;
 
+  std::string const &name() const noexcept { return name_; }
+  std::vector<Argument> const &arguments() const noexcept { return arguments_; }
+  std::optional<std::string> const &returnType() const noexcept { return returnType_; }
+  std::shared_ptr<BlockStatement> const &body() const noexcept { return body_; };
+
 private:
   std::string name_;
   std::vector<Argument> arguments_;

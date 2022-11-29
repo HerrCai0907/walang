@@ -47,6 +47,7 @@ private:
     registerType("u64", std::make_shared<TypeU64>());
     registerType("f32", std::make_shared<TypeF32>());
     registerType("f64", std::make_shared<TypeF64>());
+    registerType("void", std::make_shared<TypeNone>());
   }
 };
 
@@ -61,6 +62,13 @@ std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   return resolvedType_;
 }
 
+std::shared_ptr<VariantType> const &VariantType::getTypeFromDeclare(ast::DeclareStatement const &declare) {
+  if (declare.type() == "") {
+    return VariantType::inferType(declare.init());
+  } else {
+    return VariantType::resolveType(declare.type());
+  }
+}
 std::shared_ptr<VariantType> const &VariantType::resolveType(std::string const &typeName) {
   return VariantTypeMap::instance().find(typeName);
 }

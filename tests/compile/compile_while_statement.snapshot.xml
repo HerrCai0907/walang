@@ -2,6 +2,7 @@
     <Basis>
 (module
  (type $none_=&gt;_none (func))
+ (start $_start)
  (func $_start
   (block $while|break|0
    (loop $while|continue|0
@@ -24,6 +25,7 @@
     <Break>
 (module
  (type $none_=&gt;_none (func))
+ (start $_start)
  (func $_start
   (block $while|break|0
    (loop $while|continue|0
@@ -44,6 +46,7 @@
     <Continue>
 (module
  (type $none_=&gt;_none (func))
+ (start $_start)
  (func $_start
   (block $while|break|0
    (loop $while|continue|0
@@ -64,6 +67,7 @@
     <MutipleLevlBreak>
 (module
  (type $none_=&gt;_none (func))
+ (start $_start)
  (func $_start
   (block $while|break|0
    (loop $while|continue|0
@@ -97,6 +101,7 @@
     <MutipleLevlContinue>
 (module
  (type $none_=&gt;_none (func))
+ (start $_start)
  (func $_start
   (block $while|break|0
    (loop $while|continue|0

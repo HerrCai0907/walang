@@ -12,6 +12,10 @@ FetchContent_MakeAvailable(googletest)
 
 include(GoogleTest)
 
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 set(TESTCASES)
 
 function(TESTCASE test_name test_file)
@@ -32,6 +36,7 @@ TESTCASE(parseTernaryExpression parser/ternaryExpression.cpp)
 TESTCASE(compileBasis compile/basisStatement.cpp)
 TESTCASE(compileIf compile/ifStatement.cpp)
 TESTCASE(compileWhile compile/whileStatement.cpp)
+TESTCASE(compileFunction compile/functionStatement.cpp)
 
 if(ENABLE_COV)
   # Coverage setup

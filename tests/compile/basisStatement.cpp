@@ -1,6 +1,6 @@
-#include "../helper/snapshot.hpp"
 #include "binaryen-c.h"
 #include "compiler.hpp"
+#include "helper/snapshot.hpp"
 #include "parser.hpp"
 #include <filesystem>
 #include <gtest/gtest.h>

@@ -4,6 +4,8 @@
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
 #include <binaryen-c.h>
+#include <cstdint>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -14,26 +16,37 @@ namespace ir {
 
 class Function {
 public:
-  explicit Function(std::string_view name) : name_(name) {}
+  Function(std::string const &name, std::vector<std::string> const &argumentNames,
+           std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
+           std::shared_ptr<VariantType> const &returnType);
 
   std::string name() const noexcept { return name_; }
+  BinaryenType returnType() const;
 
-  std::shared_ptr<Local> &addTempLocal(std::shared_ptr<VariantType> const &localType) {
-    return locals_.emplace_back(std::make_shared<Local>(locals_.size(), localType));
-  }
+  std::shared_ptr<Local> const &addLocal(std::string const &name, std::shared_ptr<VariantType> const &localType);
+  std::shared_ptr<Local> const &addTempLocal(std::shared_ptr<VariantType> const &localType);
+  std::shared_ptr<Local> findLocalByName(std::string const &name) const;
 
-  BinaryenFunctionRef finalize(BinaryenModuleRef module, BinaryenExpressionRef body) {
-    std::vector<BinaryenType> types{};
-    for (auto const &local : locals_) {
-      types.emplace_back(local->variantType()->underlyingTypeName());
-    }
-    return BinaryenAddFunction(module, name_.c_str(), BinaryenTypeNone(), BinaryenTypeNone(), types.data(),
-                               types.size(), body);
-  }
+  std::string const &createBreakLabel(std::string const &prefix);
+  std::string const &topBreakLabel() const;
+  void freeBreakLabel();
+  std::string const &createContinueLabel(std::string const &prefix);
+  std::string const &topContinueLabel() const;
+  void freeContinueLabel();
+
+  BinaryenFunctionRef finalize(BinaryenModuleRef module, BinaryenExpressionRef body);
 
 private:
   std::string name_;
-  std::vector<std::shared_ptr<Local>> locals_;
+  uint32_t argumentSize_;
+  std::shared_ptr<VariantType> returnType_;
+
+  std::vector<std::shared_ptr<Local>> locals_{};
+
+  std::stack<std::string> currentBreakLabel_{};
+  uint32_t breakLabelIndex_{0U};
+  std::stack<std::string> currentContinueLabel_{};
+  uint32_t continueLabelIndex_{0U};
 };
 
 } // namespace ir

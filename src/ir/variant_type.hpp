@@ -2,6 +2,7 @@
 
 #include "ast/expression.hpp"
 #include "ast/op.hpp"
+#include "ast/statement.hpp"
 #include <binaryen-c.h>
 #include <cstdint>
 #include <memory>
@@ -27,6 +28,7 @@ public:
   };
   static std::shared_ptr<VariantType> const &resolveType(std::string const &name);
   static std::shared_ptr<VariantType> const &inferType(std::shared_ptr<ast::Expression> const &initExpr);
+  static std::shared_ptr<VariantType> const &getTypeFromDeclare(ast::DeclareStatement const &declare);
 
   virtual ~VariantType() = default;
 
