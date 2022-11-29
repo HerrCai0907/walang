@@ -25,8 +25,8 @@ public:
     F64,
     ConditionType,
   };
-  static std::shared_ptr<VariantType> resolveType(std::string const &name);
-  static std::shared_ptr<VariantType> inferType(std::shared_ptr<ast::Expression> const &initExpr);
+  static std::shared_ptr<VariantType> const &resolveType(std::string const &name);
+  static std::shared_ptr<VariantType> const &inferType(std::shared_ptr<ast::Expression> const &initExpr);
 
   virtual ~VariantType() = default;
 

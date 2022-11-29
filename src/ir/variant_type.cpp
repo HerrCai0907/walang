@@ -7,11 +7,48 @@
 #include <cstdint>
 #include <fmt/core.h>
 #include <magic_enum.hpp>
+#include <map>
 #include <memory>
 #include <stdexcept>
+#include <string>
 
 namespace walang {
 namespace ir {
+
+class VariantTypeMap {
+public:
+  static VariantTypeMap &instance() {
+    static VariantTypeMap ins{};
+    return ins;
+  }
+  void registerType(std::string const &name, std::shared_ptr<VariantType> const &type) {
+    auto ret = map_.try_emplace(name, type);
+    if (ret.second == false) {
+      throw std::runtime_error(fmt::format("repeat type '{}'", type->to_string()));
+    }
+  }
+  std::shared_ptr<VariantType> const &find(std::string const &name) {
+    auto it = map_.find(name);
+    if (it == map_.end()) {
+      throw std::runtime_error(fmt::format("unknown type '{}'", name));
+    }
+    return it->second;
+  }
+
+private:
+  std::map<std::string, std::shared_ptr<VariantType>> map_{};
+
+  VariantTypeMap() { registerDefault(); }
+
+  void registerDefault() {
+    registerType("i32", std::make_shared<TypeI32>());
+    registerType("u32", std::make_shared<TypeU32>());
+    registerType("i64", std::make_shared<TypeI64>());
+    registerType("u64", std::make_shared<TypeU64>());
+    registerType("f32", std::make_shared<TypeF32>());
+    registerType("f64", std::make_shared<TypeF64>());
+  }
+};
 
 VariantType::VariantType(Type typeName) : typeName_(typeName) {}
 
@@ -24,28 +61,15 @@ std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   return resolvedType_;
 }
 
-std::shared_ptr<VariantType> VariantType::resolveType(std::string const &typeName) {
-  if (typeName == "i32") {
-    return std::make_shared<TypeI32>();
-  } else if (typeName == "u32") {
-    return std::make_shared<TypeU32>();
-  } else if (typeName == "i64") {
-    return std::make_shared<TypeI64>();
-  } else if (typeName == "u64") {
-    return std::make_shared<TypeU64>();
-  } else if (typeName == "f32") {
-    return std::make_shared<TypeF32>();
-  } else if (typeName == "f64") {
-    return std::make_shared<TypeF64>();
-  }
-  throw std::runtime_error("unknown type " + typeName);
+std::shared_ptr<VariantType> const &VariantType::resolveType(std::string const &typeName) {
+  return VariantTypeMap::instance().find(typeName);
 }
-std::shared_ptr<VariantType> VariantType::inferType(std::shared_ptr<ast::Expression> const &initExpr) {
+std::shared_ptr<VariantType> const &VariantType::inferType(std::shared_ptr<ast::Expression> const &initExpr) {
   if (initExpr->type() == ast::Expression::Type::Identifier) {
     auto identifer = std::dynamic_pointer_cast<ast::Identifier>(initExpr);
-    return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<VariantType> { return std::make_shared<TypeI32>(); },
-                                 [](double d) -> std::shared_ptr<VariantType> { return std::make_shared<TypeF32>(); },
-                                 [](const std::string &s) -> std::shared_ptr<VariantType> {
+    return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<VariantType> const & { return resolveType("i32"); },
+                                 [](double d) -> std::shared_ptr<VariantType> const & { return resolveType("f32"); },
+                                 [](const std::string &s) -> std::shared_ptr<VariantType> const & {
                                    throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
                                  }},
                       identifer->id());
