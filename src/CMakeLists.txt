@@ -21,3 +21,9 @@ target_link_libraries(walang-core
 )
 
 add_subdirectory(cli)
+
+if(ENABLE_COV)
+  set(CMAKE_BUILD_TYPE "Debug")
+  include(CodeCoverage)
+  APPEND_COVERAGE_COMPILER_FLAGS()
+endif()

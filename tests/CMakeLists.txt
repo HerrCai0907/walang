@@ -18,30 +18,32 @@ include_directories(
 
 set(TESTCASES)
 
-function(TESTCASE test_name test_file)
+function(TESTCASE test_name)
+  message("${ARGN}")
   message(STATUS "test case ${test_name}")
-  add_executable(${test_name} ${test_file})
+  add_executable(${test_name} ${ARGN})
   target_link_libraries(${test_name} walang-core GTest::gtest_main tinyxml2)
   gtest_discover_tests(${test_name})
   set(TESTCASES ${TESTCASES} ${test_name} PARENT_SCOPE)
 endfunction()
 
-TESTCASE(parseBasisStatement parse/basisStatement.cpp)
-TESTCASE(parseFlowStatement parse/flowStatement.cpp)
-TESTCASE(parseFunction parse/function.cpp)
-TESTCASE(parseBinaryExpression parse/binaryExpression.cpp)
-TESTCASE(parsePrefixExpression parse/prefixExpression.cpp)
-TESTCASE(parseTernaryExpression parse/ternaryExpression.cpp)
-TESTCASE(parseCallExpression parse/callExpression.cpp)
+TESTCASE(parseTest parse/basisStatement.cpp
+  parse/flowStatement.cpp
+  parse/function.cpp
+  parse/binaryExpression.cpp
+  parse/prefixExpression.cpp
+  parse/ternaryExpression.cpp
+  parse/callExpression.cpp)
 
-TESTCASE(compileBasis compile/basisStatement.cpp)
-TESTCASE(compileIf compile/ifStatement.cpp)
-TESTCASE(compileWhile compile/whileStatement.cpp)
-TESTCASE(compileFunction compile/functionStatement.cpp)
-TESTCASE(compileCall compile/call.cpp)
+TESTCASE(compileTest
+  compile/basisStatement.cpp
+  compile/ifStatement.cpp
+  compile/whileStatement.cpp
+  compile/functionStatement.cpp
+  compile/call.cpp
+)
 
 if(ENABLE_COV)
-  # Coverage setup
   set(CMAKE_BUILD_TYPE "Debug")
   include(CodeCoverage)
   APPEND_COVERAGE_COMPILER_FLAGS()
@@ -52,6 +54,7 @@ if(ENABLE_COV)
     "${gtest_SOURCE_DIR}/*"
     "${PROJECT_SOURCE_DIR}/tests/*"
     "${PROJECT_SOURCE_DIR}/g4/*"
+    "${PROJECT_SOURCE_DIR}/third_party/*"
   )
 
   SETUP_TARGET_FOR_COVERAGE_LCOV(NAME coverage

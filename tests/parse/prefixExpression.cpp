@@ -6,7 +6,7 @@
 using namespace walang;
 using namespace walang::ast;
 
-TEST(parser_prefix_expression, not_op) {
+TEST(ParserPrefixExpression, not_op) {
   FileParser parser("test.wa", R"(
 not a;
   )");
@@ -17,7 +17,7 @@ not a;
   ASSERT_EQ(file->statement()[0]->to_string(), "(NOT a)\n");
 }
 
-TEST(parser_prefix_expression, priority) {
+TEST(ParserPrefixExpression, priority) {
   FileParser parser("test.wa", R"(
 1 + not a + 2;
   )");
@@ -28,7 +28,7 @@ TEST(parser_prefix_expression, priority) {
   ASSERT_EQ(file->statement()[0]->to_string(), "(ADD (ADD 1 (NOT a)) 2)\n");
 }
 
-TEST(parser_prefix_expression, parentheses) {
+TEST(ParserPrefixExpression, parentheses) {
   FileParser parser("test.wa", R"(
 not(1 + 2);
   )");
