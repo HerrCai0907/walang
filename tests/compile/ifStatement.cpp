@@ -12,8 +12,7 @@ class CompileIfStatementTest : public ::testing::Test {
 public:
   static test_helper::SnapShot snapshot;
 };
-test_helper::SnapShot CompileIfStatementTest::snapshot{
-    std::filesystem::path(__FILE__).parent_path().append("compile_if_statement.snapshot.xml")};
+test_helper::SnapShot CompileIfStatementTest::snapshot{std::filesystem::path(__FILE__).replace_extension("xml")};
 
 TEST_F(CompileIfStatementTest, basis) {
   FileParser parser("test.wa", R"(
