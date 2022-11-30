@@ -51,9 +51,9 @@ private:
   }
 };
 
-VariantType::VariantType(Type typeName) : typeName_(typeName) {}
+VariantType::VariantType(Type typeName) : type_(typeName) {}
 
-std::string VariantType::to_string() const { return fmt::format("{}", magic_enum::enum_name(typeName_)); }
+std::string VariantType::to_string() const { return fmt::format("{}", magic_enum::enum_name(type_)); }
 
 std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   if (resolvedType_ == nullptr) {
@@ -106,6 +106,7 @@ BinaryenExpressionRef VariantType::underlyingDefaultValue(BinaryenModuleRef modu
     return BinaryenConst(module, BinaryenLiteralFloat64(0));
   } else {
     assert(false);
+    std::abort();
   }
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int64_t value) const {
@@ -119,6 +120,7 @@ BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int
     return BinaryenConst(module, BinaryenLiteralFloat64(static_cast<double>(value)));
   } else {
     assert(false);
+    std::abort();
   }
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, double value) const {
@@ -132,11 +134,12 @@ BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, dou
     return BinaryenConst(module, BinaryenLiteralFloat64(value));
   } else {
     assert(false);
+    std::abort();
   }
 }
 
 bool VariantType::tryResolveTo(std::shared_ptr<VariantType> const &type) const {
-  if (type->typeName_ == typeName_) {
+  if (type->type_ == type_) {
     return true;
   }
   return false;
@@ -149,8 +152,8 @@ bool TypeCondition::tryResolveTo(std::shared_ptr<VariantType> const &type) const
   if (VariantType::tryResolveTo(type)) {
     return true;
   }
-  if (type->typeName() == Type::I32 || type->typeName() == Type::U32 || type->typeName() == Type::I64 ||
-      type->typeName() == Type::U64) {
+  if (type->type() == Type::I32 || type->type() == Type::U32 || type->type() == Type::I64 ||
+      type->type() == Type::U64) {
     resolvedType_ = type;
     return true;
   }
@@ -181,6 +184,7 @@ BinaryenExpressionRef Int32::handlePrefixOp(BinaryenModuleRef module, ast::Prefi
   }
   }
   assert(false);
+  std::abort();
 }
 BinaryenExpressionRef Int64::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                             BinaryenExpressionRef exprRef) const {
@@ -197,6 +201,7 @@ BinaryenExpressionRef Int64::handlePrefixOp(BinaryenModuleRef module, ast::Prefi
   }
   }
   assert(false);
+  std::abort();
 }
 BinaryenExpressionRef TypeF32::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                               BinaryenExpressionRef exprRef) const {
@@ -214,6 +219,7 @@ BinaryenExpressionRef TypeF32::handlePrefixOp(BinaryenModuleRef module, ast::Pre
   }
   }
   assert(false);
+  std::abort();
 }
 BinaryenExpressionRef TypeF64::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                               BinaryenExpressionRef exprRef) const {
@@ -231,6 +237,7 @@ BinaryenExpressionRef TypeF64::handlePrefixOp(BinaryenModuleRef module, ast::Pre
   }
   }
   assert(false);
+  std::abort();
 }
 
 BinaryenExpressionRef PendingResolveType::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
@@ -326,6 +333,7 @@ BinaryenExpressionRef TypeI32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   }
   assert(false);
+  std::abort();
 }
 BinaryenExpressionRef TypeU32::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -409,6 +417,7 @@ BinaryenExpressionRef TypeU32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   }
   assert(false);
+  std::abort();
 }
 BinaryenExpressionRef TypeI64::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -492,6 +501,7 @@ BinaryenExpressionRef TypeI64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   }
   assert(false);
+  std::abort();
 }
 BinaryenExpressionRef TypeU64::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -575,6 +585,7 @@ BinaryenExpressionRef TypeU64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   }
   assert(false);
+  std::abort();
 }
 
 BinaryenExpressionRef TypeF32::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
@@ -635,6 +646,7 @@ BinaryenExpressionRef TypeF32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   }
   assert(false);
+  std::abort();
 }
 
 BinaryenExpressionRef TypeF64::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
@@ -695,6 +707,7 @@ BinaryenExpressionRef TypeF64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   }
   assert(false);
+  std::abort();
 }
 
 } // namespace ir

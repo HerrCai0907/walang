@@ -38,6 +38,7 @@ TESTCASE(compileBasis compile/basisStatement.cpp)
 TESTCASE(compileIf compile/ifStatement.cpp)
 TESTCASE(compileWhile compile/whileStatement.cpp)
 TESTCASE(compileFunction compile/functionStatement.cpp)
+TESTCASE(compileCall compile/call.cpp)
 
 if(ENABLE_COV)
   # Coverage setup

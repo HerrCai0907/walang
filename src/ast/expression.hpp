@@ -104,6 +104,9 @@ public:
   virtual ~CallExpression() = default;
   virtual std::string to_string() const override;
 
+  std::shared_ptr<Expression> const &caller() const noexcept { return caller_; }
+  std::vector<std::shared_ptr<Expression>> const &arguments() const noexcept { return arguments_; }
+
 private:
   std::shared_ptr<Expression> caller_;
   std::vector<std::shared_ptr<Expression>> arguments_;

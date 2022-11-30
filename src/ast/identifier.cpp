@@ -20,6 +20,7 @@ Identifier::Identifier(walangParser::IdentifierContext *ctx,
     id_ = std::stod(ctx->getText());
   } else {
     assert(false);
+    std::abort();
   }
 }
 std::string Identifier::to_string() const {
