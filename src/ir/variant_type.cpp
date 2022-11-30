@@ -78,7 +78,7 @@ std::shared_ptr<VariantType> const &VariantType::inferType(std::shared_ptr<ast::
     return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<VariantType> const & { return resolveType("i32"); },
                                  [](double d) -> std::shared_ptr<VariantType> const & { return resolveType("f32"); },
                                  [](const std::string &s) -> std::shared_ptr<VariantType> const & {
-                                   throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
+                                   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
                                  }},
                       identifier->id());
   }

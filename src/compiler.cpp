@@ -80,7 +80,7 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
   case ast::Statement::_FunctionStatement:
     return compileFunctionStatement(std::dynamic_pointer_cast<ast::FunctionStatement>(statement));
   }
-  throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
   std::shared_ptr<ir::VariantType> const &variantType = ir::VariantType::getTypeFromDeclare(*statement);
@@ -186,8 +186,10 @@ BinaryenExpressionRef Compiler::compileExpression(std::shared_ptr<ast::Expressio
     return compileBinaryExpression(std::dynamic_pointer_cast<ast::BinaryExpression>(expression), expectedType);
   case ast::Expression::_TernaryExpression:
     return compileTernaryExpression(std::dynamic_pointer_cast<ast::TernaryExpression>(expression), expectedType);
+  case ast::Expression::_CallExpression:
+    break;
   }
-  throw std::runtime_error("not support");
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifier> const &expression,
@@ -227,7 +229,7 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                    }
                                    return globalIt->second->makeGet(module_);
                                  }
-                                 throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
+                                 throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
                                }},
                     expression->id());
 }
@@ -263,11 +265,11 @@ std::shared_ptr<ir::Variant> Compiler::resolveVariant(std::shared_ptr<ast::Expre
                      if (globalIt != globals_.end()) {
                        return globalIt->second;
                      }
-                     throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
+                     throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
                    }},
         std::dynamic_pointer_cast<ast::Identifier>(expression)->id());
   }
-  throw std::runtime_error("not support" __FILE__ "#" + std::to_string(__LINE__));
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 } // namespace walang
