@@ -6,7 +6,7 @@
 using namespace walang;
 using namespace walang::ast;
 
-TEST(parser_binary_expression, add) {
+TEST(ParserBinaryExpression, add) {
   FileParser parser("test.wa", R"(
 a + 4;
   )");
@@ -16,7 +16,7 @@ a + 4;
   ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
   ASSERT_EQ(file->statement()[0]->to_string(), "(ADD a 4)\n");
 }
-TEST(parser_binary_expression, sub) {
+TEST(ParserBinaryExpression, sub) {
   FileParser parser("test.wa", R"(
 a - 0x4;
   )");
@@ -26,7 +26,7 @@ a - 0x4;
   ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
   ASSERT_EQ(file->statement()[0]->to_string(), "(SUB a 4)\n");
 }
-TEST(parser_binary_expression, mul) {
+TEST(ParserBinaryExpression, mul) {
   FileParser parser("test.wa", R"(
 a * 4.2;
   )");
@@ -36,7 +36,7 @@ a * 4.2;
   ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
   ASSERT_EQ(file->statement()[0]->to_string(), "(MUL a 4.2)\n");
 }
-TEST(parser_binary_expression, div) {
+TEST(ParserBinaryExpression, div) {
   FileParser parser("test.wa", R"(
 a / 4.1;
   )");
@@ -46,7 +46,7 @@ a / 4.1;
   ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
   ASSERT_EQ(file->statement()[0]->to_string(), "(DIV a 4.1)\n");
 }
-TEST(parser_binary_expression, mod) {
+TEST(ParserBinaryExpression, mod) {
   FileParser parser("test.wa", R"(
 a % 4;
   )");
@@ -56,7 +56,7 @@ a % 4;
   ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
   ASSERT_EQ(file->statement()[0]->to_string(), "(MOD a 4)\n");
 }
-TEST(parser_binary_expression, shift) {
+TEST(ParserBinaryExpression, shift) {
   FileParser parser("test.wa", R"(
 a >> 4;
 a << 4;
@@ -69,7 +69,7 @@ a << 4;
   ASSERT_EQ(file->statement()[0]->to_string(), "(RIGHT_SHIFT a 4)\n");
   ASSERT_EQ(file->statement()[1]->to_string(), "(LEFT_SHIFT a 4)\n");
 }
-TEST(parser_binary_expression, equal) {
+TEST(ParserBinaryExpression, equal) {
   FileParser parser("test.wa", R"(
 a > 4;
 a < 4;
@@ -92,42 +92,42 @@ a != 4;
   ASSERT_EQ(file->statement()[5]->to_string(), "(NOT_EQUAL a 4)\n");
 }
 
-TEST(parser_binary_expression, priority_1) {
+TEST(ParserBinaryExpression, priority_1) {
   FileParser parser("test.wa", R"(
 a * 2 + 3;
   )");
   auto file = parser.parse();
   ASSERT_EQ(file->statement()[0]->to_string(), "(ADD (MUL a 2) 3)\n");
 }
-TEST(parser_binary_expression, priority_2) {
+TEST(ParserBinaryExpression, priority_2) {
   FileParser parser("test.wa", R"(
 a + 2 * 3;
   )");
   auto file = parser.parse();
   ASSERT_EQ(file->statement()[0]->to_string(), "(ADD a (MUL 2 3))\n");
 }
-TEST(parser_binary_expression, priority_3) {
+TEST(ParserBinaryExpression, priority_3) {
   FileParser parser("test.wa", R"(
 a + 2 + 3 + 4;
   )");
   auto file = parser.parse();
   ASSERT_EQ(file->statement()[0]->to_string(), "(ADD (ADD (ADD a 2) 3) 4)\n");
 }
-TEST(parser_binary_expression, priority_4) {
+TEST(ParserBinaryExpression, priority_4) {
   FileParser parser("test.wa", R"(
 a > a + 2 * 3;
   )");
   auto file = parser.parse();
   ASSERT_EQ(file->statement()[0]->to_string(), "(GREATER_THAN a (ADD a (MUL 2 3)))\n");
 }
-TEST(parser_binary_expression, priority_5) {
+TEST(ParserBinaryExpression, priority_5) {
   FileParser parser("test.wa", R"(
 a * 1 + 2 > 3;
   )");
   auto file = parser.parse();
   ASSERT_EQ(file->statement()[0]->to_string(), "(GREATER_THAN (ADD (MUL a 1) 2) 3)\n");
 }
-TEST(parser_binary_expression, parentheses) {
+TEST(ParserBinaryExpression, parentheses) {
   FileParser parser("test.wa", R"(
 a * (1 + 2);
   )");

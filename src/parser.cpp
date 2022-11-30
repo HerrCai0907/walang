@@ -76,6 +76,9 @@ public:
     assert(astNodes_.count(ctx->expression()) == 1);
     astNodes_.emplace(ctx, astNodes_.find(ctx->expression())->second);
   }
+  virtual void exitCallExpression(walangParser::CallExpressionContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::CallExpression>(ctx, astNodes_));
+  }
 
   virtual void visitErrorNode(antlr4::tree::ErrorNode *node) override {
     std::cerr << "unexpected " << node->getText() << std::endl;

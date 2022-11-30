@@ -6,7 +6,7 @@
 using namespace walang;
 using namespace walang::ast;
 
-TEST(parser_ternary_expression, basis) {
+TEST(ParserTernaryExpression, basis) {
   FileParser parser("test.wa", R"(
 a ? 1 : 2;
   )");
@@ -17,7 +17,7 @@ a ? 1 : 2;
   ASSERT_EQ(file->statement()[0]->to_string(), "(a ? 1 : 2)\n");
 }
 
-TEST(parser_ternary_expression, multiple) {
+TEST(ParserTernaryExpression, multiple) {
   FileParser parser("test.wa", R"(
 1 ? 2 : 3 ? 4 : 5;
   )");
@@ -28,7 +28,7 @@ TEST(parser_ternary_expression, multiple) {
   ASSERT_EQ(file->statement()[0]->to_string(), "(1 ? 2 : (3 ? 4 : 5))\n");
 }
 
-TEST(parser_ternary_expression, priority) {
+TEST(ParserTernaryExpression, priority) {
   FileParser parser("test.wa", R"(
 1 == 2 ? a * b : 3 + 4;
   )");
@@ -39,7 +39,7 @@ TEST(parser_ternary_expression, priority) {
   ASSERT_EQ(file->statement()[0]->to_string(), "((EQUAL 1 2) ? (MUL a b) : (ADD 3 4))\n");
 }
 
-TEST(parser_prefix_expression, parentheses) {
+TEST(ParserTernaryExpression, parentheses) {
   FileParser parser("test.wa", R"(
 (a ? 1 : 2) + 1;
   )");

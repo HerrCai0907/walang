@@ -11,24 +11,32 @@
 namespace walang {
 namespace ir {
 
-class Variant {
+class Symbol {
 public:
   enum class Type {
     _Global,
     _Local,
+    _Function,
   };
-  explicit Variant(Type type, std::shared_ptr<VariantType> const &variantType)
+  explicit Symbol(Type type, std::shared_ptr<VariantType> const &variantType)
       : type_(type), variantType_(variantType) {}
-  virtual ~Variant() = default;
+  virtual ~Symbol() = default;
 
   Type type() const noexcept { return type_; }
   std::shared_ptr<VariantType> const &variantType() const noexcept { return variantType_; }
-  virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) = 0;
-  virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) = 0;
 
 protected:
   const Type type_;
   std::shared_ptr<VariantType> variantType_;
+};
+
+class Variant : public Symbol {
+public:
+  explicit Variant(Type type, std::shared_ptr<VariantType> const &variantType) : Symbol(type, variantType) {}
+  virtual ~Variant() = default;
+
+  virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) = 0;
+  virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) = 0;
 };
 
 class Global : public Variant {

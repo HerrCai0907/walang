@@ -14,14 +14,14 @@
 namespace walang {
 namespace ir {
 
-class Function {
+class Function : public Symbol {
 public:
   Function(std::string const &name, std::vector<std::string> const &argumentNames,
            std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
            std::shared_ptr<VariantType> const &returnType);
 
   std::string name() const noexcept { return name_; }
-  BinaryenType returnType() const;
+  std::shared_ptr<Signature> signature() const noexcept { return std::dynamic_pointer_cast<Signature>(variantType_); }
 
   std::shared_ptr<Local> const &addLocal(std::string const &name, std::shared_ptr<VariantType> const &localType);
   std::shared_ptr<Local> const &addTempLocal(std::shared_ptr<VariantType> const &localType);
@@ -39,7 +39,6 @@ public:
 private:
   std::string name_;
   uint32_t argumentSize_;
-  std::shared_ptr<VariantType> returnType_;
 
   std::vector<std::shared_ptr<Local>> locals_{};
 

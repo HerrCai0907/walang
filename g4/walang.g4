@@ -100,7 +100,7 @@ ternaryExpressionCondition:
 ternaryExpression:
 	ternaryExpressionCondition ternaryExpressionBody+;
 
-callExpressionRight: '(' expression (',' expression)* ')';
+callExpressionRight: '(' (expression (',' expression)*)? ')';
 callExpression: identifier callExpressionRight+;
 
 expression:

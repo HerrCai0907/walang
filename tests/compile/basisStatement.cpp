@@ -13,8 +13,7 @@ class CompileBasisStatementTest : public ::testing::Test {
 public:
   static test_helper::SnapShot snapshot;
 };
-test_helper::SnapShot CompileBasisStatementTest::snapshot{
-    std::filesystem::path(__FILE__).parent_path().append("compile_basis_statement.snapshot.xml")};
+test_helper::SnapShot CompileBasisStatementTest::snapshot{std::filesystem::path(__FILE__).replace_extension("xml")};
 
 TEST_F(CompileBasisStatementTest, binaryExpression) {
   FileParser parser("test.wa", R"(

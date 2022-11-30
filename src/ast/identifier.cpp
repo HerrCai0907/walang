@@ -9,7 +9,7 @@ namespace ast {
 
 Identifier::Identifier(walangParser::IdentifierContext *ctx,
                        std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &)
-    : Expression(Type::Identifier) {
+    : Expression(Type::_Identifier) {
   if (ctx->Identifier() != nullptr) {
     id_ = ctx->getText();
   } else if (ctx->IntNumber() != nullptr) {
@@ -20,6 +20,7 @@ Identifier::Identifier(walangParser::IdentifierContext *ctx,
     id_ = std::stod(ctx->getText());
   } else {
     assert(false);
+    std::abort();
   }
 }
 std::string Identifier::to_string() const {

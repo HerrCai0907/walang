@@ -11,8 +11,7 @@ class CompileFunctionStatementTest : public ::testing::Test {
 public:
   static test_helper::SnapShot snapshot;
 };
-test_helper::SnapShot CompileFunctionStatementTest::snapshot{
-    std::filesystem::path(__FILE__).parent_path().append("compile_function_statement.snapshot.xml")};
+test_helper::SnapShot CompileFunctionStatementTest::snapshot{std::filesystem::path(__FILE__).replace_extension("xml")};
 
 TEST_F(CompileFunctionStatementTest, basis) {
   FileParser parser("test.wa", R"(

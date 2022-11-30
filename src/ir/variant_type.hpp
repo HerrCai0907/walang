@@ -25,6 +25,7 @@ public:
     F32,
     F64,
     ConditionType,
+    Signature,
   };
   static std::shared_ptr<VariantType> const &resolveType(std::string const &name);
   static std::shared_ptr<VariantType> const &inferType(std::shared_ptr<ast::Expression> const &initExpr);
@@ -32,8 +33,8 @@ public:
 
   virtual ~VariantType() = default;
 
-  Type typeName() const noexcept { return typeName_; }
-  std::string to_string() const;
+  Type type() const noexcept { return type_; }
+  virtual std::string to_string() const;
   virtual BinaryenType underlyingTypeName() const = 0;
   BinaryenExpressionRef underlyingDefaultValue(BinaryenModuleRef module) const;
   BinaryenExpressionRef underlyingConst(BinaryenModuleRef module, int64_t value) const;
@@ -47,9 +48,8 @@ public:
                                                std::shared_ptr<Function> const &function) = 0;
 
 protected:
-  Type typeName_;
+  Type type_;
 
-  VariantType() : typeName_(Type::Auto) {}
   VariantType(Type typeName);
 };
 
@@ -173,6 +173,26 @@ public:
   virtual BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
                                                BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
                                                std::shared_ptr<Function> const &function) override;
+};
+
+class Signature : public VariantType {
+public:
+  Signature(std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
+            std::shared_ptr<VariantType> const &returnType);
+  virtual std::string to_string() const override;
+  virtual BinaryenType underlyingTypeName() const override;
+  virtual BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
+                                               BinaryenExpressionRef exprRef) const override;
+  virtual BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
+                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
+                                               std::shared_ptr<Function> const &function) override;
+
+  std::vector<std::shared_ptr<VariantType>> const &argumentTypes() const { return argumentTypes_; }
+  std::shared_ptr<VariantType> const &returnType() const { return returnType_; }
+
+private:
+  std::vector<std::shared_ptr<VariantType>> argumentTypes_;
+  std::shared_ptr<VariantType> returnType_;
 };
 
 } // namespace ir
