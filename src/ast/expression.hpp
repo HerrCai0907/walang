@@ -21,8 +21,9 @@ public:
     _PrefixExpression,
     _BinaryExpression,
     _TernaryExpression,
+    _CallExpression,
   };
-  Expression(Type type) : type_(type) {}
+  Expression(Type type) noexcept : type_(type) {}
   virtual ~Expression() = default;
 
   Type type() const noexcept { return type_; }
@@ -93,6 +94,19 @@ private:
   std::shared_ptr<Expression> conditionExpr_;
   std::shared_ptr<Expression> leftExpr_;
   std::shared_ptr<Expression> rightExpr_;
+};
+
+class CallExpression : public Expression {
+public:
+  CallExpression() noexcept;
+  CallExpression(walangParser::CallExpressionContext *ctx,
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
+  virtual ~CallExpression() = default;
+  virtual std::string to_string() const override;
+
+private:
+  std::shared_ptr<Expression> caller_;
+  std::vector<std::shared_ptr<Expression>> arguments_;
 };
 
 } // namespace ast

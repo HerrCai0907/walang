@@ -32,6 +32,7 @@ TESTCASE(parseFunction parser/function.cpp)
 TESTCASE(parseBinaryExpression parser/binaryExpression.cpp)
 TESTCASE(parsePrefixExpression parser/prefixExpression.cpp)
 TESTCASE(parseTernaryExpression parser/ternaryExpression.cpp)
+TESTCASE(parseCallExpression parser/callExpression.cpp)
 
 TESTCASE(compileBasis compile/basisStatement.cpp)
 TESTCASE(compileIf compile/ifStatement.cpp)
