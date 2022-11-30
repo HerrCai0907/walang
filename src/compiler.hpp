@@ -39,6 +39,8 @@ private:
   BinaryenExpressionRef compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement);
   BinaryenExpressionRef compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement);
 
+  BinaryenExpressionRef compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement);
+
   BinaryenExpressionRef compileExpression(std::shared_ptr<ast::Expression> const &expression,
                                           std::shared_ptr<ir::VariantType> const &expectedType);
   BinaryenExpressionRef compileIdentifier(std::shared_ptr<ast::Identifier> const &expression,
@@ -52,10 +54,7 @@ private:
 
   std::shared_ptr<ir::Variant> resolveVariant(std::shared_ptr<ast::Expression> const &expression);
 
-  std::string const &createBreakLabel(std::string const &prefix);
-  std::string const &createContinueLabel(std::string const &prefix);
-  void freeBreakLabel();
-  void freeContinueLabel();
+  std::shared_ptr<ir::Function> const &currentFunction() const { return currentFunction_.top(); }
 
 private:
   BinaryenModuleRef module_;
@@ -63,12 +62,8 @@ private:
   std::vector<std::shared_ptr<ast::File>> files_;
   std::unordered_map<std::string, std::shared_ptr<ir::Global>> globals_{};
 
-  std::shared_ptr<ir::Function> currentFunction_{};
-
-  std::stack<std::string> currentBreakLabel_{};
-  uint32_t breakLabelIndex_{0U};
-  std::stack<std::string> currentContinueLabel_{};
-  uint32_t continueLabelIndex_{0U};
+  std::stack<std::shared_ptr<ir::Function>> currentFunction_{};
+  std::shared_ptr<ir::Function> startFunction_{};
 };
 
 } // namespace walang

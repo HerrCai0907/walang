@@ -24,38 +24,39 @@ public:
   Type type() const noexcept { return type_; }
   std::shared_ptr<VariantType> const &variantType() const noexcept { return variantType_; }
   virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) = 0;
+  virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) = 0;
 
-private:
-  Type type_;
+protected:
+  const Type type_;
   std::shared_ptr<VariantType> variantType_;
 };
 
 class Global : public Variant {
 public:
-  explicit Global(ast::DeclareStatement const &declare);
+  Global(std::string const &name, std::shared_ptr<VariantType> const &type);
   virtual ~Global() override = default;
   std::string name() const noexcept { return name_; }
   virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 
 private:
   std::string name_;
-  std::shared_ptr<ast::Expression> init_;
 };
 
 class Local : public Variant {
 public:
-  explicit Local(uint32_t index, std::shared_ptr<VariantType> const &type)
-      : Variant(Type::_Local, type), index_{index}, name_{}, init_{nullptr} {}
+  Local(uint32_t index, std::shared_ptr<VariantType> const &type);
+  Local(uint32_t index, std::string const &name, std::shared_ptr<VariantType> const &type);
   ~Local() = default;
 
   uint32_t index() const noexcept { return index_; }
   std::string name() const noexcept { return name_; }
   virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 
 private:
   uint32_t index_;
   std::string name_;
-  std::shared_ptr<ast::Expression> init_;
 };
 
 } // namespace ir

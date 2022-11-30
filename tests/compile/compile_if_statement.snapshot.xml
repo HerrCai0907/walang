@@ -3,6 +3,7 @@
 (module
  (type $none_=&gt;_none (func))
  (global $a (mut i32) (i32.const 0))
+ (start $_start)
  (func $_start
   (global.set $a
    (i32.const 0)
@@ -20,6 +21,7 @@
 (module
  (type $none_=&gt;_none (func))
  (global $a (mut i32) (i32.const 0))
+ (start $_start)
  (func $_start
   (global.set $a
    (i32.const 0)
@@ -40,6 +42,7 @@
 (module
  (type $none_=&gt;_none (func))
  (global $a (mut i32) (i32.const 0))
+ (start $_start)
  (func $_start
   (global.set $a
    (i32.const 0)

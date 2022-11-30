@@ -5,7 +5,7 @@ namespace walang {
 namespace ast {
 
 AssignStatement::AssignStatement(walangParser::AssignStatementContext *ctx,
-                                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+                                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
     : Statement(Statement::Type::_AssignStatement) {
   assert(map.count(ctx->expression(0)) == 1);
   assert(map.count(ctx->expression(1)) == 1);

@@ -12,9 +12,9 @@ not a;
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
-  EXPECT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), "(NOT a)\n");
+  ASSERT_EQ(file->statement().size(), 1);
+  ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
+  ASSERT_EQ(file->statement()[0]->to_string(), "(NOT a)\n");
 }
 
 TEST(parser_prefix_expression, priority) {
@@ -23,9 +23,9 @@ TEST(parser_prefix_expression, priority) {
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
-  EXPECT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), "(ADD (ADD 1 (NOT a)) 2)\n");
+  ASSERT_EQ(file->statement().size(), 1);
+  ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
+  ASSERT_EQ(file->statement()[0]->to_string(), "(ADD (ADD 1 (NOT a)) 2)\n");
 }
 
 TEST(parser_prefix_expression, parentheses) {
@@ -33,5 +33,5 @@ TEST(parser_prefix_expression, parentheses) {
 not(1 + 2);
   )");
   auto file = parser.parse();
-  EXPECT_EQ(file->statement()[0]->to_string(), "(NOT (ADD 1 2))\n");
+  ASSERT_EQ(file->statement()[0]->to_string(), "(NOT (ADD 1 2))\n");
 }

@@ -1,2 +1,6 @@
-let c : f32 = 0;
-not c;
+
+function foo(a:i32) : void {
+    a = a + 1;
+    let b = 2;
+    let d = 3;
+}

@@ -1,15 +1,6 @@
 cmake_minimum_required(VERSION 3.13.4)
 project(walang)
 
-# configuration
-set(CMAKE_EXPORT_COMPILE_COMMANDS on)
-list(APPEND CMAKE_MODULE_PATH
-  ${PROJECT_SOURCE_DIR}/cmake-modules)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
 # dependiences
 set(ANTLR_BUILD_CPP_TESTS 0)
 add_subdirectory(third_party/antlr/runtime/Cpp)
@@ -41,6 +32,15 @@ include_directories(
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party/binaryen/src
 )
+
+# configuration
+set(CMAKE_EXPORT_COMPILE_COMMANDS on)
+list(APPEND CMAKE_MODULE_PATH
+  ${PROJECT_SOURCE_DIR}/cmake-modules)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # source
 add_subdirectory(g4)

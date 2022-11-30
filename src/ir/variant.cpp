@@ -5,23 +5,24 @@
 namespace walang {
 namespace ir {
 
-static std::shared_ptr<VariantType> getTypeFromDeclare(ast::DeclareStatement const &declare) {
-  if (declare.type() == "") {
-    return VariantType::inferType(declare.init());
-  } else {
-    return VariantType::resolveType(declare.type());
-  }
-}
-
-Global::Global(ast::DeclareStatement const &declare)
-    : Variant(Type::_Global, getTypeFromDeclare(declare)), name_{declare.name()}, init_{declare.init()} {}
+Global::Global(std::string const &name, std::shared_ptr<VariantType> const &type)
+    : Variant(Type::_Global, type), name_{name} {}
+Local::Local(uint32_t index, std::shared_ptr<VariantType> const &type)
+    : Variant(Type::_Local, type), index_{index}, name_{} {}
+Local::Local(uint32_t index, std::string const &name, std::shared_ptr<VariantType> const &type)
+    : Variant(Type::_Local, type), index_{index}, name_{name} {}
 
 BinaryenExpressionRef Global::makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
   return BinaryenGlobalSet(module, name_.c_str(), exprRef);
 }
-
+BinaryenExpressionRef Global::makeGet(BinaryenModuleRef module) {
+  return BinaryenGlobalGet(module, name_.c_str(), variantType_->underlyingTypeName());
+}
 BinaryenExpressionRef Local::makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
   return BinaryenLocalSet(module, index_, exprRef);
+}
+BinaryenExpressionRef Local::makeGet(BinaryenModuleRef module) {
+  return BinaryenLocalGet(module, index_, variantType_->underlyingTypeName());
 }
 
 } // namespace ir

@@ -1,0 +1,24 @@
+<snapshots>
+    <basis>
+(module
+ (type $i64_f32_=&gt;_none (func (param i64 f32)))
+ (type $none_=&gt;_none (func))
+ (start $_start)
+ (func $foo (param $a i64) (param $b f32)
+  (local $c i32)
+  (local.set $c
+   (i32.const 10)
+  )
+  (local.set $c
+   (i32.add
+    (local.get $c)
+    (i32.const 1)
+   )
+  )
+ )
+ (func $_start
+  (nop)
+ )
+)
+</basis>
+</snapshots>

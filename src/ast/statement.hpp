@@ -6,7 +6,9 @@
 #include <cassert>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace walang {
@@ -23,6 +25,7 @@ public:
     _WhileStatement,
     _BreakStatement,
     _ContinueStatement,
+    _FunctionStatement,
   };
   Statement(Type type) noexcept : type_(type) {}
   virtual ~Statement() = default;
@@ -36,7 +39,7 @@ private:
 class DeclareStatement final : public Statement {
 public:
   DeclareStatement(walangParser::DeclareStatementContext *ctx,
-                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   virtual ~DeclareStatement() = default;
   std::string to_string() const override;
   std::string name() const noexcept { return name_; }
@@ -52,7 +55,7 @@ private:
 class AssignStatement final : public Statement {
 public:
   AssignStatement(walangParser::AssignStatementContext *ctx,
-                  std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+                  std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   virtual ~AssignStatement() = default;
   std::string to_string() const override;
   std::shared_ptr<Expression> variant() const noexcept { return varExpr_; }
@@ -66,7 +69,7 @@ private:
 class ExpressionStatement : public Statement {
 public:
   ExpressionStatement(walangParser::ExpressionStatementContext *ctx,
-                      std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+                      std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   virtual ~ExpressionStatement() = default;
   std::string to_string() const;
   std::shared_ptr<Expression> expr() const noexcept { return expr_; }
@@ -78,7 +81,7 @@ private:
 class BlockStatement : public Statement {
 public:
   BlockStatement(walangParser::BlockStatementContext *ctx,
-                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   virtual ~BlockStatement() = default;
   std::string to_string() const;
   std::vector<std::shared_ptr<Statement>> const &statements() const noexcept { return statements_; }
@@ -90,7 +93,7 @@ private:
 class IfStatement : public Statement {
 public:
   IfStatement(walangParser::IfStatementContext *ctx,
-              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   virtual ~IfStatement() = default;
   std::string to_string() const;
   std::shared_ptr<Expression> const &condition() const noexcept { return condition_; }
@@ -106,7 +109,7 @@ private:
 class WhileStatement : public Statement {
 public:
   WhileStatement(walangParser::WhileStatementContext *ctx,
-                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map);
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   virtual ~WhileStatement() = default;
   std::string to_string() const;
   std::shared_ptr<Expression> const &condition() const noexcept { return condition_; }
@@ -120,7 +123,7 @@ private:
 class BreakStatement : public Statement {
 public:
   BreakStatement(walangParser::BreakStatementContext *ctx,
-                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
       : Statement(Type::_BreakStatement) {}
   virtual ~BreakStatement() = default;
   std::string to_string() const { return "break\n"; }
@@ -129,10 +132,34 @@ public:
 class ContinueStatement : public Statement {
 public:
   ContinueStatement(walangParser::ContinueStatementContext *ctx,
-                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
       : Statement(Type::_ContinueStatement) {}
   virtual ~ContinueStatement() = default;
   std::string to_string() const { return "continue\n"; }
+};
+
+class FunctionStatement : public Statement {
+public:
+  struct Argument {
+    std::string name_;
+    std::string type_;
+  };
+
+  FunctionStatement(walangParser::FunctionStatementContext *ctx,
+                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
+  virtual ~FunctionStatement() = default;
+  std::string to_string() const;
+
+  std::string const &name() const noexcept { return name_; }
+  std::vector<Argument> const &arguments() const noexcept { return arguments_; }
+  std::optional<std::string> const &returnType() const noexcept { return returnType_; }
+  std::shared_ptr<BlockStatement> const &body() const noexcept { return body_; };
+
+private:
+  std::string name_;
+  std::vector<Argument> arguments_;
+  std::optional<std::string> returnType_;
+  std::shared_ptr<BlockStatement> body_;
 };
 
 } // namespace ast

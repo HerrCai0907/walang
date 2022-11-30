@@ -18,7 +18,7 @@
   std::exit(-1);
 }
 
-std::string readFile(std::string_view path) {
+std::string readFile(std::string const &path) {
   std::ifstream file{path, std::ios::binary};
   if (!file.is_open()) {
     throw std::runtime_error(std::string("invalid path") + std::string(path));
@@ -61,6 +61,7 @@ int main(int argc, const char *argv[]) {
   auto file = parser.parse();
   walang::Compiler compiler({file});
   compiler.compile();
+  BinaryenModuleValidate(compiler.module());
 
   std::ofstream outputFile{outputFilePath};
   if (!outputFile.is_open()) {

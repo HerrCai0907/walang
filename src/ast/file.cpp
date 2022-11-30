@@ -4,7 +4,7 @@ namespace walang {
 namespace ast {
 
 void File::update(walangParser::WalangContext *ctx,
-                  std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map) {
+                  std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map) {
   std::vector<walangParser::StatementContext *> statements = ctx->statement();
   for (auto statement : statements) {
     antlr4::ParserRuleContext *child = dynamic_cast<antlr4::ParserRuleContext *>(statement->children.at(0));

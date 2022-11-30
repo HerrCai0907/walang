@@ -10,7 +10,7 @@ namespace walang {
 namespace ast {
 
 BlockStatement::BlockStatement(walangParser::BlockStatementContext *ctx,
-                               std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+                               std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
     : Statement(Statement::Type::_BlockStatement) {
   auto statements = ctx->statement();
   std::transform(statements.cbegin(), statements.cend(), std::back_inserter(statements_),

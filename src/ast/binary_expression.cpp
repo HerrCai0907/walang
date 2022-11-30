@@ -7,9 +7,8 @@ namespace ast {
 
 BinaryExpression::BinaryExpression() noexcept
     : Expression(Type::BinaryExpression), op_(static_cast<BinaryOp>(0)), leftExpr_(nullptr), rightExpr_(nullptr) {}
-BinaryExpression::BinaryExpression(
-    walangParser::BinaryExpressionContext *ctx,
-    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+BinaryExpression::BinaryExpression(walangParser::BinaryExpressionContext *ctx,
+                                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
     : Expression(Type::BinaryExpression) {
 
   auto leftChild = dynamic_cast<antlr4::ParserRuleContext *>(ctx->binaryExpressionLeft()->children.at(0));

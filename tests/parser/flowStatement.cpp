@@ -15,9 +15,9 @@ TEST(ParseFlowStatement, Block) {
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
+  ASSERT_EQ(file->statement().size(), 1);
   ASSERT_NE(std::dynamic_pointer_cast<BlockStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), R"({
+  ASSERT_EQ(file->statement()[0]->to_string(), R"({
 (ADD a 1)
 (ADD b 2)
 })");
@@ -29,9 +29,9 @@ if (1) {}
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
+  ASSERT_EQ(file->statement().size(), 1);
   ASSERT_NE(std::dynamic_pointer_cast<IfStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), R"(if 1 then {
+  ASSERT_EQ(file->statement()[0]->to_string(), R"(if 1 then {
 })");
 }
 
@@ -43,9 +43,9 @@ if (1) {
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
+  ASSERT_EQ(file->statement().size(), 1);
   ASSERT_NE(std::dynamic_pointer_cast<IfStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), R"(if 1 then {
+  ASSERT_EQ(file->statement()[0]->to_string(), R"(if 1 then {
 } else {
 })");
 }
@@ -59,9 +59,9 @@ if (1) {
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
+  ASSERT_EQ(file->statement().size(), 1);
   ASSERT_NE(std::dynamic_pointer_cast<IfStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), R"(if 1 then {
+  ASSERT_EQ(file->statement()[0]->to_string(), R"(if 1 then {
 } else if 2 then {
 } else {
 })");
@@ -74,8 +74,8 @@ while (1) {
   )");
   auto file = parser.parse();
 
-  EXPECT_EQ(file->statement().size(), 1);
+  ASSERT_EQ(file->statement().size(), 1);
   ASSERT_NE(std::dynamic_pointer_cast<WhileStatement>(file->statement()[0]), nullptr);
-  EXPECT_EQ(file->statement()[0]->to_string(), R"(while 1 {
+  ASSERT_EQ(file->statement()[0]->to_string(), R"(while 1 {
 })");
 }

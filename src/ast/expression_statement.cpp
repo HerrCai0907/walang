@@ -6,7 +6,7 @@ namespace ast {
 
 ExpressionStatement::ExpressionStatement(
     walangParser::ExpressionStatementContext *ctx,
-    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &map)
+    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
     : Statement(Statement::Type::_ExpressionStatement) {
   assert(map.count(ctx->expression()) == 1);
   expr_ = std::dynamic_pointer_cast<ast::Expression>(map.find(ctx->expression())->second);

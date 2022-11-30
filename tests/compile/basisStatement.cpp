@@ -1,6 +1,6 @@
-#include "../helper/snapshot.hpp"
 #include "binaryen-c.h"
 #include "compiler.hpp"
+#include "helper/snapshot.hpp"
 #include "parser.hpp"
 #include <filesystem>
 #include <gtest/gtest.h>
@@ -38,7 +38,7 @@ TEST_F(CompileBasisStatementTest, logicAndExpression) {
   compile.compile();
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(compile.wat());
-  EXPECT_THROW(
+  ASSERT_THROW(
       [] {
         FileParser parser("test.wa", R"(
 let a : f32 = 0 && 4;
@@ -59,7 +59,7 @@ TEST_F(CompileBasisStatementTest, logicOrExpression) {
   compile.compile();
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(compile.wat());
-  EXPECT_THROW(
+  ASSERT_THROW(
       [] {
         FileParser parser("test.wa", R"(
 let a : f32 = 0 || 4;
@@ -95,7 +95,7 @@ let d:f64 = 0;
   snapshot.check(compile.wat());
 }
 TEST_F(CompileBasisStatementTest, prefixExpressionFailed) {
-  EXPECT_THROW(
+  ASSERT_THROW(
       [] {
         FileParser parser("test.wa", R"(
 let a:f32 = 0;
@@ -106,7 +106,7 @@ not a;
         compile.compile();
       }(),
       std::runtime_error);
-  EXPECT_THROW(
+  ASSERT_THROW(
       [] {
         FileParser parser("test.wa", R"(
 let a:f64 = 0;

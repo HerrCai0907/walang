@@ -44,5 +44,5 @@ TEST(parser_prefix_expression, parentheses) {
 (a ? 1 : 2) + 1;
   )");
   auto file = parser.parse();
-  EXPECT_EQ(file->statement()[0]->to_string(), "(ADD (a ? 1 : 2) 1)\n");
+  ASSERT_EQ(file->statement()[0]->to_string(), "(ADD (a ? 1 : 2) 1)\n");
 }
