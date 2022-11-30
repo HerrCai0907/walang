@@ -1,6 +1,7 @@
 #include "compiler.hpp"
 #include "ast/expression.hpp"
 #include "ast/statement.hpp"
+#include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
 #include "ir/function.hpp"
 #include "ir/variant.hpp"
@@ -218,30 +219,32 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                  }
                                  return expectedType->underlyingConst(module_, static_cast<int64_t>(i));
                                },
-                               [this, &expectedType](double d) -> BinaryenExpressionRef {
+                               [this, &expression, &expectedType](double d) -> BinaryenExpressionRef {
                                  auto pendingType = std::dynamic_pointer_cast<ir::PendingResolveType>(expectedType);
                                  if (pendingType != nullptr && !pendingType->isResolved()) {
                                    // not resolve, default f32
                                    pendingType->tryResolveTo(std::make_shared<ir::TypeF32>());
                                  }
-                                 return expectedType->underlyingConst(module_, d);
+                                 try {
+                                   return expectedType->underlyingConst(module_, d);
+                                 } catch (TypeConvertError &e) {
+                                   e.setRange(expression->range());
+                                   throw e;
+                                 }
                                },
-                               [this, &expectedType](const std::string &s) -> BinaryenExpressionRef {
+                               [this, &expression, &expectedType](const std::string &s) -> BinaryenExpressionRef {
                                  auto local = currentFunction()->findLocalByName(s);
                                  if (local != nullptr) {
                                    if (!expectedType->tryResolveTo(local->variantType())) {
-                                     throw std::runtime_error(fmt::format("invalid convert from {0} to {1}",
-                                                                          local->variantType()->to_string(),
-                                                                          expectedType->to_string()));
+                                     throw TypeConvertError(local->variantType(), expectedType, expression->range());
                                    }
                                    return local->makeGet(module_);
                                  }
                                  auto globalIt = globals_.find(s);
                                  if (globalIt != globals_.end()) {
                                    if (!expectedType->tryResolveTo(globalIt->second->variantType())) {
-                                     throw std::runtime_error(fmt::format("invalid convert from {0} to {1}",
-                                                                          globalIt->second->variantType()->to_string(),
-                                                                          expectedType->to_string()));
+                                     throw TypeConvertError(globalIt->second->variantType(), expectedType,
+                                                            expression->range());
                                    }
                                    return globalIt->second->makeGet(module_);
                                  }
@@ -283,9 +286,7 @@ BinaryenExpressionRef Compiler::compileCallExpression(std::shared_ptr<ast::CallE
       throw std::runtime_error(fmt::format("argument number not match in function call {0}", expression->to_string()));
     }
     if (expectedType->tryResolveTo(functionCaller->signature()->returnType()) == false) {
-      throw std::runtime_error(fmt::format("invalid convert from {0} to {1}",
-                                           functionCaller->signature()->returnType()->to_string(),
-                                           expectedType->to_string()));
+      throw TypeConvertError(functionCaller->signature()->returnType(), expectedType, expression->range());
     }
 
     // compile

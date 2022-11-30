@@ -1,4 +1,5 @@
 #include "compiler.hpp"
+#include "helper/diagnose.hpp"
 #include "helper/snapshot.hpp"
 #include "parser.hpp"
 #include <gtest/gtest.h>
@@ -61,7 +62,7 @@ foo(1.5);
         Compiler compile{{file}};
         compile.compile();
       }(),
-      std::runtime_error);
+      TypeConvertError);
 }
 
 TEST_F(CompileCallTest, ReturnTypeNotMatch) {
@@ -76,5 +77,5 @@ a = foo();
         Compiler compile{{file}};
         compile.compile();
       }(),
-      std::runtime_error);
+      TypeConvertError);
 }

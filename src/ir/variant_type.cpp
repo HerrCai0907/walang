@@ -1,6 +1,7 @@
 #include "variant_type.hpp"
 #include "ast/expression.hpp"
 #include "ast/op.hpp"
+#include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
 #include "ir/function.hpp"
 #include <binaryen-c.h>
@@ -125,9 +126,9 @@ BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, double value) const {
   if (underlyingTypeName() == BinaryenTypeInt32()) {
-    throw std::runtime_error("invalid convert from double to i32");
+    throw TypeConvertError(shared_from_this(), resolveType("i32"));
   } else if (underlyingTypeName() == BinaryenTypeInt64()) {
-    throw std::runtime_error("invalid convert from double to i64");
+    throw TypeConvertError(shared_from_this(), resolveType("i64"));
   } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(static_cast<float>(value)));
   } else if (underlyingTypeName() == BinaryenTypeFloat64()) {

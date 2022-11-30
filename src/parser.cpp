@@ -26,6 +26,7 @@ public:
     antlr4::ParserRuleContext *child = dynamic_cast<antlr4::ParserRuleContext *>(ctx->children.at(0));
     assert(astNodes_.count(child) == 1);
     astNodes_.emplace(ctx, astNodes_.find(child)->second);
+    astNodes_.find(child)->second->setRange(file_, ctx);
   }
   virtual void exitDeclareStatement(walangParser::DeclareStatementContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::DeclareStatement>(ctx, astNodes_));
@@ -59,6 +60,7 @@ public:
     antlr4::ParserRuleContext *child = dynamic_cast<antlr4::ParserRuleContext *>(ctx->children.at(0));
     assert(astNodes_.count(child) == 1);
     astNodes_.emplace(ctx, astNodes_.find(child)->second);
+    astNodes_.find(child)->second->setRange(file_, ctx);
   }
   virtual void exitIdentifier(walangParser::IdentifierContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::Identifier>(ctx, astNodes_));
@@ -91,7 +93,7 @@ private:
 };
 
 std::shared_ptr<ast::File> FileParser::parse() {
-  auto file = std::make_shared<ast::File>();
+  auto file = std::make_shared<ast::File>(filename_);
   antlr4::ANTLRInputStream inputStream(content_);
   walangLexer lexer(&inputStream);
   antlr4::CommonTokenStream tokens(&lexer);
