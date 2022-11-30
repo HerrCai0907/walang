@@ -11,7 +11,7 @@ namespace ast {
 
 PrefixExpression::PrefixExpression(walangParser::PrefixExpressionContext *ctx,
                                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
-    : Expression(Type::PrefixExpression) {
+    : Expression(Type::_PrefixExpression) {
   this->op_ = Operator::getOp(ctx->prefixOperator());
   assert(map.count(ctx->expression()) == 1);
   this->expr_ = std::dynamic_pointer_cast<Expression>(map.find(ctx->expression())->second);

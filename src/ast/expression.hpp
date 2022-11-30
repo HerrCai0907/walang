@@ -16,7 +16,12 @@ namespace ast {
 
 class Expression : public Node {
 public:
-  enum Type { Identifier, PrefixExpression, BinaryExpression, TernaryExpression };
+  enum Type {
+    _Identifier,
+    _PrefixExpression,
+    _BinaryExpression,
+    _TernaryExpression,
+  };
   Expression(Type type) : type_(type) {}
   virtual ~Expression() = default;
 

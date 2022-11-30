@@ -178,13 +178,13 @@ BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::Fu
 BinaryenExpressionRef Compiler::compileExpression(std::shared_ptr<ast::Expression> const &expression,
                                                   std::shared_ptr<ir::VariantType> const &expectedType) {
   switch (expression->type()) {
-  case ast::Expression::Identifier:
+  case ast::Expression::_Identifier:
     return compileIdentifier(std::dynamic_pointer_cast<ast::Identifier>(expression), expectedType);
-  case ast::Expression::PrefixExpression:
+  case ast::Expression::_PrefixExpression:
     return compilePrefixExpression(std::dynamic_pointer_cast<ast::PrefixExpression>(expression), expectedType);
-  case ast::Expression::BinaryExpression:
+  case ast::Expression::_BinaryExpression:
     return compileBinaryExpression(std::dynamic_pointer_cast<ast::BinaryExpression>(expression), expectedType);
-  case ast::Expression::TernaryExpression:
+  case ast::Expression::_TernaryExpression:
     return compileTernaryExpression(std::dynamic_pointer_cast<ast::TernaryExpression>(expression), expectedType);
   }
   throw std::runtime_error("not support");

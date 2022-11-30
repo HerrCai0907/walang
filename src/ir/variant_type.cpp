@@ -73,7 +73,7 @@ std::shared_ptr<VariantType> const &VariantType::resolveType(std::string const &
   return VariantTypeMap::instance().find(typeName);
 }
 std::shared_ptr<VariantType> const &VariantType::inferType(std::shared_ptr<ast::Expression> const &initExpr) {
-  if (initExpr->type() == ast::Expression::Type::Identifier) {
+  if (initExpr->type() == ast::Expression::Type::_Identifier) {
     auto identifier = std::dynamic_pointer_cast<ast::Identifier>(initExpr);
     return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<VariantType> const & { return resolveType("i32"); },
                                  [](double d) -> std::shared_ptr<VariantType> const & { return resolveType("f32"); },
