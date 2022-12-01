@@ -1,5 +1,6 @@
 #include "binaryen-c.h"
 #include "compiler.hpp"
+#include "helper/diagnose.hpp"
 #include "helper/snapshot.hpp"
 #include "parser.hpp"
 #include <filesystem>
@@ -53,7 +54,7 @@ while (1) {
   snapshot.check(compile.wat());
 }
 
-TEST_F(CompileWhileStatementTest, MutipleLevlBreak) {
+TEST_F(CompileWhileStatementTest, MutipleLevelBreak) {
   FileParser parser("test.wa", R"(
 while (1) {
   while (2) {
@@ -69,7 +70,7 @@ while (1) {
   snapshot.check(compile.wat());
 }
 
-TEST_F(CompileWhileStatementTest, MutipleLevlContinue) {
+TEST_F(CompileWhileStatementTest, MutipleLevelContinue) {
   FileParser parser("test.wa", R"(
 while (1) {
   while (2) {
@@ -83,4 +84,36 @@ while (1) {
   compile.compile();
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(compile.wat());
+}
+
+TEST_F(CompileWhileStatementTest, ErrorStatement) {
+  EXPECT_THROW(
+      [] {
+        FileParser parser("test.wa", R"(
+while (1) {
+}
+continue;
+    )");
+        auto file = parser.parse();
+        Compiler compile{{file}};
+        compile.compile();
+        ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+        snapshot.check(compile.wat());
+      }(),
+      JumpStatementError);
+
+  EXPECT_THROW(
+      [] {
+        FileParser parser("test.wa", R"(
+while (1) {
+}
+break;
+    )");
+        auto file = parser.parse();
+        Compiler compile{{file}};
+        compile.compile();
+        ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+        snapshot.check(compile.wat());
+      }(),
+      JumpStatementError);
 }

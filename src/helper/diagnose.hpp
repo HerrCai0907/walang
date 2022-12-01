@@ -3,6 +3,7 @@
 #include "ast/op.hpp"
 #include "helper/range.hpp"
 #include "ir/variant_type.hpp"
+#include <cstdint>
 #include <exception>
 #include <memory>
 #include <stdexcept>
@@ -50,6 +51,27 @@ public:
 private:
   std::variant<ast::PrefixOp, ast::BinaryOp> const op_;
   std::shared_ptr<ir::VariantType const> const type_;
+
+  virtual void generateErrorMessage() override;
+};
+
+class ArgumentCountError : public CompilerError {
+public:
+  ArgumentCountError(uint32_t expected, uint32_t actual, ast::Range const &range);
+
+private:
+  uint32_t expected_;
+  uint32_t actual_;
+
+  virtual void generateErrorMessage() override;
+};
+
+class JumpStatementError : public CompilerError {
+public:
+  JumpStatementError(std::string const &statement);
+
+private:
+  std::string statement_;
 
   virtual void generateErrorMessage() override;
 };

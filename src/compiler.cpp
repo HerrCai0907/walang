@@ -106,6 +106,7 @@ BinaryenExpressionRef Compiler::compileAssignStatement(std::shared_ptr<ast::Assi
   auto exprRef = compileExpression(statement->value(), symbol->variantType());
   switch (symbol->type()) {
   case ir::Symbol::Type::_Function:
+    // TODO(TypeConvertError)
     throw std::runtime_error(fmt::format("cannot assign to function {0}", statement->to_string()));
   case ir::Symbol::Type::_Global:
   case ir::Symbol::Type::_Local:
@@ -164,10 +165,20 @@ BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::While
   return BinaryenBlock(module_, breakLabel.c_str(), &loop, 1U, BinaryenTypeNone());
 }
 BinaryenExpressionRef Compiler::compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement) {
-  return BinaryenBreak(module_, currentFunction()->topBreakLabel().c_str(), nullptr, nullptr);
+  try {
+    return BinaryenBreak(module_, currentFunction()->topBreakLabel().c_str(), nullptr, nullptr);
+  } catch (JumpStatementError &e) {
+    e.setRange(statement->range());
+    throw e;
+  }
 }
 BinaryenExpressionRef Compiler::compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement) {
-  return BinaryenBreak(module_, currentFunction()->topContinueLabel().c_str(), nullptr, nullptr);
+  try {
+    return BinaryenBreak(module_, currentFunction()->topContinueLabel().c_str(), nullptr, nullptr);
+  } catch (JumpStatementError &e) {
+    e.setRange(statement->range());
+    throw e;
+  }
 }
 BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement) {
   std::vector<std::string> argumentNames{};
@@ -295,7 +306,7 @@ BinaryenExpressionRef Compiler::compileCallExpression(std::shared_ptr<ast::CallE
     std::vector<std::shared_ptr<ast::Expression>> const &argumentExpressions = expression->arguments();
     // check
     if (signatureArgumentTypes.size() != argumentExpressions.size()) {
-      throw std::runtime_error(fmt::format("argument number not match in function call {0}", expression->to_string()));
+      throw ArgumentCountError(signatureArgumentTypes.size(), argumentExpressions.size(), expression->range());
     }
     if (expectedType->tryResolveTo(functionCaller->signature()->returnType()) == false) {
       throw TypeConvertError(functionCaller->signature()->returnType(), expectedType, expression->range());
@@ -314,25 +325,28 @@ BinaryenExpressionRef Compiler::compileCallExpression(std::shared_ptr<ast::CallE
 
 std::shared_ptr<ir::Symbol> Compiler::resolveVariant(std::shared_ptr<ast::Expression> const &expression) {
   if (std::dynamic_pointer_cast<ast::Identifier>(expression) != nullptr) {
-    return std::visit(
-        overloaded{[this](uint64_t i) -> std::shared_ptr<ir::Symbol> { throw std::runtime_error("not support"); },
-                   [](double d) -> std::shared_ptr<ir::Symbol> { throw std::runtime_error("not support"); },
-                   [this](const std::string &s) -> std::shared_ptr<ir::Symbol> {
-                     auto local = currentFunction()->findLocalByName(s);
-                     if (local != nullptr) {
-                       return local;
-                     }
-                     auto globalIt = globals_.find(s);
-                     if (globalIt != globals_.end()) {
-                       return globalIt->second;
-                     }
-                     auto functionIt = functions_.find(s);
-                     if (functionIt != functions_.cend()) {
-                       return functionIt->second;
-                     }
-                     throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
-                   }},
-        std::dynamic_pointer_cast<ast::Identifier>(expression)->id());
+    return std::visit(overloaded{[this](uint64_t i) -> std::shared_ptr<ir::Symbol> {
+                                   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
+                                 },
+                                 [](double d) -> std::shared_ptr<ir::Symbol> {
+                                   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
+                                 },
+                                 [this](const std::string &s) -> std::shared_ptr<ir::Symbol> {
+                                   auto local = currentFunction()->findLocalByName(s);
+                                   if (local != nullptr) {
+                                     return local;
+                                   }
+                                   auto globalIt = globals_.find(s);
+                                   if (globalIt != globals_.end()) {
+                                     return globalIt->second;
+                                   }
+                                   auto functionIt = functions_.find(s);
+                                   if (functionIt != functions_.cend()) {
+                                     return functionIt->second;
+                                   }
+                                   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
+                                 }},
+                      std::dynamic_pointer_cast<ast::Identifier>(expression)->id());
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }

@@ -21,7 +21,21 @@ InvalidOperator::InvalidOperator(std::shared_ptr<ir::VariantType const> const &t
 InvalidOperator::InvalidOperator(std::shared_ptr<ir::VariantType const> const &type, ast::BinaryOp op)
     : type_(type), op_(op) {}
 void InvalidOperator::generateErrorMessage() {
-  errorMessage_ = fmt::format("invalid operator '{0}' for '{1}'", ast::Operator::to_string(op_), type_->to_string());
+  errorMessage_ =
+      fmt::format("invalid operator '{0}' for '{1}'\n\t{2}", ast::Operator::to_string(op_), type_->to_string(), range_);
+}
+
+ArgumentCountError::ArgumentCountError(uint32_t expected, uint32_t actual, ast::Range const &range)
+    : CompilerError(range), expected_(expected), actual_(actual) {
+  generateErrorMessage();
+}
+void ArgumentCountError::generateErrorMessage() {
+  errorMessage_ = fmt::format("expect '{0}' arguments but get '{1}'\n\t{2}", expected_, actual_, range_);
+}
+
+JumpStatementError::JumpStatementError(std::string const &statement) : CompilerError(), statement_(statement) {}
+void JumpStatementError::generateErrorMessage() {
+  errorMessage_ = fmt::format("invalid {0} statement \n\t{1}", statement_, range_);
 }
 
 } // namespace walang

@@ -40,7 +40,7 @@ foo(1);
         Compiler compile{{file}};
         compile.compile();
       }(),
-      std::runtime_error);
+      ArgumentCountError);
   EXPECT_THROW(
       [] {
         FileParser parser("test.wa", R"(
@@ -51,7 +51,7 @@ foo();
         Compiler compile{{file}};
         compile.compile();
       }(),
-      std::runtime_error);
+      ArgumentCountError);
   EXPECT_THROW(
       [] {
         FileParser parser("test.wa", R"(
