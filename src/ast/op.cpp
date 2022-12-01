@@ -3,6 +3,7 @@
 #include "tree/TerminalNode.h"
 #include <iostream>
 #include <magic_enum.hpp>
+#include <variant>
 
 namespace walang {
 namespace ast {
@@ -98,6 +99,13 @@ int Operator::getOpPriority(BinaryOp op) noexcept {
 
 std::string Operator::to_string(BinaryOp op) { return std::string{magic_enum::enum_name(op)}; }
 std::string Operator::to_string(PrefixOp op) { return std::string{magic_enum::enum_name(op)}; }
+std::string Operator::to_string(std::variant<PrefixOp, BinaryOp> op) {
+  if (std::holds_alternative<BinaryOp>(op)) {
+    return to_string(std::get<BinaryOp>(op));
+  } else {
+    return to_string(std::get<PrefixOp>(op));
+  }
+}
 
 } // namespace ast
 } // namespace walang

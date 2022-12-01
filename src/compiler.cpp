@@ -255,13 +255,23 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
 BinaryenExpressionRef Compiler::compilePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression,
                                                         std::shared_ptr<ir::VariantType> const &expectedType) {
   BinaryenExpressionRef exprRef = compileExpression(expression->expr(), expectedType);
-  return expectedType->handlePrefixOp(module_, expression->op(), exprRef);
+  try {
+    return expectedType->handlePrefixOp(module_, expression->op(), exprRef);
+  } catch (InvalidOperator &e) {
+    e.setRange(expression->range());
+    throw e;
+  }
 }
 BinaryenExpressionRef Compiler::compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression,
                                                         std::shared_ptr<ir::VariantType> const &expectedType) {
   BinaryenExpressionRef leftExprRef = compileExpression(expression->leftExpr(), expectedType);
   BinaryenExpressionRef rightExprRef = compileExpression(expression->rightExpr(), expectedType);
-  return expectedType->handleBinaryOp(module_, expression->op(), leftExprRef, rightExprRef, currentFunction());
+  try {
+    return expectedType->handleBinaryOp(module_, expression->op(), leftExprRef, rightExprRef, currentFunction());
+  } catch (InvalidOperator &e) {
+    e.setRange(expression->range());
+    throw e;
+  }
 }
 BinaryenExpressionRef Compiler::compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression,
                                                          std::shared_ptr<ir::VariantType> const &expectedType) {

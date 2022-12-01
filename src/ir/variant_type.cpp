@@ -167,8 +167,7 @@ BinaryenExpressionRef PendingResolveType::handlePrefixOp(BinaryenModuleRef modul
 }
 BinaryenExpressionRef TypeNone::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                                BinaryenExpressionRef exprRef) const {
-  throw std::runtime_error(
-      fmt::format("invalid prefix operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+  throw InvalidOperator(shared_from_this(), op);
 }
 BinaryenExpressionRef Int32::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                             BinaryenExpressionRef exprRef) const {
@@ -215,8 +214,7 @@ BinaryenExpressionRef TypeF32::handlePrefixOp(BinaryenModuleRef module, ast::Pre
     return BinaryenBinary(module, BinaryenSubFloat32(), leftRef, exprRef);
   }
   case ast::PrefixOp::NOT: {
-    throw std::runtime_error(
-        fmt::format("invalid prefix operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+    throw InvalidOperator(shared_from_this(), op);
   }
   }
   assert(false);
@@ -233,8 +231,7 @@ BinaryenExpressionRef TypeF64::handlePrefixOp(BinaryenModuleRef module, ast::Pre
     return BinaryenBinary(module, BinaryenSubFloat64(), leftRef, exprRef);
   }
   case ast::PrefixOp::NOT: {
-    throw std::runtime_error(
-        fmt::format("invalid prefix operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+    throw InvalidOperator(shared_from_this(), op);
   }
   }
   assert(false);
@@ -249,8 +246,7 @@ BinaryenExpressionRef PendingResolveType::handleBinaryOp(BinaryenModuleRef modul
 BinaryenExpressionRef TypeNone::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
                                                BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
                                                std::shared_ptr<Function> const &function) {
-  throw std::runtime_error(
-      fmt::format("invalid prefix operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+  throw InvalidOperator(shared_from_this(), op);
 }
 BinaryenExpressionRef TypeI32::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -642,8 +638,7 @@ BinaryenExpressionRef TypeF32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   case ast::BinaryOp::RIGHT_SHIFT:
   case ast::BinaryOp::LOGIC_AND:
   case ast::BinaryOp::LOGIC_OR: {
-    throw std::runtime_error(
-        fmt::format("invalid operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+    throw InvalidOperator(shared_from_this(), op);
   }
   }
   assert(false);
@@ -703,8 +698,7 @@ BinaryenExpressionRef TypeF64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   case ast::BinaryOp::RIGHT_SHIFT:
   case ast::BinaryOp::LOGIC_AND:
   case ast::BinaryOp::LOGIC_OR: {
-    throw std::runtime_error(
-        fmt::format("invalid operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+    throw InvalidOperator(shared_from_this(), op);
   }
   }
   assert(false);

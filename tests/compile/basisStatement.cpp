@@ -1,5 +1,6 @@
 #include "binaryen-c.h"
 #include "compiler.hpp"
+#include "helper/diagnose.hpp"
 #include "helper/snapshot.hpp"
 #include "parser.hpp"
 #include <filesystem>
@@ -46,7 +47,7 @@ let a : f32 = 0 && 4;
         Compiler compile{{file}};
         compile.compile();
       }(),
-      std::runtime_error);
+      InvalidOperator);
 }
 
 TEST_F(CompileBasisStatementTest, logicOrExpression) {
@@ -67,7 +68,7 @@ let a : f32 = 0 || 4;
         Compiler compile{{file}};
         compile.compile();
       }(),
-      std::runtime_error);
+      InvalidOperator);
 }
 
 TEST_F(CompileBasisStatementTest, prefixExpression) {
@@ -104,7 +105,7 @@ not a;
         Compiler compile{{file}};
         compile.compile();
       }(),
-      std::runtime_error);
+      InvalidOperator);
   ASSERT_THROW(
       [] {
         FileParser parser("test.wa", R"(
@@ -115,7 +116,7 @@ not a;
         Compiler compile{{file}};
         compile.compile();
       }(),
-      std::runtime_error);
+      InvalidOperator);
 }
 
 TEST_F(CompileBasisStatementTest, ternaryExpression) {

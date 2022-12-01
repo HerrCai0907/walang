@@ -1,10 +1,12 @@
 #pragma once
 
+#include "ast/op.hpp"
 #include "helper/range.hpp"
 #include "ir/variant_type.hpp"
 #include <exception>
 #include <memory>
 #include <stdexcept>
+#include <variant>
 
 namespace walang {
 
@@ -13,7 +15,7 @@ public:
   CompilerError() = default;
   explicit CompilerError(ast::Range const &range) : range_(range) {}
 
-  virtual const char *what() const noexcept = 0;
+  virtual const char *what() const noexcept { return errorMessage_.c_str(); }
   void setRange(ast::Range const &range) {
     range_ = range;
     generateErrorMessage();
@@ -33,11 +35,21 @@ public:
   TypeConvertError(std::shared_ptr<ir::VariantType const> const &from, std::shared_ptr<ir::VariantType const> const &to,
                    ast::Range const &range);
 
-  virtual const char *what() const noexcept override;
-
 private:
   std::shared_ptr<ir::VariantType const> const from_;
   std::shared_ptr<ir::VariantType const> const to_;
+
+  virtual void generateErrorMessage() override;
+};
+
+class InvalidOperator : public CompilerError {
+public:
+  InvalidOperator(std::shared_ptr<ir::VariantType const> const &type, ast::PrefixOp op);
+  InvalidOperator(std::shared_ptr<ir::VariantType const> const &type, ast::BinaryOp op);
+
+private:
+  std::variant<ast::PrefixOp, ast::BinaryOp> const op_;
+  std::shared_ptr<ir::VariantType const> const type_;
 
   virtual void generateErrorMessage() override;
 };
