@@ -26,6 +26,7 @@ public:
     _BreakStatement,
     _ContinueStatement,
     _FunctionStatement,
+    _ClassStatement,
   };
   Statement(Type type) noexcept : type_(type) {}
   virtual ~Statement() = default;
@@ -160,6 +161,24 @@ private:
   std::vector<Argument> arguments_;
   std::optional<std::string> returnType_;
   std::shared_ptr<BlockStatement> body_;
+};
+
+class ClassStatement : public Statement {
+public:
+  struct Member {
+    std::string name_;
+    std::string type_;
+  };
+
+  ClassStatement(walangParser::ClassStatementContext *ctx,
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
+  virtual ~ClassStatement() = default;
+  std::string to_string() const;
+
+private:
+  std::string name_;
+  std::vector<Member> members_;
+  std::vector<std::shared_ptr<FunctionStatement>> functions_;
 };
 
 } // namespace ast

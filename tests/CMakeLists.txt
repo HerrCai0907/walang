@@ -19,7 +19,6 @@ include_directories(
 set(TESTCASES)
 
 function(TESTCASE test_name)
-  message("${ARGN}")
   message(STATUS "test case ${test_name}")
   add_executable(${test_name} ${ARGN})
   target_link_libraries(${test_name} walang-core GTest::gtest_main tinyxml2)
@@ -27,13 +26,8 @@ function(TESTCASE test_name)
   set(TESTCASES ${TESTCASES} ${test_name} PARENT_SCOPE)
 endfunction()
 
-TESTCASE(parseTest parse/basisStatement.cpp
-  parse/flowStatement.cpp
-  parse/function.cpp
-  parse/binaryExpression.cpp
-  parse/prefixExpression.cpp
-  parse/ternaryExpression.cpp
-  parse/callExpression.cpp)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/parse parse_test_srcs)
+TESTCASE(parseTest ${parse_test_srcs})
 
 TESTCASE(compileTest
   compile/basisStatement.cpp

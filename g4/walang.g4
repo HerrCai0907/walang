@@ -21,7 +21,8 @@ statement:
 	| whileStatement
 	| breakStatement
 	| continueStatement
-	| functionStatement;
+	| functionStatement
+	| classStatement;
 
 // basis statement
 expressionStatement: expression ';';
@@ -44,6 +45,10 @@ parameter: Identifier ':' type;
 parameterList: (parameter (',' parameter)*)?;
 functionStatement:
 	'function' Identifier '(' parameterList ')' (':' type)? blockStatement;
+
+member: Identifier ':' type ';';
+classStatement:
+	'class' Identifier '{' (functionStatement | member)* '}';
 
 // expression
 prefixOperator: 'not' | '+' | '-';
@@ -121,6 +126,7 @@ CONTINUE: 'continue';
 LET: 'let';
 NOT: 'not';
 FUNCTION: 'function';
+CLASS: 'class';
 
 // Operator
 LParenthesis: '(';
