@@ -1,6 +1,7 @@
 #include "variant_type.hpp"
 #include "ast/expression.hpp"
 #include "ast/op.hpp"
+#include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
 #include "ir/function.hpp"
 #include <binaryen-c.h>
@@ -24,13 +25,13 @@ public:
   void registerType(std::string const &name, std::shared_ptr<VariantType> const &type) {
     auto ret = map_.try_emplace(name, type);
     if (ret.second == false) {
-      throw std::runtime_error(fmt::format("repeat type '{}'", type->to_string()));
+      throw RedefinedSymbol(type->to_string());
     }
   }
-  std::shared_ptr<VariantType> const &find(std::string const &name) {
+  std::shared_ptr<VariantType> const &findVariantType(std::string const &name) {
     auto it = map_.find(name);
     if (it == map_.end()) {
-      throw std::runtime_error(fmt::format("unknown type '{}'", name));
+      throw UnknownSymbol(name);
     }
     return it->second;
   }
@@ -70,7 +71,7 @@ std::shared_ptr<VariantType> const &VariantType::getTypeFromDeclare(ast::Declare
   }
 }
 std::shared_ptr<VariantType> const &VariantType::resolveType(std::string const &typeName) {
-  return VariantTypeMap::instance().find(typeName);
+  return VariantTypeMap::instance().findVariantType(typeName);
 }
 std::shared_ptr<VariantType> const &VariantType::inferType(std::shared_ptr<ast::Expression> const &initExpr) {
   if (initExpr->type() == ast::Expression::Type::_Identifier) {
@@ -125,9 +126,9 @@ BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, double value) const {
   if (underlyingTypeName() == BinaryenTypeInt32()) {
-    throw std::runtime_error("invalid convert from double to i32");
+    throw TypeConvertError(shared_from_this(), resolveType("i32"));
   } else if (underlyingTypeName() == BinaryenTypeInt64()) {
-    throw std::runtime_error("invalid convert from double to i64");
+    throw TypeConvertError(shared_from_this(), resolveType("i64"));
   } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(static_cast<float>(value)));
   } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
@@ -166,8 +167,7 @@ BinaryenExpressionRef PendingResolveType::handlePrefixOp(BinaryenModuleRef modul
 }
 BinaryenExpressionRef TypeNone::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                                BinaryenExpressionRef exprRef) const {
-  throw std::runtime_error(
-      fmt::format("invalid prefix operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+  throw InvalidOperator(shared_from_this(), op);
 }
 BinaryenExpressionRef Int32::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                             BinaryenExpressionRef exprRef) const {
@@ -214,8 +214,7 @@ BinaryenExpressionRef TypeF32::handlePrefixOp(BinaryenModuleRef module, ast::Pre
     return BinaryenBinary(module, BinaryenSubFloat32(), leftRef, exprRef);
   }
   case ast::PrefixOp::NOT: {
-    throw std::runtime_error(
-        fmt::format("invalid prefix operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+    throw InvalidOperator(shared_from_this(), op);
   }
   }
   assert(false);
@@ -232,8 +231,7 @@ BinaryenExpressionRef TypeF64::handlePrefixOp(BinaryenModuleRef module, ast::Pre
     return BinaryenBinary(module, BinaryenSubFloat64(), leftRef, exprRef);
   }
   case ast::PrefixOp::NOT: {
-    throw std::runtime_error(
-        fmt::format("invalid prefix operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+    throw InvalidOperator(shared_from_this(), op);
   }
   }
   assert(false);
@@ -248,8 +246,7 @@ BinaryenExpressionRef PendingResolveType::handleBinaryOp(BinaryenModuleRef modul
 BinaryenExpressionRef TypeNone::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
                                                BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
                                                std::shared_ptr<Function> const &function) {
-  throw std::runtime_error(
-      fmt::format("invalid prefix operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+  throw InvalidOperator(shared_from_this(), op);
 }
 BinaryenExpressionRef TypeI32::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -641,8 +638,7 @@ BinaryenExpressionRef TypeF32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   case ast::BinaryOp::RIGHT_SHIFT:
   case ast::BinaryOp::LOGIC_AND:
   case ast::BinaryOp::LOGIC_OR: {
-    throw std::runtime_error(
-        fmt::format("invalid operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+    throw InvalidOperator(shared_from_this(), op);
   }
   }
   assert(false);
@@ -702,8 +698,7 @@ BinaryenExpressionRef TypeF64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   case ast::BinaryOp::RIGHT_SHIFT:
   case ast::BinaryOp::LOGIC_AND:
   case ast::BinaryOp::LOGIC_OR: {
-    throw std::runtime_error(
-        fmt::format("invalid operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+    throw InvalidOperator(shared_from_this(), op);
   }
   }
   assert(false);

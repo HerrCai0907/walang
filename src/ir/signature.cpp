@@ -1,6 +1,7 @@
 #include "binaryen-c.h"
 #include "fmt/core.h"
 #include "fmt/format.h"
+#include "helper/diagnose.hpp"
 #include "variant_type.hpp"
 #include <algorithm>
 #include <iterator>
@@ -26,12 +27,12 @@ BinaryenType Signature::underlyingTypeName() const { return BinaryenTypeInt32();
 
 BinaryenExpressionRef Signature::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                                 BinaryenExpressionRef exprRef) const {
-  throw std::runtime_error(fmt::format("invalid operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+  throw InvalidOperator(shared_from_this(), op);
 }
 BinaryenExpressionRef Signature::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
                                                 BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
                                                 std::shared_ptr<Function> const &function) {
-  throw std::runtime_error(fmt::format("invalid operator '{0}' for '{1}'", ast::Operator::to_string(op), to_string()));
+  throw InvalidOperator(shared_from_this(), op);
 }
 
 } // namespace ir

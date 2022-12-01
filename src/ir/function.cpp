@@ -1,5 +1,6 @@
 #include "function.hpp"
 #include "binaryen-c.h"
+#include "helper/diagnose.hpp"
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
 #include <cassert>
@@ -47,13 +48,13 @@ std::string const &Function::createContinueLabel(std::string const &prefix) {
 }
 std::string const &Function::topBreakLabel() const {
   if (currentBreakLabel_.size() == 0) {
-    throw std::runtime_error("invalid break");
+    throw JumpStatementError("invalid break");
   }
   return currentBreakLabel_.top();
 }
 std::string const &Function::topContinueLabel() const {
   if (currentContinueLabel_.size() == 0) {
-    throw std::runtime_error("invalid continue");
+    throw JumpStatementError("invalid continue");
   }
   return currentContinueLabel_.top();
 }

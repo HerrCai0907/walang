@@ -2,6 +2,7 @@
 
 #include "generated/walangParser.h"
 #include <string>
+#include <variant>
 
 namespace walang {
 namespace ast {
@@ -42,6 +43,7 @@ public:
 
   static std::string to_string(BinaryOp op);
   static std::string to_string(PrefixOp op);
+  static std::string to_string(std::variant<PrefixOp, BinaryOp> op);
 };
 
 } // namespace ast

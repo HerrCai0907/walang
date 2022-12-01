@@ -1,6 +1,2 @@
-
-function foo(a:i32) : void {
-    a = a + 1;
-    let b = 2;
-    let d = 3;
-}
+let a:f64 = 0;
+not a;
