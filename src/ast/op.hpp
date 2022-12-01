@@ -4,8 +4,7 @@
 #include <string>
 #include <variant>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
 enum class BinaryOp {
   ADD = 1,
@@ -46,5 +45,4 @@ public:
   static std::string to_string(std::variant<PrefixOp, BinaryOp> op);
 };
 
-} // namespace ast
 } // namespace walang

@@ -5,14 +5,14 @@
 #include "ir/variant_type.hpp"
 #include <cassert>
 #include <memory>
+#include <utility>
 
-namespace walang {
-namespace ir {
+namespace walang::ir {
 
-Function::Function(std::string const &name, std::vector<std::string> const &argumentNames,
+Function::Function(std::string name, std::vector<std::string> const &argumentNames,
                    std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
                    std::shared_ptr<VariantType> const &returnType)
-    : Symbol(Type::_Function, std::make_shared<Signature>(argumentTypes, returnType)), name_(name),
+    : Symbol(Type::TypeFunction, std::make_shared<Signature>(argumentTypes, returnType)), name_(std::move(name)),
       argumentSize_(argumentNames.size()) {
   assert(argumentNames.size() == argumentTypes.size());
   for (std::size_t i = 0; i < argumentSize_; i++) {
@@ -47,13 +47,13 @@ std::string const &Function::createContinueLabel(std::string const &prefix) {
   return str;
 }
 std::string const &Function::topBreakLabel() const {
-  if (currentBreakLabel_.size() == 0) {
+  if (currentBreakLabel_.empty()) {
     throw JumpStatementError("invalid break");
   }
   return currentBreakLabel_.top();
 }
 std::string const &Function::topContinueLabel() const {
-  if (currentContinueLabel_.size() == 0) {
+  if (currentContinueLabel_.empty()) {
     throw JumpStatementError("invalid continue");
   }
   return currentContinueLabel_.top();
@@ -72,7 +72,7 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
                           localBinaryenTypes.size() - argumentSize_, body);
 
   for (std::size_t i = 0; i < locals_.size(); i++) {
-    if (locals_[i]->name() == "") {
+    if (locals_[i]->name().empty()) {
       continue;
     }
     BinaryenFunctionSetLocalName(funcRef, i, locals_[i]->name().c_str());
@@ -81,5 +81,4 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
   return funcRef;
 }
 
-} // namespace ir
-} // namespace walang
+} // namespace walang::ir

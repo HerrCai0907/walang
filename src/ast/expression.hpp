@@ -11,35 +11,35 @@
 #include <variant>
 #include <vector>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
+
+enum ExpressionType {
+  TypeIdentifier,
+  TypePrefixExpression,
+  TypeBinaryExpression,
+  TypeTernaryExpression,
+  TypeCallExpression,
+};
 
 class Expression : public Node {
 public:
-  enum Type {
-    _Identifier,
-    _PrefixExpression,
-    _BinaryExpression,
-    _TernaryExpression,
-    _CallExpression,
-  };
-  Expression(Type type) noexcept : type_(type) {}
-  virtual ~Expression() = default;
+  explicit Expression(ExpressionType type) noexcept : type_(type) {}
+  ~Expression() override = default;
 
-  Type type() const noexcept { return type_; }
+  [[nodiscard]] ExpressionType type() const noexcept { return type_; }
 
 private:
-  Type type_;
+  ExpressionType type_;
 };
 
 class Identifier final : public Expression {
 public:
   Identifier(walangParser::IdentifierContext *ctx,
              std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &);
-  virtual ~Identifier() = default;
-  virtual std::string to_string() const override;
+  ~Identifier() override = default;
+  [[nodiscard]] std::string to_string() const override;
 
-  std::variant<uint64_t, double, std::string> const &id() const noexcept { return id_; }
+  [[nodiscard]] std::variant<uint64_t, double, std::string> const &id() const noexcept { return id_; }
 
 private:
   std::variant<uint64_t, double, std::string> id_;
@@ -49,10 +49,10 @@ class PrefixExpression : public Expression {
 public:
   PrefixExpression(walangParser::PrefixExpressionContext *ctx,
                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
-  virtual ~PrefixExpression() override {}
-  virtual std::string to_string() const override;
-  PrefixOp op() const noexcept { return op_; }
-  std::shared_ptr<Expression> const &expr() const noexcept { return expr_; }
+  ~PrefixExpression() override = default;
+  [[nodiscard]] std::string to_string() const override;
+  [[nodiscard]] PrefixOp op() const noexcept { return op_; }
+  [[nodiscard]] std::shared_ptr<Expression> const &expr() const noexcept { return expr_; }
 
 private:
   PrefixOp op_;
@@ -64,18 +64,18 @@ public:
   BinaryExpression() noexcept;
   BinaryExpression(walangParser::BinaryExpressionContext *ctx,
                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
-  virtual ~BinaryExpression() = default;
-  virtual std::string to_string() const override;
-  BinaryOp op() const noexcept { return op_; }
-  std::shared_ptr<Expression> const &leftExpr() const noexcept { return leftExpr_; }
-  std::shared_ptr<Expression> const &rightExpr() const noexcept { return rightExpr_; }
+  ~BinaryExpression() override = default;
+  [[nodiscard]] std::string to_string() const override;
+  [[nodiscard]] BinaryOp op() const noexcept { return op_; }
+  [[nodiscard]] std::shared_ptr<Expression> const &leftExpr() const noexcept { return leftExpr_; }
+  [[nodiscard]] std::shared_ptr<Expression> const &rightExpr() const noexcept { return rightExpr_; }
 
 private:
   BinaryOp op_;
   std::shared_ptr<Expression> leftExpr_;
   std::shared_ptr<Expression> rightExpr_;
 
-  void appendExpr(BinaryOp op, std::shared_ptr<Expression> rightExpr);
+  void appendExpr(BinaryOp op, const std::shared_ptr<Expression> &rightExpr);
 };
 
 class TernaryExpression : public Expression {
@@ -83,8 +83,8 @@ public:
   TernaryExpression() noexcept;
   TernaryExpression(walangParser::TernaryExpressionContext *ctx,
                     std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
-  virtual ~TernaryExpression() = default;
-  virtual std::string to_string() const override;
+  ~TernaryExpression() override = default;
+  [[nodiscard]] std::string to_string() const override;
 
   std::shared_ptr<Expression> const &conditionExpr() { return conditionExpr_; }
   std::shared_ptr<Expression> const &leftExpr() { return leftExpr_; }
@@ -101,16 +101,15 @@ public:
   CallExpression() noexcept;
   CallExpression(walangParser::CallExpressionContext *ctx,
                  std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
-  virtual ~CallExpression() = default;
-  virtual std::string to_string() const override;
+  ~CallExpression() override = default;
+  [[nodiscard]] std::string to_string() const override;
 
-  std::shared_ptr<Expression> const &caller() const noexcept { return caller_; }
-  std::vector<std::shared_ptr<Expression>> const &arguments() const noexcept { return arguments_; }
+  [[nodiscard]] std::shared_ptr<Expression> const &caller() const noexcept { return caller_; }
+  [[nodiscard]] std::vector<std::shared_ptr<Expression>> const &arguments() const noexcept { return arguments_; }
 
 private:
   std::shared_ptr<Expression> caller_;
   std::vector<std::shared_ptr<Expression>> arguments_;
 };
 
-} // namespace ast
-} // namespace walang
+} // namespace walang::ast

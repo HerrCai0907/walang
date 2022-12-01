@@ -2,15 +2,16 @@
 #include "ir/variant_type.hpp"
 #include <binaryen-c.h>
 
-namespace walang {
-namespace ir {
+#include <utility>
 
-Global::Global(std::string const &name, std::shared_ptr<VariantType> const &type)
-    : Variant(Type::_Global, type), name_{name} {}
+namespace walang::ir {
+
+Global::Global(std::string name, std::shared_ptr<VariantType> const &type)
+    : Variant(Type::TypeGlobal, type), name_{std::move(name)} {}
 Local::Local(uint32_t index, std::shared_ptr<VariantType> const &type)
-    : Variant(Type::_Local, type), index_{index}, name_{} {}
-Local::Local(uint32_t index, std::string const &name, std::shared_ptr<VariantType> const &type)
-    : Variant(Type::_Local, type), index_{index}, name_{name} {}
+    : Variant(Type::TypeLocal, type), index_{index}, name_{} {}
+Local::Local(uint32_t index, std::string name, std::shared_ptr<VariantType> const &type)
+    : Variant(Type::TypeLocal, type), index_{index}, name_{std::move(name)} {}
 
 BinaryenExpressionRef Global::makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
   return BinaryenGlobalSet(module, name_.c_str(), exprRef);
@@ -25,5 +26,4 @@ BinaryenExpressionRef Local::makeGet(BinaryenModuleRef module) {
   return BinaryenLocalGet(module, index_, variantType_->underlyingTypeName());
 }
 
-} // namespace ir
 } // namespace walang

@@ -6,19 +6,17 @@
 #include <fmt/core.h>
 #include <iterator>
 #include <memory>
-#include <string>
 #include <vector>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
 FunctionStatement::FunctionStatement(walangParser::FunctionStatementContext *ctx,
                                      std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
-    : Statement(Type::_FunctionStatement) {
+    : Statement(StatementType::TypeFunctionStatement) {
   name_ = ctx->Identifier()->getText();
 
-  auto parameterCtxs = ctx->parameterList()->parameter();
-  std::transform(parameterCtxs.cbegin(), parameterCtxs.cend(), std::back_inserter(arguments_),
+  auto parameterContexts = ctx->parameterList()->parameter();
+  std::transform(parameterContexts.cbegin(), parameterContexts.cend(), std::back_inserter(arguments_),
                  [](walangParser::ParameterContext *parameterCtx) {
                    return Argument{parameterCtx->Identifier()->getText(), parameterCtx->type()->getText()};
                  });
@@ -29,12 +27,11 @@ FunctionStatement::FunctionStatement(walangParser::FunctionStatementContext *ctx
   body_ = std::dynamic_pointer_cast<BlockStatement>(map.find(ctx->blockStatement())->second);
 }
 std::string FunctionStatement::to_string() const {
-  std::vector<std::string> argumentStrs{};
-  std::transform(arguments_.cbegin(), arguments_.cend(), std::back_inserter(argumentStrs),
+  std::vector<std::string> argumentStrings{};
+  std::transform(arguments_.cbegin(), arguments_.cend(), std::back_inserter(argumentStrings),
                  [](Argument const &argument) { return fmt::format("{0}:{1}", argument.name_, argument.type_); });
-  return fmt::format("fn {0} ({1}) -> {2} {3}\n", name_, fmt::join(argumentStrs, ", "),
+  return fmt::format("fn {0} ({1}) -> {2} {3}\n", name_, fmt::join(argumentStrings, ", "),
                      returnType_.value_or("__unknown__"), body_->to_string());
 }
 
-} // namespace ast
 } // namespace walang

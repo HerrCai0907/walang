@@ -1,12 +1,9 @@
 #include "op.hpp"
-#include "generated/walangParser.h"
-#include "tree/TerminalNode.h"
 #include <iostream>
 #include <magic_enum.hpp>
 #include <variant>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
 BinaryOp Operator::getOp(walangParser::BinaryOperatorContext *ctx) noexcept {
   if (ctx->Plus() != nullptr) {
@@ -107,5 +104,4 @@ std::string Operator::to_string(std::variant<PrefixOp, BinaryOp> op) {
   }
 }
 
-} // namespace ast
-} // namespace walang
+} // namespace walang::ast

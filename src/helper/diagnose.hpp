@@ -7,6 +7,7 @@
 #include <exception>
 #include <memory>
 #include <stdexcept>
+#include <utility>
 #include <variant>
 
 namespace walang {
@@ -14,9 +15,8 @@ namespace walang {
 class CompilerError : public std::exception {
 public:
   CompilerError() = default;
-  explicit CompilerError(ast::Range const &range) : range_(range) {}
 
-  virtual const char *what() const noexcept { return errorMessage_.c_str(); }
+  [[nodiscard]] const char *what() const noexcept override { return errorMessage_.c_str(); }
   void setRange(ast::Range const &range) {
     range_ = range;
     generateErrorMessage();
@@ -33,14 +33,12 @@ class TypeConvertError : public CompilerError {
 public:
   TypeConvertError(std::shared_ptr<ir::VariantType const> const &from,
                    std::shared_ptr<ir::VariantType const> const &to);
-  TypeConvertError(std::shared_ptr<ir::VariantType const> const &from, std::shared_ptr<ir::VariantType const> const &to,
-                   ast::Range const &range);
 
 private:
   std::shared_ptr<ir::VariantType const> const from_;
   std::shared_ptr<ir::VariantType const> const to_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
 class InvalidOperator : public CompilerError {
@@ -52,48 +50,48 @@ private:
   std::variant<ast::PrefixOp, ast::BinaryOp> const op_;
   std::shared_ptr<ir::VariantType const> const type_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
 class ArgumentCountError : public CompilerError {
 public:
-  ArgumentCountError(uint32_t expected, uint32_t actual, ast::Range const &range);
+  ArgumentCountError(uint32_t expected, uint32_t actual);
 
 private:
   uint32_t expected_;
   uint32_t actual_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
 class JumpStatementError : public CompilerError {
 public:
-  JumpStatementError(std::string const &statement);
+  explicit JumpStatementError(std::string statement);
 
 private:
   std::string statement_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
 class RedefinedSymbol : public CompilerError {
 public:
-  RedefinedSymbol(std::string const &symbol);
+  explicit RedefinedSymbol(std::string symbol);
 
 private:
   std::string symbol_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
 class UnknownSymbol : public CompilerError {
 public:
-  UnknownSymbol(std::string const &symbol);
+  explicit UnknownSymbol(std::string symbol);
 
 private:
   std::string symbol_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
 } // namespace walang

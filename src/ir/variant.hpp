@@ -8,22 +8,21 @@
 #include <string>
 #include <vector>
 
-namespace walang {
-namespace ir {
+namespace walang::ir {
 
 class Symbol {
 public:
   enum class Type {
-    _Global,
-    _Local,
-    _Function,
+    TypeGlobal,
+    TypeLocal,
+    TypeFunction,
   };
   explicit Symbol(Type type, std::shared_ptr<VariantType> const &variantType)
       : type_(type), variantType_(variantType) {}
   virtual ~Symbol() = default;
 
-  Type type() const noexcept { return type_; }
-  std::shared_ptr<VariantType> const &variantType() const noexcept { return variantType_; }
+  [[nodiscard]] Type type() const noexcept { return type_; }
+  [[nodiscard]] std::shared_ptr<VariantType> const &variantType() const noexcept { return variantType_; }
 
 protected:
   const Type type_;
@@ -33,7 +32,7 @@ protected:
 class Variant : public Symbol {
 public:
   explicit Variant(Type type, std::shared_ptr<VariantType> const &variantType) : Symbol(type, variantType) {}
-  virtual ~Variant() = default;
+  ~Variant() override = default;
 
   virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) = 0;
   virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) = 0;
@@ -41,11 +40,11 @@ public:
 
 class Global : public Variant {
 public:
-  Global(std::string const &name, std::shared_ptr<VariantType> const &type);
-  virtual ~Global() override = default;
-  std::string name() const noexcept { return name_; }
-  virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
-  virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
+  Global(std::string name, std::shared_ptr<VariantType> const &type);
+  ~Global() override = default;
+  [[nodiscard]] std::string name() const noexcept { return name_; }
+  BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 
 private:
   std::string name_;
@@ -54,18 +53,17 @@ private:
 class Local : public Variant {
 public:
   Local(uint32_t index, std::shared_ptr<VariantType> const &type);
-  Local(uint32_t index, std::string const &name, std::shared_ptr<VariantType> const &type);
-  ~Local() = default;
+  Local(uint32_t index, std::string name, std::shared_ptr<VariantType> const &type);
+  ~Local() override = default;
 
-  uint32_t index() const noexcept { return index_; }
-  std::string name() const noexcept { return name_; }
-  virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
-  virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
+  [[nodiscard]] uint32_t index() const noexcept { return index_; }
+  [[nodiscard]] std::string name() const noexcept { return name_; }
+  BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 
 private:
   uint32_t index_;
   std::string name_;
 };
 
-} // namespace ir
 } // namespace walang

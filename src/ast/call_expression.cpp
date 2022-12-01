@@ -1,21 +1,18 @@
 #include "expression.hpp"
 #include "fmt/core.h"
 #include "fmt/format.h"
-#include "generated/walangParser.h"
 #include <algorithm>
 #include <cassert>
 #include <iterator>
 #include <memory>
-#include <string>
 #include <vector>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
-CallExpression::CallExpression() noexcept : Expression(Type::_CallExpression) {}
+CallExpression::CallExpression() noexcept : Expression(ExpressionType::TypeCallExpression) {}
 CallExpression::CallExpression(walangParser::CallExpressionContext *ctx,
                                std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
-    : Expression(Type::_CallExpression) {
+    : Expression(ExpressionType::TypeCallExpression) {
   bool first = true;
   assert(map.count(ctx->identifier()) == 1);
   for (walangParser::CallExpressionRightContext *rightCtx : ctx->callExpressionRight()) {
@@ -39,11 +36,10 @@ CallExpression::CallExpression(walangParser::CallExpressionContext *ctx,
 }
 
 std::string CallExpression::to_string() const {
-  std::vector<std::string> argumentStrs{};
-  std::transform(arguments_.cbegin(), arguments_.cend(), std::back_inserter(argumentStrs),
+  std::vector<std::string> argumentStrings{};
+  std::transform(arguments_.cbegin(), arguments_.cend(), std::back_inserter(argumentStrings),
                  [](std::shared_ptr<Expression> const &expr) { return expr->to_string(); });
-  return fmt::format("{0}({1})", caller_->to_string(), fmt::join(argumentStrs, ", "));
+  return fmt::format("{0}({1})", caller_->to_string(), fmt::join(argumentStrings, ", "));
 }
 
-} // namespace ast
-} // namespace walang
+} // namespace walang::ast

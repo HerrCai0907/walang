@@ -15,7 +15,7 @@ namespace walang {
 
 class Compiler {
 public:
-  explicit Compiler(std::vector<std::shared_ptr<ast::File>> files);
+  explicit Compiler(std::vector<std::shared_ptr<ast::File>> const &files);
   explicit Compiler(Compiler const &) = delete;
   explicit Compiler(Compiler &&) = delete;
   Compiler &operator=(Compiler const &) = delete;
@@ -24,9 +24,8 @@ public:
   ~Compiler() { BinaryenModuleDispose(module_); }
 
   void compile();
-  void dumpModule() { BinaryenModulePrint(module_); }
-  BinaryenModuleRef module() const noexcept { return module_; }
-  std::string wat() const;
+  [[nodiscard]] BinaryenModuleRef module() const noexcept { return module_; }
+  [[nodiscard]] std::string wat() const;
 
 private:
   BinaryenExpressionRef compileStatement(std::shared_ptr<ast::Statement> const &statement);
@@ -56,7 +55,7 @@ private:
 
   std::shared_ptr<ir::Symbol> resolveVariant(std::shared_ptr<ast::Expression> const &expression);
 
-  std::shared_ptr<ir::Function> const &currentFunction() const { return currentFunction_.top(); }
+  [[nodiscard]] std::shared_ptr<ir::Function> const &currentFunction() const { return currentFunction_.top(); }
 
 private:
   BinaryenModuleRef module_;

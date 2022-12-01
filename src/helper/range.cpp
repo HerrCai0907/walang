@@ -2,8 +2,7 @@
 #include "ast/file.hpp"
 #include "fmt/core.h"
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
 Range::Range(std::shared_ptr<File> const &file, antlr4::ParserRuleContext *ctx)
     : file_(file),
@@ -18,5 +17,4 @@ std::string Range::to_string() const {
                      end_.column + 1);
 }
 
-} // namespace ast
 } // namespace walang

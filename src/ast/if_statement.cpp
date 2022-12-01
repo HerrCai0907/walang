@@ -2,21 +2,18 @@
 #include "statement.hpp"
 #include <cassert>
 #include <fmt/core.h>
-#include <fmt/format.h>
 #include <iterator>
 #include <memory>
-#include <vector>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
 IfStatement::IfStatement(walangParser::IfStatementContext *ctx,
                          std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
-    : Statement(Statement::Type::_IfStatement) {
+    : Statement(StatementType::TypeIfStatement) {
   assert(map.count(ctx->expression()) == 1);
   condition_ = std::dynamic_pointer_cast<Expression>(map.find(ctx->expression())->second);
   auto blockStatements = ctx->blockStatement();
-  assert(blockStatements.size() >= 1);
+  assert(!blockStatements.empty());
   assert(map.count(blockStatements.at(0)) == 1);
   thenBlock_ = std::dynamic_pointer_cast<BlockStatement>(map.find(blockStatements.at(0))->second);
   if (blockStatements.size() == 2U) {
@@ -40,5 +37,4 @@ std::string IfStatement::to_string() const {
   return fmt::format("if {0} then {1}{2}", condition_->to_string(), thenBlock_->to_string(), elseStr);
 }
 
-} // namespace ast
 } // namespace walang

@@ -13,8 +13,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace walang {
-namespace ir {
+namespace walang::ir {
 
 class VariantTypeMap {
 public:
@@ -24,7 +23,7 @@ public:
   }
   void registerType(std::string const &name, std::shared_ptr<VariantType> const &type) {
     auto ret = map_.try_emplace(name, type);
-    if (ret.second == false) {
+    if (!ret.second) {
       throw RedefinedSymbol(type->to_string());
     }
   }
@@ -64,7 +63,7 @@ std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
 }
 
 std::shared_ptr<VariantType> const &VariantType::getTypeFromDeclare(ast::DeclareStatement const &declare) {
-  if (declare.type() == "") {
+  if (declare.type().empty()) {
     return VariantType::inferType(declare.init());
   } else {
     return VariantType::resolveType(declare.type());
@@ -74,7 +73,7 @@ std::shared_ptr<VariantType> const &VariantType::resolveType(std::string const &
   return VariantTypeMap::instance().findVariantType(typeName);
 }
 std::shared_ptr<VariantType> const &VariantType::inferType(std::shared_ptr<ast::Expression> const &initExpr) {
-  if (initExpr->type() == ast::Expression::Type::_Identifier) {
+  if (initExpr->type() == ast::ExpressionType::TypeIdentifier) {
     auto identifier = std::dynamic_pointer_cast<ast::Identifier>(initExpr);
     return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<VariantType> const & { return resolveType("i32"); },
                                  [](double d) -> std::shared_ptr<VariantType> const & { return resolveType("f32"); },
@@ -106,8 +105,7 @@ BinaryenExpressionRef VariantType::underlyingDefaultValue(BinaryenModuleRef modu
   } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
     return BinaryenConst(module, BinaryenLiteralFloat64(0));
   } else {
-    assert(false);
-    std::abort();
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int64_t value) const {
@@ -120,8 +118,7 @@ BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int
   } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
     return BinaryenConst(module, BinaryenLiteralFloat64(static_cast<double>(value)));
   } else {
-    assert(false);
-    std::abort();
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, double value) const {
@@ -134,8 +131,7 @@ BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, dou
   } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
     return BinaryenConst(module, BinaryenLiteralFloat64(value));
   } else {
-    assert(false);
-    std::abort();
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
 
@@ -183,8 +179,7 @@ BinaryenExpressionRef Int32::handlePrefixOp(BinaryenModuleRef module, ast::Prefi
     return BinaryenUnary(module, BinaryenEqZInt32(), exprRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Int64::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                             BinaryenExpressionRef exprRef) const {
@@ -200,8 +195,7 @@ BinaryenExpressionRef Int64::handlePrefixOp(BinaryenModuleRef module, ast::Prefi
     return BinaryenUnary(module, BinaryenEqZInt64(), exprRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeF32::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                               BinaryenExpressionRef exprRef) const {
@@ -217,8 +211,7 @@ BinaryenExpressionRef TypeF32::handlePrefixOp(BinaryenModuleRef module, ast::Pre
     throw InvalidOperator(shared_from_this(), op);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeF64::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                               BinaryenExpressionRef exprRef) const {
@@ -234,8 +227,7 @@ BinaryenExpressionRef TypeF64::handlePrefixOp(BinaryenModuleRef module, ast::Pre
     throw InvalidOperator(shared_from_this(), op);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 BinaryenExpressionRef PendingResolveType::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
@@ -329,8 +321,7 @@ BinaryenExpressionRef TypeI32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeU32::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -413,8 +404,7 @@ BinaryenExpressionRef TypeU32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeI64::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -497,8 +487,7 @@ BinaryenExpressionRef TypeI64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeU64::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -581,8 +570,7 @@ BinaryenExpressionRef TypeU64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 BinaryenExpressionRef TypeF32::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
@@ -641,8 +629,7 @@ BinaryenExpressionRef TypeF32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
     throw InvalidOperator(shared_from_this(), op);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 BinaryenExpressionRef TypeF64::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
@@ -701,9 +688,7 @@ BinaryenExpressionRef TypeF64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
     throw InvalidOperator(shared_from_this(), op);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
-} // namespace ir
 } // namespace walang

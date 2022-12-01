@@ -1,17 +1,11 @@
-#include "ast/file.hpp"
 #include "compiler.hpp"
 #include "parser.hpp"
 #include <algorithm>
 #include <cstdlib>
 #include <filesystem>
-#include <fstream>
 #include <iostream>
-#include <iterator>
 #include <list>
-#include <sstream>
 #include <stdexcept>
-#include <string_view>
-#include <vector>
 
 [[noreturn]] void printHelpAndExit() {
   std::cerr << "walang source [-o target])" << std::endl;
@@ -53,7 +47,7 @@ int main(int argc, const char *argv[]) {
     printHelpAndExit();
   }
   inputFilePath = arguments.front();
-  if (outputFilePath == "") {
+  if (outputFilePath.empty()) {
     outputFilePath = std::filesystem::path{inputFilePath}.replace_extension("wat").string();
   }
   std::string source = readFile(inputFilePath);

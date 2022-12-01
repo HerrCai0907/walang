@@ -4,12 +4,11 @@
 #include <string>
 #include <variant>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
 Identifier::Identifier(walangParser::IdentifierContext *ctx,
                        std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<ast::Node>> const &)
-    : Expression(Type::_Identifier) {
+    : Expression(ExpressionType::TypeIdentifier) {
   if (ctx->Identifier() != nullptr) {
     id_ = ctx->getText();
   } else if (ctx->IntNumber() != nullptr) {
@@ -19,8 +18,7 @@ Identifier::Identifier(walangParser::IdentifierContext *ctx,
   } else if (ctx->FloatNumber() != nullptr) {
     id_ = std::stod(ctx->getText());
   } else {
-    assert(false);
-    std::abort();
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
 std::string Identifier::to_string() const {
@@ -29,5 +27,4 @@ std::string Identifier::to_string() const {
                     id_);
 }
 
-} // namespace ast
 } // namespace walang

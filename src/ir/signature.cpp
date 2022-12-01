@@ -7,11 +7,9 @@
 #include <iterator>
 #include <memory>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
-namespace walang {
-namespace ir {
+namespace walang::ir {
 
 Signature::Signature(std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
                      std::shared_ptr<VariantType> const &returnType)
@@ -34,7 +32,5 @@ BinaryenExpressionRef Signature::handleBinaryOp(BinaryenModuleRef module, ast::B
                                                 std::shared_ptr<Function> const &function) {
   throw InvalidOperator(shared_from_this(), op);
 }
-
-} // namespace ir
 
 } // namespace walang
