@@ -6,11 +6,11 @@
 #include "ir/function.hpp"
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
-#include <_types/_uint32_t.h>
 #include <algorithm>
 #include <binaryen-c.h>
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 #include <exception>
 #include <fmt/core.h>
 #include <iterator>
@@ -111,6 +111,8 @@ BinaryenExpressionRef Compiler::compileAssignStatement(std::shared_ptr<ast::Assi
   case ir::Symbol::Type::_Local:
     return std::dynamic_pointer_cast<ir::Variant>(symbol)->makeAssign(module_, exprRef);
   }
+  assert(false);
+  std::abort();
 }
 BinaryenExpressionRef Compiler::compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> const &statement) {
   auto expectedType = std::make_shared<ir::TypeAuto>();

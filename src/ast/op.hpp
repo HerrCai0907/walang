@@ -2,6 +2,7 @@
 
 #include "generated/walangParser.h"
 #include <string>
+#include <variant>
 
 namespace walang {
 namespace ast {
