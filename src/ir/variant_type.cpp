@@ -25,13 +25,13 @@ public:
   void registerType(std::string const &name, std::shared_ptr<VariantType> const &type) {
     auto ret = map_.try_emplace(name, type);
     if (ret.second == false) {
-      throw std::runtime_error(fmt::format("repeat type '{}'", type->to_string()));
+      throw RedefinedSymbol(type->to_string());
     }
   }
-  std::shared_ptr<VariantType> const &find(std::string const &name) {
+  std::shared_ptr<VariantType> const &findVariantType(std::string const &name) {
     auto it = map_.find(name);
     if (it == map_.end()) {
-      throw std::runtime_error(fmt::format("unknown type '{}'", name));
+      throw UnknownSymbol(name);
     }
     return it->second;
   }
@@ -71,7 +71,7 @@ std::shared_ptr<VariantType> const &VariantType::getTypeFromDeclare(ast::Declare
   }
 }
 std::shared_ptr<VariantType> const &VariantType::resolveType(std::string const &typeName) {
-  return VariantTypeMap::instance().find(typeName);
+  return VariantTypeMap::instance().findVariantType(typeName);
 }
 std::shared_ptr<VariantType> const &VariantType::inferType(std::shared_ptr<ast::Expression> const &initExpr) {
   if (initExpr->type() == ast::Expression::Type::_Identifier) {

@@ -38,4 +38,9 @@ void JumpStatementError::generateErrorMessage() {
   errorMessage_ = fmt::format("invalid {0} statement \n\t{1}", statement_, range_);
 }
 
+RedefinedSymbol::RedefinedSymbol(std::string const &symbol) : CompilerError(), symbol_(symbol) {}
+void RedefinedSymbol::generateErrorMessage() { errorMessage_ = fmt::format("redefined {0} \n\t{1}", symbol_, range_); }
+UnknownSymbol::UnknownSymbol(std::string const &symbol) : CompilerError(), symbol_(symbol) {}
+void UnknownSymbol::generateErrorMessage() { errorMessage_ = fmt::format("unknown {0} \n\t{1}", symbol_, range_); }
+
 } // namespace walang

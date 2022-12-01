@@ -76,4 +76,24 @@ private:
   virtual void generateErrorMessage() override;
 };
 
+class RedefinedSymbol : public CompilerError {
+public:
+  RedefinedSymbol(std::string const &symbol);
+
+private:
+  std::string symbol_;
+
+  virtual void generateErrorMessage() override;
+};
+
+class UnknownSymbol : public CompilerError {
+public:
+  UnknownSymbol(std::string const &symbol);
+
+private:
+  std::string symbol_;
+
+  virtual void generateErrorMessage() override;
+};
+
 } // namespace walang
