@@ -1,7 +1,7 @@
-#include "binaryen-c.h"
 #include "compiler.hpp"
 #include "helper/snapshot.hpp"
 #include "parser.hpp"
+#include <binaryen-c.h>
 #include <filesystem>
 #include <gtest/gtest.h>
 

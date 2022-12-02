@@ -8,14 +8,13 @@
 namespace walang::ast {
 
 TernaryExpression::TernaryExpression() noexcept
-    : Expression(ExpressionType::TypeTernaryExpression), conditionExpr_(nullptr), leftExpr_(nullptr), rightExpr_(nullptr) {
-}
+    : Expression(ExpressionType::TypeTernaryExpression), conditionExpr_(nullptr), leftExpr_(nullptr),
+      rightExpr_(nullptr) {}
 
 TernaryExpression::TernaryExpression(walangParser::TernaryExpressionContext *ctx,
                                      std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
     : Expression(ExpressionType::TypeTernaryExpression) {
-  auto *conditionCtx =
-      dynamic_cast<antlr4::ParserRuleContext *>(ctx->ternaryExpressionCondition()->children.at(0));
+  auto *conditionCtx = dynamic_cast<antlr4::ParserRuleContext *>(ctx->ternaryExpressionCondition()->children.at(0));
   assert(map.count(conditionCtx) == 1);
   conditionExpr_ = std::dynamic_pointer_cast<Expression>(map.find(conditionCtx)->second);
 
@@ -41,4 +40,4 @@ std::string TernaryExpression::to_string() const {
   return fmt::format("({0} ? {1} : {2})", conditionExpr_->to_string(), leftExpr_->to_string(), rightExpr_->to_string());
 }
 
-} // namespace walang
+} // namespace walang::ast

@@ -1,8 +1,8 @@
-#include "binaryen-c.h"
 #include "compiler.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/snapshot.hpp"
 #include "parser.hpp"
+#include <binaryen-c.h>
 #include <filesystem>
 #include <gtest/gtest.h>
 #include <stdexcept>

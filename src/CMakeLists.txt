@@ -3,6 +3,10 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/ast ast_srcs)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/ir ir_srcs)
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/helper helper_srcs)
 
+if(ENABLE_CLANG_TIDY)
+  set(CMAKE_CXX_CLANG_TIDY clang-tidy -p ${CMAKE_CURRENT_SOURCE_DIR} "--header-filter='!((*/third_party/*)|(*/g4/*))'")
+endif(ENABLE_CLANG_TIDY)
+
 add_library(walang-core
   ${core_srcs}
   ${ast_srcs}

@@ -25,10 +25,8 @@ public:
     F64,
     ConditionType,
     Signature,
+    Class,
   };
-  static std::shared_ptr<VariantType> const &resolveType(std::string const &name);
-  static std::shared_ptr<VariantType> const &inferType(std::shared_ptr<ast::Expression> const &initExpr);
-  static std::shared_ptr<VariantType> const &getTypeFromDeclare(ast::DeclareStatement const &declare);
 
   virtual ~VariantType() = default;
 
@@ -49,7 +47,7 @@ public:
 protected:
   Type type_;
 
-  explicit VariantType(Type typeName);
+  explicit VariantType(Type type);
 };
 
 class PendingResolveType : public VariantType {
@@ -59,10 +57,10 @@ public:
   BinaryenType underlyingTypeName() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
-                                               BinaryenExpressionRef exprRef) const override;
-  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
-                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
-                                               std::shared_ptr<Function> const &function) override;
+                                       BinaryenExpressionRef exprRef) const override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
 
 protected:
   mutable std::shared_ptr<VariantType> resolvedType_{nullptr};
@@ -88,10 +86,10 @@ public:
   BinaryenType underlyingTypeName() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
-                                               BinaryenExpressionRef exprRef) const override;
-  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
-                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
-                                               std::shared_ptr<Function> const &function) override;
+                                       BinaryenExpressionRef exprRef) const override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
 };
 
 class Int32 : public VariantType {
@@ -99,7 +97,7 @@ public:
   BinaryenType underlyingTypeName() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
-                                               BinaryenExpressionRef exprRef) const override;
+                                       BinaryenExpressionRef exprRef) const override;
 
 protected:
   std::shared_ptr<VariantType> resolvedType_{nullptr};
@@ -110,23 +108,23 @@ protected:
 class TypeI32 : public Int32 {
 public:
   TypeI32() : Int32(Type::I32) {}
-  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
-                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
-                                               std::shared_ptr<Function> const &function) override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
 };
 class TypeU32 : public Int32 {
 public:
   TypeU32() : Int32(Type::U32) {}
-  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
-                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
-                                               std::shared_ptr<Function> const &function) override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
 };
 
 class Int64 : public VariantType {
 public:
   BinaryenType underlyingTypeName() const override;
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
-                                               BinaryenExpressionRef exprRef) const override;
+                                       BinaryenExpressionRef exprRef) const override;
 
 protected:
   std::shared_ptr<VariantType> resolvedType_{nullptr};
@@ -137,17 +135,17 @@ protected:
 class TypeI64 : public Int64 {
 public:
   TypeI64() : Int64(Type::I64) {}
-  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
-                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
-                                               std::shared_ptr<Function> const &function) override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
 };
 
 class TypeU64 : public Int64 {
 public:
   TypeU64() : Int64(Type::U64) {}
-  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
-                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
-                                               std::shared_ptr<Function> const &function) override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
 };
 
 class TypeF32 : public VariantType {
@@ -156,10 +154,10 @@ public:
   BinaryenType underlyingTypeName() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
-                                               BinaryenExpressionRef exprRef) const override;
-  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
-                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
-                                               std::shared_ptr<Function> const &function) override;
+                                       BinaryenExpressionRef exprRef) const override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
 };
 
 class TypeF64 : public VariantType {
@@ -168,23 +166,22 @@ public:
   BinaryenType underlyingTypeName() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
-                                               BinaryenExpressionRef exprRef) const override;
-  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
-                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
-                                               std::shared_ptr<Function> const &function) override;
+                                       BinaryenExpressionRef exprRef) const override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
 };
 
 class Signature : public VariantType {
 public:
-  Signature(std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
-            std::shared_ptr<VariantType> const &returnType);
+  Signature(std::vector<std::shared_ptr<VariantType>> argumentTypes, std::shared_ptr<VariantType> returnType);
   std::string to_string() const override;
   BinaryenType underlyingTypeName() const override;
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
-                                               BinaryenExpressionRef exprRef) const override;
-  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
-                                               BinaryenExpressionRef leftRef, BinaryenExpressionRef rightRef,
-                                               std::shared_ptr<Function> const &function) override;
+                                       BinaryenExpressionRef exprRef) const override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
 
   std::vector<std::shared_ptr<VariantType>> const &argumentTypes() const { return argumentTypes_; }
   std::shared_ptr<VariantType> const &returnType() const { return returnType_; }
@@ -194,4 +191,4 @@ private:
   std::shared_ptr<VariantType> returnType_;
 };
 
-} // namespace walang
+} // namespace walang::ir

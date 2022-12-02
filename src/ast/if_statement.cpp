@@ -37,4 +37,4 @@ std::string IfStatement::to_string() const {
   return fmt::format("if {0} then {1}{2}", condition_->to_string(), thenBlock_->to_string(), elseStr);
 }
 
-} // namespace walang
+} // namespace walang::ast

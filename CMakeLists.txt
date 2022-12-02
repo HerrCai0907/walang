@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13.4)
 project(walang)
 
-# dependiences
+# dependencies
 set(ANTLR_BUILD_CPP_TESTS 0)
 add_subdirectory(third_party/antlr/runtime/Cpp)
 unset(ANTLR_BUILD_CPP_TESTS)

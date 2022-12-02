@@ -1,8 +1,7 @@
-#include "function.hpp"
-#include "binaryen-c.h"
 #include "helper/diagnose.hpp"
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
+#include <binaryen-c.h>
 #include <cassert>
 #include <memory>
 #include <utility>

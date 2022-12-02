@@ -19,4 +19,4 @@ std::string WhileStatement::to_string() const {
   return fmt::format("while {0} {1}", condition_->to_string(), block_->to_string());
 }
 
-} // namespace walang
+} // namespace walang::ast

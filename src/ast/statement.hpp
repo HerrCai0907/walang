@@ -43,13 +43,13 @@ public:
                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   ~DeclareStatement() override = default;
   [[nodiscard]] std::string to_string() const override;
-  [[nodiscard]] std::string name() const noexcept { return name_; }
-  [[nodiscard]] std::string type() const noexcept { return type_; }
+  [[nodiscard]] std::string variantName() const noexcept { return variantName_; }
+  [[nodiscard]] std::string variantType() const noexcept { return variantType_; }
   [[nodiscard]] std::shared_ptr<Expression> init() const noexcept { return initExpr_; }
 
 private:
-  std::string name_;
-  std::string type_;
+  std::string variantName_;
+  std::string variantType_;
   std::shared_ptr<Expression> initExpr_;
 };
 

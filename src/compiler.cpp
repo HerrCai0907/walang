@@ -3,9 +3,9 @@
 #include "ast/statement.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
-#include "ir/function.hpp"
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
+#include "symbol_table.hpp"
 #include <algorithm>
 #include <binaryen-c.h>
 #include <cstdint>
@@ -14,19 +14,20 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
 namespace walang {
 
-Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> const &files)
-    : module_{BinaryenModuleCreate()}, files_{files} {}
+Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files)
+    : module_{BinaryenModuleCreate()}, files_{std::move(files)} {}
 
 void Compiler::compile() {
   for (auto const &file : files_) {
     startFunction_ = std::make_shared<ir::Function>("_start", std::vector<std::string>{},
                                                     std::vector<std::shared_ptr<ir::VariantType>>{},
-                                                    ir::VariantType::resolveType("void"));
+                                                    VariantTypeMap::instance().resolveType("void"));
     currentFunction_.push(startFunction_);
     std::vector<BinaryenExpressionRef> expressions{};
     for (auto &statement : file->statement()) {
@@ -80,22 +81,24 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
     return compileContinueStatement(std::dynamic_pointer_cast<ast::ContinueStatement>(statement));
   case ast::StatementType::TypeFunctionStatement:
     return compileFunctionStatement(std::dynamic_pointer_cast<ast::FunctionStatement>(statement));
+  case ast::StatementType::TypeClassStatement:
+    return compileClassStatement(std::dynamic_pointer_cast<ast::ClassStatement>(statement));
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
-  std::shared_ptr<ir::VariantType> const &variantType = ir::VariantType::getTypeFromDeclare(*statement);
+  std::shared_ptr<ir::VariantType> const &variantType = VariantTypeMap::instance().getTypeFromDeclare(*statement);
   BinaryenExpressionRef init = compileExpression(statement->init(), variantType);
   if (currentFunction() == startFunction_) {
     // in global
-    auto global = std::make_shared<ir::Global>(statement->name(), variantType);
+    auto global = std::make_shared<ir::Global>(statement->variantName(), variantType);
     BinaryenAddGlobal(module_, global->name().c_str(), variantType->underlyingTypeName(), true,
                       variantType->underlyingDefaultValue(module_));
-    globals_.emplace(statement->name(), global);
+    globals_.emplace(statement->variantName(), global);
     return global->makeAssign(module_, init);
   } else {
     // in function
-    auto local = currentFunction()->addLocal(statement->name(), variantType);
+    auto local = currentFunction()->addLocal(statement->variantName(), variantType);
     return local->makeAssign(module_, init);
   }
 }
@@ -182,17 +185,21 @@ BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::Fu
   std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
   for (auto const &argument : statement->arguments()) {
     argumentNames.push_back(argument.name_);
-    argumentTypes.push_back(ir::VariantType::resolveType(argument.type_));
+    argumentTypes.push_back(VariantTypeMap::instance().resolveType(argument.type_));
   }
-  std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
-                                                    ? ir::VariantType::resolveType(statement->returnType().value())
-                                                    : std::make_shared<ir::TypeAuto>();
+  std::shared_ptr<ir::VariantType> returnType =
+      statement->returnType().has_value() ? VariantTypeMap::instance().resolveType(statement->returnType().value())
+                                          : std::make_shared<ir::TypeAuto>();
   auto functionIr = std::make_shared<ir::Function>(statement->name(), argumentNames, argumentTypes, returnType);
   functions_.insert(std::make_pair(statement->name(), functionIr));
   currentFunction_.push(functionIr);
   BinaryenExpressionRef body = compileBlockStatement(statement->body());
   currentFunction()->finalize(module_, body);
   currentFunction_.pop();
+  return BinaryenNop(module_);
+}
+BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement) {
+  return nullptr;
   return BinaryenNop(module_);
 }
 

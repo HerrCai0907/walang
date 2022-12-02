@@ -26,4 +26,4 @@ BinaryenExpressionRef Local::makeGet(BinaryenModuleRef module) {
   return BinaryenLocalGet(module, index_, variantType_->underlyingTypeName());
 }
 
-} // namespace walang
+} // namespace walang::ir

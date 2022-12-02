@@ -3,7 +3,7 @@
 #include "ast/expression.hpp"
 #include "ast/file.hpp"
 #include "ast/statement.hpp"
-#include "ir/function.hpp"
+
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
 #include <binaryen-c.h>
@@ -15,7 +15,7 @@ namespace walang {
 
 class Compiler {
 public:
-  explicit Compiler(std::vector<std::shared_ptr<ast::File>> const &files);
+  explicit Compiler(std::vector<std::shared_ptr<ast::File>> files);
   explicit Compiler(Compiler const &) = delete;
   explicit Compiler(Compiler &&) = delete;
   Compiler &operator=(Compiler const &) = delete;
@@ -37,6 +37,7 @@ private:
   BinaryenExpressionRef compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement);
   BinaryenExpressionRef compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement);
   BinaryenExpressionRef compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement);
+  BinaryenExpressionRef compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement);
 
   BinaryenExpressionRef compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement);
 

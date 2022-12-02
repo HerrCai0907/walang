@@ -1,9 +1,9 @@
-#include "fmt/format.h"
 #include "generated/walangParser.h"
 #include "statement.hpp"
 #include <algorithm>
 #include <cassert>
 #include <fmt/core.h>
+#include <fmt/format.h>
 #include <iterator>
 #include <memory>
 #include <vector>
@@ -34,4 +34,4 @@ std::string FunctionStatement::to_string() const {
                      returnType_.value_or("__unknown__"), body_->to_string());
 }
 
-} // namespace walang
+} // namespace walang::ast

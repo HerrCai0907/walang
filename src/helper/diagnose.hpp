@@ -31,8 +31,7 @@ protected:
 
 class TypeConvertError : public CompilerError {
 public:
-  TypeConvertError(std::shared_ptr<ir::VariantType const> const &from,
-                   std::shared_ptr<ir::VariantType const> const &to);
+  TypeConvertError(std::shared_ptr<ir::VariantType const> from, std::shared_ptr<ir::VariantType const> to);
 
 private:
   std::shared_ptr<ir::VariantType const> const from_;
@@ -43,8 +42,8 @@ private:
 
 class InvalidOperator : public CompilerError {
 public:
-  InvalidOperator(std::shared_ptr<ir::VariantType const> const &type, ast::PrefixOp op);
-  InvalidOperator(std::shared_ptr<ir::VariantType const> const &type, ast::BinaryOp op);
+  InvalidOperator(std::shared_ptr<ir::VariantType const> type, ast::PrefixOp op);
+  InvalidOperator(std::shared_ptr<ir::VariantType const> type, ast::BinaryOp op);
 
 private:
   std::variant<ast::PrefixOp, ast::BinaryOp> const op_;

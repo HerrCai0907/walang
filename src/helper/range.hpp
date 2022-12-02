@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ParserRuleContext.h"
-#include "fmt/core.h"
-#include "fmt/format.h"
 #include <cstdint>
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <memory>
 #include <string_view>
 
@@ -28,7 +28,7 @@ private:
   Position end_{};
 };
 
-} // namespace walang
+} // namespace walang::ast
 
 template <> struct fmt::formatter<walang::ast::Range> : fmt::formatter<std::string_view> {
   // parse is inherited from formatter<string_view>.

@@ -27,4 +27,4 @@ std::string Identifier::to_string() const {
                     id_);
 }
 
-} // namespace walang
+} // namespace walang::ast

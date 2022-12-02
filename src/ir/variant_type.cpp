@@ -3,7 +3,8 @@
 #include "ast/op.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
-#include "ir/function.hpp"
+#include "symbol_table.hpp"
+#include "variant.hpp"
 #include <binaryen-c.h>
 #include <cstdint>
 #include <fmt/core.h>
@@ -15,43 +16,7 @@
 
 namespace walang::ir {
 
-class VariantTypeMap {
-public:
-  static VariantTypeMap &instance() {
-    static VariantTypeMap ins{};
-    return ins;
-  }
-  void registerType(std::string const &name, std::shared_ptr<VariantType> const &type) {
-    auto ret = map_.try_emplace(name, type);
-    if (!ret.second) {
-      throw RedefinedSymbol(type->to_string());
-    }
-  }
-  std::shared_ptr<VariantType> const &findVariantType(std::string const &name) {
-    auto it = map_.find(name);
-    if (it == map_.end()) {
-      throw UnknownSymbol(name);
-    }
-    return it->second;
-  }
-
-private:
-  std::map<std::string, std::shared_ptr<VariantType>> map_{};
-
-  VariantTypeMap() { registerDefault(); }
-
-  void registerDefault() {
-    registerType("i32", std::make_shared<TypeI32>());
-    registerType("u32", std::make_shared<TypeU32>());
-    registerType("i64", std::make_shared<TypeI64>());
-    registerType("u64", std::make_shared<TypeU64>());
-    registerType("f32", std::make_shared<TypeF32>());
-    registerType("f64", std::make_shared<TypeF64>());
-    registerType("void", std::make_shared<TypeNone>());
-  }
-};
-
-VariantType::VariantType(Type typeName) : type_(typeName) {}
+VariantType::VariantType(Type type) : type_(type) {}
 
 std::string VariantType::to_string() const { return fmt::format("{}", magic_enum::enum_name(type_)); }
 
@@ -60,29 +25,6 @@ std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
     throw std::runtime_error("unresolved type '" + to_string() + "'");
   }
   return resolvedType_;
-}
-
-std::shared_ptr<VariantType> const &VariantType::getTypeFromDeclare(ast::DeclareStatement const &declare) {
-  if (declare.type().empty()) {
-    return VariantType::inferType(declare.init());
-  } else {
-    return VariantType::resolveType(declare.type());
-  }
-}
-std::shared_ptr<VariantType> const &VariantType::resolveType(std::string const &typeName) {
-  return VariantTypeMap::instance().findVariantType(typeName);
-}
-std::shared_ptr<VariantType> const &VariantType::inferType(std::shared_ptr<ast::Expression> const &initExpr) {
-  if (initExpr->type() == ast::ExpressionType::TypeIdentifier) {
-    auto identifier = std::dynamic_pointer_cast<ast::Identifier>(initExpr);
-    return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<VariantType> const & { return resolveType("i32"); },
-                                 [](double d) -> std::shared_ptr<VariantType> const & { return resolveType("f32"); },
-                                 [](const std::string &s) -> std::shared_ptr<VariantType> const & {
-                                   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
-                                 }},
-                      identifier->id());
-  }
-  throw std::runtime_error("cannot infer type from " + initExpr->to_string());
 }
 
 BinaryenType VariantType::underlyingTypeName() const {
@@ -96,26 +38,28 @@ BinaryenType TypeF32::underlyingTypeName() const { return BinaryenTypeFloat32();
 BinaryenType TypeF64::underlyingTypeName() const { return BinaryenTypeFloat64(); }
 
 BinaryenExpressionRef VariantType::underlyingDefaultValue(BinaryenModuleRef module) const {
-  if (underlyingTypeName() == BinaryenTypeInt32()) {
+  auto typeName = underlyingTypeName();
+  if (typeName == BinaryenTypeInt32()) {
     return BinaryenConst(module, BinaryenLiteralInt32(0));
-  } else if (underlyingTypeName() == BinaryenTypeInt64()) {
+  } else if (typeName == BinaryenTypeInt64()) {
     return BinaryenConst(module, BinaryenLiteralInt64(0));
-  } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
+  } else if (typeName == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(0));
-  } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
+  } else if (typeName == BinaryenTypeFloat64()) {
     return BinaryenConst(module, BinaryenLiteralFloat64(0));
   } else {
     throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int64_t value) const {
-  if (underlyingTypeName() == BinaryenTypeInt32()) {
+  auto typeName = underlyingTypeName();
+  if (typeName == BinaryenTypeInt32()) {
     return BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(value)));
-  } else if (underlyingTypeName() == BinaryenTypeInt64()) {
+  } else if (typeName == BinaryenTypeInt64()) {
     return BinaryenConst(module, BinaryenLiteralInt64(value));
-  } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
+  } else if (typeName == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(static_cast<float>(value)));
-  } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
+  } else if (typeName == BinaryenTypeFloat64()) {
     return BinaryenConst(module, BinaryenLiteralFloat64(static_cast<double>(value)));
   } else {
     throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
@@ -123,9 +67,9 @@ BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, double value) const {
   if (underlyingTypeName() == BinaryenTypeInt32()) {
-    throw TypeConvertError(shared_from_this(), resolveType("i32"));
+    throw TypeConvertError(shared_from_this(), VariantTypeMap::instance().resolveType("i32"));
   } else if (underlyingTypeName() == BinaryenTypeInt64()) {
-    throw TypeConvertError(shared_from_this(), resolveType("i64"));
+    throw TypeConvertError(shared_from_this(), VariantTypeMap::instance().resolveType("i64"));
   } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(static_cast<float>(value)));
   } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
@@ -691,4 +635,4 @@ BinaryenExpressionRef TypeF64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
-} // namespace walang
+} // namespace walang::ir

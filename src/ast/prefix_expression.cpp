@@ -19,4 +19,4 @@ std::string PrefixExpression::to_string() const {
   return fmt::format("({0} {1})", Operator::to_string(op_), expr_->to_string());
 }
 
-} // namespace walang
+} // namespace walang::ast

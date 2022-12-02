@@ -1,6 +1,6 @@
 #include "range.hpp"
 #include "ast/file.hpp"
-#include "fmt/core.h"
+#include <fmt/core.h>
 
 namespace walang::ast {
 
@@ -17,4 +17,4 @@ std::string Range::to_string() const {
                      end_.column + 1);
 }
 
-} // namespace walang
+} // namespace walang::ast

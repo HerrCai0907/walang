@@ -1,8 +1,8 @@
-#include "fmt/format.h"
 #include "generated/walangParser.h"
 #include "statement.hpp"
 #include <cassert>
 #include <fmt/core.h>
+#include <fmt/format.h>
 #include <iterator>
 #include <memory>
 #include <vector>
@@ -25,7 +25,7 @@ ClassStatement::ClassStatement(walangParser::ClassStatementContext *ctx,
 std::string ClassStatement::to_string() const {
   std::vector<std::string> memberStrings{};
   memberStrings.reserve(members_.size());
-for (Member const &member : members_) {
+  for (Member const &member : members_) {
     memberStrings.push_back(fmt::format("{0}:{1}\n", member.name_, member.type_));
   }
   std::vector<std::string> functionStrings{};
