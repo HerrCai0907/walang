@@ -6,33 +6,33 @@
 using namespace walang;
 using namespace walang::ast;
 
-TEST(ParseCallExpression, basis) {
+TEST(ParseMemberExpression, Basis) {
   FileParser parser("test.wa", R"(
-foo(a,b,1,2.5);
+a.b;
   )");
   auto file = parser.parse();
 
   ASSERT_EQ(file->statement().size(), 1);
   ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
-  ASSERT_EQ(file->statement()[0]->to_string(), "foo(a, b, 1, 2.5)\n");
+  ASSERT_EQ(file->statement()[0]->to_string(), "a.b\n");
 }
-TEST(ParseCallExpression, repeat) {
+TEST(ParseMemberExpression, Priority) {
   FileParser parser("test.wa", R"(
-foo(a)(b)(c);
+a.b + 1;
   )");
   auto file = parser.parse();
 
   ASSERT_EQ(file->statement().size(), 1);
   ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
-  ASSERT_EQ(file->statement()[0]->to_string(), "foo(a)(b)(c)\n");
+  ASSERT_EQ(file->statement()[0]->to_string(), "(ADD a.b 1)\n");
 }
-TEST(ParseCallExpression, mix) {
+TEST(ParseMemberExpression, PriorityWithCall) {
   FileParser parser("test.wa", R"(
-a.foo(a).a(b)(c);
+a.b(c.d,e.f);
   )");
   auto file = parser.parse();
 
   ASSERT_EQ(file->statement().size(), 1);
   ASSERT_NE(std::dynamic_pointer_cast<ExpressionStatement>(file->statement()[0]), nullptr);
-  ASSERT_EQ(file->statement()[0]->to_string(), "a.foo(a).a(b)(c)\n");
+  ASSERT_EQ(file->statement()[0]->to_string(), "a.b(c.d, e.f)\n");
 }

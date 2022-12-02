@@ -4,6 +4,7 @@
 #include "ast/statement.hpp"
 #include "generated/walangBaseListener.h"
 #include "generated/walangLexer.h"
+#include "generated/walangParser.h"
 #include <cassert>
 #include <iostream>
 #include <memory>
@@ -79,6 +80,9 @@ public:
   }
   void exitCallExpression(walangParser::CallExpressionContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::CallExpression>(ctx, astNodes_));
+  }
+  void exitMemberExpression(walangParser::MemberExpressionContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::MemberExpression>(ctx, astNodes_));
   }
 
   void visitErrorNode(antlr4::tree::ErrorNode *node) override {

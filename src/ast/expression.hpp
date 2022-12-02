@@ -19,6 +19,7 @@ enum ExpressionType {
   TypeBinaryExpression,
   TypeTernaryExpression,
   TypeCallExpression,
+  TypeMemberExpression,
 };
 
 class Expression : public Node {
@@ -99,6 +100,8 @@ private:
 class CallExpression : public Expression {
 public:
   CallExpression() noexcept;
+  CallExpression(std::shared_ptr<Expression> caller, walangParser::CallExpressionRightContext *ctx,
+                 std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   CallExpression(walangParser::CallExpressionContext *ctx,
                  std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   ~CallExpression() override = default;
@@ -110,6 +113,23 @@ public:
 private:
   std::shared_ptr<Expression> caller_;
   std::vector<std::shared_ptr<Expression>> arguments_;
+};
+
+class MemberExpression : public Expression {
+public:
+  MemberExpression() noexcept;
+  MemberExpression(std::shared_ptr<Expression> expr, walangParser::MemberExpressionRightContext *ctx);
+  MemberExpression(walangParser::MemberExpressionContext *ctx,
+                   std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
+  ~MemberExpression() override = default;
+  [[nodiscard]] std::string to_string() const override;
+
+  [[nodiscard]] std::shared_ptr<Expression> const &expression() const noexcept { return expr_; }
+  [[nodiscard]] std::string const &member() const noexcept { return member_; }
+
+private:
+  std::shared_ptr<Expression> expr_;
+  std::string member_;
 };
 
 } // namespace walang::ast
