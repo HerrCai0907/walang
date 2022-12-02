@@ -1,0 +1,17 @@
+<snapshots>
+    <Basis>
+(module
+ (type $i32_f32_=&gt;_none (func (param i32 f32)))
+ (type $i32_f32_i32_=&gt;_none (func (param i32 f32 i32)))
+ (type $none_=&gt;_none (func))
+ (start $_start)
+ (func $foo (param $this#0 i32) (param $this#1 f32)
+ )
+ (func $foo2 (param $this#0 i32) (param $this#1 f32) (param $a i32)
+ )
+ (func $_start
+  (nop)
+ )
+)
+</Basis>
+</snapshots>

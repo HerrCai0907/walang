@@ -5,11 +5,10 @@
 
 namespace walang {
 
-TypeConvertError::TypeConvertError(std::shared_ptr<ir::VariantType const> from,
-                                   std::shared_ptr<ir::VariantType const> to)
+TypeConvertError::TypeConvertError(std::string from, std::string to)
     : CompilerError(), from_(std::move(from)), to_(std::move(to)) {}
 void TypeConvertError::generateErrorMessage() {
-  errorMessage_ = fmt::format("invalid convert from {0} to {1}\n\t{2}", from_->to_string(), to_->to_string(), range_);
+  errorMessage_ = fmt::format("invalid convert from {0} to {1}\n\t{2}", from_, to_, range_);
 }
 
 InvalidOperator::InvalidOperator(std::shared_ptr<ir::VariantType const> type, ast::PrefixOp op)
@@ -36,5 +35,9 @@ RedefinedSymbol::RedefinedSymbol(std::string symbol) : CompilerError(), symbol_(
 void RedefinedSymbol::generateErrorMessage() { errorMessage_ = fmt::format("redefined {0} \n\t{1}", symbol_, range_); }
 UnknownSymbol::UnknownSymbol(std::string symbol) : CompilerError(), symbol_(std::move(symbol)) {}
 void UnknownSymbol::generateErrorMessage() { errorMessage_ = fmt::format("unknown {0} \n\t{1}", symbol_, range_); }
+RecursiveDefinedSymbol::RecursiveDefinedSymbol(std::string symbol) : CompilerError(), symbol_(std::move(symbol)) {}
+void RecursiveDefinedSymbol::generateErrorMessage() {
+  errorMessage_ = fmt::format("recursive defined symbol {0} \n\t{1}", symbol_, range_);
+}
 
 } // namespace walang

@@ -3,7 +3,9 @@
 #include "ir/variant_type.hpp"
 #include <binaryen-c.h>
 #include <cassert>
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
 
 namespace walang::ir {
@@ -61,20 +63,43 @@ void Function::freeContinueLabel() { currentContinueLabel_.pop(); }
 void Function::freeBreakLabel() { currentBreakLabel_.pop(); }
 
 BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpressionRef body) {
-  std::vector<BinaryenType> localBinaryenTypes{};
-  std::transform(locals_.cbegin(), locals_.cend(), std::back_inserter(localBinaryenTypes),
-                 [](std::shared_ptr<Local> const &local) { return local->variantType()->underlyingTypeName(); });
-  BinaryenType argumentBinaryenType = BinaryenTypeCreate(&localBinaryenTypes[0], argumentSize_);
-  BinaryenType returnType = signature()->returnType()->underlyingTypeName();
-  BinaryenFunctionRef funcRef =
-      BinaryenAddFunction(module, name_.c_str(), argumentBinaryenType, returnType, &localBinaryenTypes[argumentSize_],
-                          localBinaryenTypes.size() - argumentSize_, body);
+  std::vector<BinaryenType> binaryenTypes{};
+  std::vector<std::string> localNames{};
 
-  for (std::size_t i = 0; i < locals_.size(); i++) {
-    if (locals_[i]->name().empty()) {
+  auto setTypeAndNameForLocals = [&binaryenTypes, &localNames](std::shared_ptr<Local> const &local) {
+    const auto &variantType = local->variantType();
+    if (variantType->type() == VariantType::Type::Class) {
+      auto underlyingTypeNames = std::dynamic_pointer_cast<Class>(variantType)->underlyingTypeNames();
+      binaryenTypes.insert(binaryenTypes.end(), underlyingTypeNames.begin(), underlyingTypeNames.end());
+      for (uint32_t i = 0; i < underlyingTypeNames.size(); i++) {
+        localNames.emplace_back(local->name() + "#" + std::to_string(i));
+      }
+    } else {
+      binaryenTypes.push_back(variantType->underlyingTypeName());
+      localNames.emplace_back(local->name());
+    }
+  };
+
+  for (uint32_t i = 0; i < argumentSize_; i++) {
+    setTypeAndNameForLocals(locals_[i]);
+  }
+
+  BinaryenType argumentBinaryenType = BinaryenTypeCreate(binaryenTypes.data(), binaryenTypes.size());
+  binaryenTypes.clear();
+  BinaryenType returnType = signature()->returnType()->underlyingTypeName();
+
+  for (uint32_t i = argumentSize_; i < locals_.size(); i++) {
+    setTypeAndNameForLocals(locals_[i]);
+  }
+
+  BinaryenFunctionRef funcRef = BinaryenAddFunction(module, name_.c_str(), argumentBinaryenType, returnType,
+                                                    &binaryenTypes[0], binaryenTypes.size(), body);
+
+  for (std::size_t i = 0; i < localNames.size(); i++) {
+    if (localNames[i].empty()) {
       continue;
     }
-    BinaryenFunctionSetLocalName(funcRef, i, locals_[i]->name().c_str());
+    BinaryenFunctionSetLocalName(funcRef, i, localNames[i].c_str());
   }
 
   return funcRef;

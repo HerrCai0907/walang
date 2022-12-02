@@ -3,15 +3,18 @@
 #include "ast/statement.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
+#include "helper/redefined_checker.hpp"
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
 #include "symbol_table.hpp"
 #include <algorithm>
 #include <binaryen-c.h>
 #include <cstdint>
+#include <exception>
 #include <fmt/core.h>
 #include <iterator>
 #include <memory>
+#include <set>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -27,7 +30,7 @@ void Compiler::compile() {
   for (auto const &file : files_) {
     startFunction_ = std::make_shared<ir::Function>("_start", std::vector<std::string>{},
                                                     std::vector<std::shared_ptr<ir::VariantType>>{},
-                                                    VariantTypeMap::instance().resolveType("void"));
+                                                    variantTypeMap_.resolveType("void"));
     currentFunction_.push(startFunction_);
     std::vector<BinaryenExpressionRef> expressions{};
     for (auto &statement : file->statement()) {
@@ -87,7 +90,7 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
-  std::shared_ptr<ir::VariantType> const &variantType = VariantTypeMap::instance().getTypeFromDeclare(*statement);
+  std::shared_ptr<ir::VariantType> const &variantType = variantTypeMap_.getTypeFromDeclare(*statement);
   BinaryenExpressionRef init = compileExpression(statement->init(), variantType);
   if (currentFunction() == startFunction_) {
     // in global
@@ -185,11 +188,11 @@ BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::Fu
   std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
   for (auto const &argument : statement->arguments()) {
     argumentNames.push_back(argument.name_);
-    argumentTypes.push_back(VariantTypeMap::instance().resolveType(argument.type_));
+    argumentTypes.push_back(variantTypeMap_.resolveType(argument.type_));
   }
-  std::shared_ptr<ir::VariantType> returnType =
-      statement->returnType().has_value() ? VariantTypeMap::instance().resolveType(statement->returnType().value())
-                                          : std::make_shared<ir::TypeAuto>();
+  std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
+                                                    ? variantTypeMap_.resolveType(statement->returnType().value())
+                                                    : std::make_shared<ir::TypeAuto>();
   auto functionIr = std::make_shared<ir::Function>(statement->name(), argumentNames, argumentTypes, returnType);
   functions_.insert(std::make_pair(statement->name(), functionIr));
   currentFunction_.push(functionIr);
@@ -199,8 +202,72 @@ BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::Fu
   return BinaryenNop(module_);
 }
 BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement) {
-  return nullptr;
+  if (currentFunction() != startFunction_) {
+    throw std::runtime_error("class should only be defined in top scope");
+  }
+  auto classType = std::make_shared<ir::Class>(statement->name());
+  variantTypeMap_.registerType(statement->name(), classType);
+
+  RedefinedChecker redefinedChecker{};
+
+  std::vector<ir::Class::ClassMember> members{};
+  members.reserve(statement->members().size());
+  for (auto const &member : statement->members()) {
+    try {
+      redefinedChecker.check(member.name_);
+    } catch (RedefinedSymbol &e) {
+      e.setRange(statement->range());
+      std::rethrow_exception(std::make_exception_ptr(e));
+    }
+    if (member.type_ == statement->name()) {
+      auto e = RecursiveDefinedSymbol(member.type_);
+      e.setRange(statement->range());
+      throw e;
+    }
+    members.push_back(ir::Class::ClassMember{.memberName_ = member.name_,
+                                             .memberType_ = variantTypeMap_.findVariantType(member.type_)});
+  }
+  classType->setMembers(members);
+
+  std::map<std::string, std::shared_ptr<ir::Function>> methodMap{};
+  for (auto const &method : statement->methods()) {
+    try {
+      redefinedChecker.check(method->name());
+    } catch (RedefinedSymbol &e) {
+      e.setRange(statement->range());
+      std::rethrow_exception(std::make_exception_ptr(e));
+    }
+    auto emplaceResult = methodMap.insert(std::make_pair(method->name(), compileClassMethod(classType, method)));
+    if (!emplaceResult.second) {
+      auto e = RedefinedSymbol(method->name());
+      e.setRange(method->range());
+      throw e;
+    }
+  }
+  classType->setMethodMap(methodMap);
+
   return BinaryenNop(module_);
+}
+std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::Class> const &classType,
+                                                           std::shared_ptr<ast::FunctionStatement> const &statement) {
+  std::vector<std::string> argumentNames{};
+  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
+  argumentNames.emplace_back("this");
+  argumentTypes.emplace_back(classType);
+  for (auto const &argument : statement->arguments()) {
+    argumentNames.emplace_back(argument.name_);
+    argumentTypes.emplace_back(variantTypeMap_.resolveType(argument.type_));
+  }
+  std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
+                                                    ? variantTypeMap_.resolveType(statement->returnType().value())
+                                                    : std::make_shared<ir::TypeAuto>();
+  auto functionIr = std::make_shared<ir::Function>(statement->name(), argumentNames, argumentTypes, returnType);
+  functions_.insert(std::make_pair(classType->className() + "#" + statement->name(), functionIr));
+  currentFunction_.push(functionIr);
+  BinaryenExpressionRef body = compileBlockStatement(statement->body());
+  currentFunction()->finalize(module_, body);
+  currentFunction_.pop();
+  return functionIr;
 }
 
 // ███████ ██   ██ ██████  ██████  ███████ ███████ ███████ ██  ██████  ███    ██
@@ -253,7 +320,8 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                  auto local = currentFunction()->findLocalByName(s);
                                  if (local != nullptr) {
                                    if (!expectedType->tryResolveTo(local->variantType())) {
-                                     auto e = TypeConvertError(local->variantType(), expectedType);
+                                     auto e =
+                                         TypeConvertError(local->variantType()->to_string(), expectedType->to_string());
                                      e.setRange(expression->range());
                                      throw e;
                                    }
@@ -262,7 +330,8 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                  auto globalIt = globals_.find(s);
                                  if (globalIt != globals_.end()) {
                                    if (!expectedType->tryResolveTo(globalIt->second->variantType())) {
-                                     auto e = TypeConvertError(globalIt->second->variantType(), expectedType);
+                                     auto e = TypeConvertError(globalIt->second->variantType()->to_string(),
+                                                               expectedType->to_string());
                                      e.setRange(expression->range());
                                      throw e;
                                    }
@@ -318,7 +387,7 @@ BinaryenExpressionRef Compiler::compileCallExpression(std::shared_ptr<ast::CallE
       throw e;
     }
     if (!expectedType->tryResolveTo(functionCaller->signature()->returnType())) {
-      auto e = TypeConvertError(functionCaller->signature()->returnType(), expectedType);
+      auto e = TypeConvertError(functionCaller->signature()->returnType()->to_string(), expectedType->to_string());
       e.setRange(expression->range());
       throw e;
     }

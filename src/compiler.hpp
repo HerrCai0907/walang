@@ -6,6 +6,7 @@
 
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
+#include "symbol_table.hpp"
 #include <binaryen-c.h>
 #include <memory>
 #include <stack>
@@ -38,6 +39,8 @@ private:
   BinaryenExpressionRef compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement);
   BinaryenExpressionRef compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement);
   BinaryenExpressionRef compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement);
+  std::shared_ptr<ir::Function> compileClassMethod(std::shared_ptr<ir::Class> const &classType,
+                                                   std::shared_ptr<ast::FunctionStatement> const &statement);
 
   BinaryenExpressionRef compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement);
 
@@ -62,6 +65,9 @@ private:
   BinaryenModuleRef module_;
 
   std::vector<std::shared_ptr<ast::File>> files_;
+
+  VariantTypeMap variantTypeMap_{};
+
   std::unordered_map<std::string, std::shared_ptr<ir::Global>> globals_{};
   std::unordered_map<std::string, std::shared_ptr<ir::Function>> functions_{};
 

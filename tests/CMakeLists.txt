@@ -29,13 +29,8 @@ endfunction()
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/parse parse_test_srcs)
 TESTCASE(parseTest ${parse_test_srcs})
 
-TESTCASE(compileTest
-  compile/basisStatement.cpp
-  compile/ifStatement.cpp
-  compile/whileStatement.cpp
-  compile/functionStatement.cpp
-  compile/call.cpp
-)
+aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/compile compile_test_srcs)
+TESTCASE(compileTest ${compile_test_srcs})
 
 if(ENABLE_COV)
   set(CMAKE_BUILD_TYPE "Debug")

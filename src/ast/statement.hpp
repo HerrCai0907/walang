@@ -170,11 +170,14 @@ public:
                  std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
   ~ClassStatement() override = default;
   [[nodiscard]] std::string to_string() const override;
+  [[nodiscard]] std::string const &name() const { return name_; }
+  [[nodiscard]] std::vector<Member> const &members() const { return members_; }
+  [[nodiscard]] std::vector<std::shared_ptr<FunctionStatement>> const &methods() const { return methods_; }
 
 private:
   std::string name_;
   std::vector<Member> members_;
-  std::vector<std::shared_ptr<FunctionStatement>> functions_;
+  std::vector<std::shared_ptr<FunctionStatement>> methods_;
 };
 
 } // namespace walang::ast

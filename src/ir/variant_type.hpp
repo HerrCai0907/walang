@@ -5,8 +5,10 @@
 #include "ast/statement.hpp"
 #include <binaryen-c.h>
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace walang::ir {
 
@@ -189,6 +191,36 @@ public:
 private:
   std::vector<std::shared_ptr<VariantType>> argumentTypes_;
   std::shared_ptr<VariantType> returnType_;
+};
+
+class Class : public VariantType {
+public:
+  struct ClassMember {
+    std::string memberName_;
+    std::shared_ptr<VariantType> memberType_;
+  };
+
+  explicit Class(std::string className);
+  void setMembers(std::vector<ClassMember> members) { member_ = std::move(members); }
+  void setMethodMap(std::map<std::string, std::shared_ptr<Function>> methodMap) { methodMap_ = std::move(methodMap); }
+
+  std::string to_string() const override;
+  BinaryenType underlyingTypeName() const override;
+  std::vector<BinaryenType> underlyingTypeNames() const;
+
+  BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
+                                       BinaryenExpressionRef exprRef) const override;
+  BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
+                                       BinaryenExpressionRef rightRef,
+                                       std::shared_ptr<Function> const &function) override;
+  [[nodiscard]] std::string const &className() { return className_; }
+  [[nodiscard]] std::vector<ClassMember> const &member() { return member_; }
+  [[nodiscard]] std::map<std::string, std::shared_ptr<Function>> const &methodMap() { return methodMap_; }
+
+private:
+  std::string className_;
+  std::vector<ClassMember> member_{};
+  std::map<std::string, std::shared_ptr<Function>> methodMap_{};
 };
 
 } // namespace walang::ir

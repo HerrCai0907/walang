@@ -27,9 +27,6 @@ std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   return resolvedType_;
 }
 
-BinaryenType VariantType::underlyingTypeName() const {
-  throw std::runtime_error("underlyingTypeName not supported type '" + to_string() + "'");
-}
 BinaryenType PendingResolveType::underlyingTypeName() const { return resolvedType()->underlyingTypeName(); }
 BinaryenType TypeNone::underlyingTypeName() const { return BinaryenTypeNone(); }
 BinaryenType Int32::underlyingTypeName() const { return BinaryenTypeInt32(); }
@@ -67,9 +64,9 @@ BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, double value) const {
   if (underlyingTypeName() == BinaryenTypeInt32()) {
-    throw TypeConvertError(shared_from_this(), VariantTypeMap::instance().resolveType("i32"));
+    throw TypeConvertError(to_string(), "i32");
   } else if (underlyingTypeName() == BinaryenTypeInt64()) {
-    throw TypeConvertError(shared_from_this(), VariantTypeMap::instance().resolveType("i64"));
+    throw TypeConvertError(to_string(), "i64");
   } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(static_cast<float>(value)));
   } else if (underlyingTypeName() == BinaryenTypeFloat64()) {

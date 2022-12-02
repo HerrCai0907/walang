@@ -14,10 +14,8 @@ class VariantType;
 
 class VariantTypeMap {
 public:
-  static VariantTypeMap &instance() {
-    static VariantTypeMap ins{};
-    return ins;
-  }
+  VariantTypeMap();
+
   void registerType(std::string const &name, std::shared_ptr<ir::VariantType> const &type);
   std::shared_ptr<ir::VariantType> const &findVariantType(std::string const &name);
 
@@ -28,7 +26,6 @@ public:
 private:
   std::map<std::string, std::shared_ptr<ir::VariantType>> map_{};
 
-  VariantTypeMap();
   void registerDefault();
 };
 

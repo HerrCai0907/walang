@@ -7,6 +7,7 @@
 #include <exception>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <variant>
 
@@ -31,11 +32,11 @@ protected:
 
 class TypeConvertError : public CompilerError {
 public:
-  TypeConvertError(std::shared_ptr<ir::VariantType const> from, std::shared_ptr<ir::VariantType const> to);
+  TypeConvertError(std::string from, std::string to);
 
 private:
-  std::shared_ptr<ir::VariantType const> const from_;
-  std::shared_ptr<ir::VariantType const> const to_;
+  std::string from_;
+  std::string to_;
 
   void generateErrorMessage() override;
 };
@@ -86,6 +87,16 @@ private:
 class UnknownSymbol : public CompilerError {
 public:
   explicit UnknownSymbol(std::string symbol);
+
+private:
+  std::string symbol_;
+
+  void generateErrorMessage() override;
+};
+
+class RecursiveDefinedSymbol : public CompilerError {
+public:
+  explicit RecursiveDefinedSymbol(std::string symbol);
 
 private:
   std::string symbol_;
