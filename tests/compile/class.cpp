@@ -97,6 +97,9 @@ class A {
   b : i32;
 }
 let a = A();
+function foo():void{
+  let b = A();
+}
     )");
   auto file = parser.parse();
   Compiler compile{{file}};

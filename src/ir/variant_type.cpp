@@ -40,6 +40,14 @@ std::shared_ptr<VariantType> VariantType::from(BinaryenType underlyingType) {
     throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
+[[nodiscard]] BinaryenType VariantType::underlyingReturnType() const {
+  auto typeNames = underlyingTypeNames();
+  if (typeNames.size() == 1) {
+    return typeNames[0];
+  } else {
+    return BinaryenTypeNone();
+  }
+}
 
 BinaryenType PendingResolveType::underlyingTypeName() const { return resolvedType()->underlyingTypeName(); }
 BinaryenType TypeNone::underlyingTypeName() const { return BinaryenTypeNone(); }

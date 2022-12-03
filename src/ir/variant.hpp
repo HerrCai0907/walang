@@ -35,7 +35,10 @@ public:
   explicit Variant(Type type, std::shared_ptr<VariantType> const &variantType) : Symbol(type, variantType) {}
   ~Variant() override = default;
 
-  virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) = 0;
+  BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef);
+  virtual BinaryenExpressionRef makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) = 0;
+  virtual BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, uint32_t index,
+                                                        BinaryenExpressionRef exprRef) = 0;
   virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) = 0;
 };
 
@@ -45,7 +48,9 @@ public:
   ~Global() override = default;
   [[nodiscard]] std::string name() const noexcept { return name_; }
   void makeDefinition(BinaryenModuleRef module);
-  BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, uint32_t index,
+                                                BinaryenExpressionRef exprRef) override;
   BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 
 private:
@@ -60,7 +65,9 @@ public:
 
   [[nodiscard]] uint32_t index() const noexcept { return index_; }
   [[nodiscard]] std::string name() const noexcept { return name_; }
-  BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, uint32_t index,
+                                                BinaryenExpressionRef exprRef) override;
   BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 
 private:

@@ -35,10 +35,11 @@ public:
   Type type() const noexcept { return type_; }
   virtual std::string to_string() const;
 
-  virtual BinaryenType underlyingTypeName() const = 0;
   static std::shared_ptr<VariantType> from(BinaryenType underlyingType);
 
+  virtual BinaryenType underlyingTypeName() const = 0;
   [[nodiscard]] virtual std::vector<BinaryenType> underlyingTypeNames() const { return {underlyingTypeName()}; }
+  [[nodiscard]] BinaryenType underlyingReturnType() const;
   BinaryenExpressionRef underlyingDefaultValue(BinaryenModuleRef module) const;
   BinaryenExpressionRef underlyingConst(BinaryenModuleRef module, int64_t value) const;
   BinaryenExpressionRef underlyingConst(BinaryenModuleRef module, double value) const;

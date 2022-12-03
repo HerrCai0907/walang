@@ -67,16 +67,14 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
   std::vector<std::string> localNames{};
 
   auto setTypeAndNameForLocals = [&binaryenTypes, &localNames](std::shared_ptr<Local> const &local) {
-    const auto &variantType = local->variantType();
-    // TODO(optimization)
-    if (variantType->type() == VariantType::Type::Class) {
-      auto underlyingTypeNames = std::dynamic_pointer_cast<Class>(variantType)->underlyingTypeNames();
+    auto underlyingTypeNames = local->variantType()->underlyingTypeNames();
+    if (underlyingTypeNames.size() != 1) {
       binaryenTypes.insert(binaryenTypes.end(), underlyingTypeNames.begin(), underlyingTypeNames.end());
       for (uint32_t i = 0; i < underlyingTypeNames.size(); i++) {
         localNames.emplace_back(local->name() + "#" + std::to_string(i));
       }
     } else {
-      binaryenTypes.push_back(variantType->underlyingTypeName());
+      binaryenTypes.push_back(underlyingTypeNames[0]);
       localNames.emplace_back(local->name());
     }
   };
@@ -87,11 +85,7 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
 
   BinaryenType argumentBinaryenType = BinaryenTypeCreate(binaryenTypes.data(), binaryenTypes.size());
   binaryenTypes.clear();
-  BinaryenType returnType = signature()->returnType()->underlyingTypeName();
-  if (signature()->returnType()->type() == VariantType::Type::Class) {
-    // TODO(optimization when class has only )
-    returnType = BinaryenTypeNone();
-  }
+  BinaryenType returnType = signature()->returnType()->underlyingReturnType();
 
   for (uint32_t i = argumentSize_; i < locals_.size(); i++) {
     setTypeAndNameForLocals(locals_[i]);
