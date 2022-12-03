@@ -17,9 +17,10 @@ Local::Local(uint32_t index, std::string name, std::shared_ptr<VariantType> cons
 
 BinaryenExpressionRef Variant::makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
   auto underlyingTypes = variantType_->underlyingTypes();
-  if (underlyingTypes.size() == 1) {
-    return makeSingleValueAssign(module, exprRef);
-  } else {
+  switch (variantType_->underlyingReturnTypeStatus()) {
+  case VariantType::UnderlyingReturnTypeStatus::None:
+    return BinaryenNop(module);
+  case VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
     BinaryenIndex exprRefCount = BinaryenBlockGetNumChildren(exprRef);
     for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
       BinaryenIndex blockIndex = exprRefCount - underlyingTypes.size() + index;
@@ -28,6 +29,9 @@ BinaryenExpressionRef Variant::makeAssign(BinaryenModuleRef module, BinaryenExpr
       BinaryenExpressionSetType(exprRef, BinaryenTypeNone());
     }
     return exprRef;
+  }
+  case VariantType::UnderlyingReturnTypeStatus::ByReturnValue:
+    return makeSingleValueAssign(module, exprRef);
   }
 }
 

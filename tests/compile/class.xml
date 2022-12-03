@@ -28,8 +28,10 @@
     <Declare>
 (module
  (type $none_=&gt;_none (func))
- (global $a#0 (mut f64) (f64.const 0))
- (global $a#1 (mut i32) (i32.const 0))
+ (type $none_=&gt;_i64 (func (result i64)))
+ (global $ga#0 (mut f64) (f64.const 0))
+ (global $ga#1 (mut i32) (i32.const 0))
+ (global $gc (mut i64) (i64.const 0))
  (memory $0 0 1)
  (start $_start)
  (func $A#constructor
@@ -42,37 +44,53 @@
    (i32.const 0)
   )
  )
+ (func $B#constructor
+ )
+ (func $C#constructor (result i64)
+  (i64.const 0)
+ )
  (func $foo
-  (local $b#0 f64)
-  (local $b#1 i32)
+  (local $la#0 f64)
+  (local $la#1 i32)
+  (local $lc i64)
   (block
    (call $A#constructor)
-   (local.set $b#0
+   (local.set $la#0
     (f64.load
      (i32.const 0)
     )
    )
-   (local.set $b#1
+   (local.set $la#1
     (i32.load
      (i32.const 8)
     )
    )
   )
+  (nop)
+  (local.set $lc
+   (call $C#constructor)
+  )
  )
  (func $_start
   (nop)
+  (nop)
+  (nop)
   (block
    (call $A#constructor)
-   (global.set $a#0
+   (global.set $ga#0
     (f64.load
      (i32.const 0)
     )
    )
-   (global.set $a#1
+   (global.set $ga#1
     (i32.load
      (i32.const 8)
     )
    )
+  )
+  (nop)
+  (global.set $gc
+   (call $C#constructor)
   )
   (nop)
  )

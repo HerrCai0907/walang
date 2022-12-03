@@ -234,15 +234,24 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
   auto constructor = std::make_shared<ir::Function>(statement->name() + "#constructor", std::vector<std::string>{},
                                                     std::vector<std::shared_ptr<ir::VariantType>>{}, classType);
   std::vector<BinaryenExpressionRef> constructorChildren{};
-  auto underlyingTypes = classType->underlyingTypes();
-  constructorChildren.reserve(underlyingTypes.size());
-  int32_t offset = 0;
-  for (auto underlyingType : underlyingTypes) {
-    int32_t dataSize = (underlyingType == BinaryenTypeInt64() || underlyingType == BinaryenTypeFloat64()) ? 8U : 4U;
-    constructorChildren.push_back(
-        BinaryenStore(module_, dataSize, 0, 0, BinaryenConst(module_, BinaryenLiteralInt32(offset)),
-                      ir::VariantType::from(underlyingType)->underlyingDefaultValue(module_), underlyingType, "0"));
-    offset += dataSize;
+  switch (classType->underlyingReturnTypeStatus()) {
+  case ir::VariantType::UnderlyingReturnTypeStatus::None:
+    break;
+  case ir::VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
+    int32_t offset = 0;
+    for (auto underlyingType : classType->underlyingTypes()) {
+      int32_t dataSize = (underlyingType == BinaryenTypeInt64() || underlyingType == BinaryenTypeFloat64()) ? 8U : 4U;
+      constructorChildren.push_back(
+          BinaryenStore(module_, dataSize, 0, 0, BinaryenConst(module_, BinaryenLiteralInt32(offset)),
+                        ir::VariantType::from(underlyingType)->underlyingDefaultValue(module_), underlyingType, "0"));
+      offset += dataSize;
+    }
+    break;
+  }
+  case ir::VariantType::UnderlyingReturnTypeStatus::ByReturnValue: {
+    constructorChildren.push_back(classType->underlyingDefaultValue(module_));
+    break;
+  }
   }
   BinaryenExpressionRef body =
       BinaryenBlock(module_, nullptr, constructorChildren.data(), constructorChildren.size(), BinaryenTypeAuto());
@@ -419,12 +428,16 @@ BinaryenExpressionRef Compiler::compileCallExpression(std::shared_ptr<ast::CallE
     for (uint32_t index = 0; index < signatureArgumentTypes.size(); index++) {
       expressionRefs.push_back(compileExpression(argumentExpressions[index], signatureArgumentTypes[index]));
     }
-    if (functionCaller->signature()->returnType()->type() == ir::VariantType::Type::Class) {
-      auto returnType = BinaryenTypeNone();
+    switch (functionCaller->signature()->returnType()->underlyingReturnTypeStatus()) {
+    case ir::VariantType::UnderlyingReturnTypeStatus::None:
+    case ir::VariantType::UnderlyingReturnTypeStatus::ByReturnValue: {
+      return BinaryenCall(module_, functionCaller->name().c_str(), expressionRefs.data(), expressionRefs.size(),
+                          functionCaller->signature()->returnType()->underlyingType());
+    }
+    case ir::VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
       BinaryenExpressionRef callRef = BinaryenCall(module_, functionCaller->name().c_str(), expressionRefs.data(),
-                                                   expressionRefs.size(), returnType);
+                                                   expressionRefs.size(), BinaryenTypeNone());
       std::vector<BinaryenExpressionRef> exprRefs{callRef};
-
       int32_t offset = 0;
       for (auto const &underlyingType : functionCaller->signature()->returnType()->underlyingTypes()) {
         int32_t dataSize = (underlyingType == BinaryenTypeInt64() || underlyingType == BinaryenTypeFloat64()) ? 8U : 4U;
@@ -434,9 +447,7 @@ BinaryenExpressionRef Compiler::compileCallExpression(std::shared_ptr<ast::CallE
       }
       return BinaryenBlock(module_, nullptr, exprRefs.data(), exprRefs.size(),
                            functionCaller->signature()->returnType()->underlyingType());
-    } else {
-      return BinaryenCall(module_, functionCaller->name().c_str(), expressionRefs.data(), expressionRefs.size(),
-                          functionCaller->signature()->returnType()->underlyingType());
+    }
     }
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));

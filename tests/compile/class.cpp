@@ -96,9 +96,17 @@ class A {
   a : f64;
   b : i32;
 }
-let a = A();
+class B {}
+class C {
+  c : i64;
+}
+let ga = A();
+let gb = B();
+let gc = C();
 function foo():void{
-  let b = A();
+  let la = A();
+  let lb = B();
+  let lc = C();
 }
     )");
   auto file = parser.parse();

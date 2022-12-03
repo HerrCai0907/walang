@@ -39,7 +39,8 @@ public:
 
   virtual BinaryenType underlyingType() const = 0;
   [[nodiscard]] virtual std::vector<BinaryenType> underlyingTypes() const { return {underlyingType()}; }
-  [[nodiscard]] BinaryenType underlyingReturnType() const;
+  enum class UnderlyingReturnTypeStatus { None, LoadFromMemory, ByReturnValue };
+  [[nodiscard]] UnderlyingReturnTypeStatus underlyingReturnTypeStatus() const;
   BinaryenExpressionRef underlyingDefaultValue(BinaryenModuleRef module) const;
   BinaryenExpressionRef underlyingConst(BinaryenModuleRef module, int64_t value) const;
   BinaryenExpressionRef underlyingConst(BinaryenModuleRef module, double value) const;

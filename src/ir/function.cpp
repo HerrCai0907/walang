@@ -85,7 +85,18 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
 
   BinaryenType argumentBinaryenType = BinaryenTypeCreate(binaryenTypes.data(), binaryenTypes.size());
   binaryenTypes.clear();
-  BinaryenType returnType = signature()->returnType()->underlyingReturnType();
+  BinaryenType returnType;
+  switch (signature()->returnType()->underlyingReturnTypeStatus()) {
+  case VariantType::UnderlyingReturnTypeStatus::None:
+  case VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
+    returnType = BinaryenTypeNone();
+    break;
+  }
+  case VariantType::UnderlyingReturnTypeStatus::ByReturnValue: {
+    returnType = signature()->returnType()->underlyingType();
+    break;
+  }
+  }
 
   for (uint32_t i = argumentSize_; i < locals_.size(); i++) {
     setTypeAndNameForLocals(locals_[i]);
