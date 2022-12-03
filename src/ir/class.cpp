@@ -22,12 +22,8 @@ std::vector<BinaryenType> Class::underlyingTypeNames() const {
   std::vector<BinaryenType> binaryenTypes{};
   binaryenTypes.reserve(member_.size());
   for (auto const &member : member_) {
-    if (member.memberType_->type() != Type::Class) {
-      binaryenTypes.push_back(member.memberType_->underlyingTypeName());
-    } else {
-      auto memberUnderlyingTypeNames = std::dynamic_pointer_cast<Class>(member.memberType_)->underlyingTypeNames();
-      binaryenTypes.insert(binaryenTypes.end(), memberUnderlyingTypeNames.begin(), memberUnderlyingTypeNames.end());
-    }
+    auto memberUnderlyingTypeNames = member.memberType_->underlyingTypeNames();
+    binaryenTypes.insert(binaryenTypes.end(), memberUnderlyingTypeNames.begin(), memberUnderlyingTypeNames.end());
   }
   return binaryenTypes;
 }

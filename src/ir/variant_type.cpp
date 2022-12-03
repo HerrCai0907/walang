@@ -27,6 +27,20 @@ std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   return resolvedType_;
 }
 
+std::shared_ptr<VariantType> VariantType::from(BinaryenType underlyingType) {
+  if (underlyingType == BinaryenTypeInt32()) {
+    return std::make_shared<TypeI32>();
+  } else if (underlyingType == BinaryenTypeInt64()) {
+    return std::make_shared<TypeI64>();
+  } else if (underlyingType == BinaryenTypeFloat32()) {
+    return std::make_shared<TypeF32>();
+  } else if (underlyingType == BinaryenTypeFloat64()) {
+    return std::make_shared<TypeF64>();
+  } else {
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
+  }
+}
+
 BinaryenType PendingResolveType::underlyingTypeName() const { return resolvedType()->underlyingTypeName(); }
 BinaryenType TypeNone::underlyingTypeName() const { return BinaryenTypeNone(); }
 BinaryenType Int32::underlyingTypeName() const { return BinaryenTypeInt32(); }

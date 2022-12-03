@@ -44,6 +44,7 @@ public:
   Global(std::string name, std::shared_ptr<VariantType> const &type);
   ~Global() override = default;
   [[nodiscard]] std::string name() const noexcept { return name_; }
+  void makeDefinition(BinaryenModuleRef module);
   BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
   BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 

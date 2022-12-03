@@ -28,7 +28,6 @@ class A {
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(compile.wat());
 }
-
 TEST_F(CompileClassTest, Error) {
   EXPECT_THROW(
       [] {
@@ -90,4 +89,18 @@ class A {
         snapshot.check(compile.wat());
       }(),
       RecursiveDefinedSymbol);
+}
+TEST_F(CompileClassTest, Declare) {
+  FileParser parser("test.wa", R"(
+class A {
+  a : f64;
+  b : i32;
+}
+let a = A();
+    )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(compile.wat());
 }

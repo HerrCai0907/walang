@@ -1,10 +1,21 @@
 <snapshots>
     <Basis>
 (module
+ (type $none_=&gt;_none (func))
  (type $i32_f32_=&gt;_none (func (param i32 f32)))
  (type $i32_f32_i32_=&gt;_none (func (param i32 f32 i32)))
- (type $none_=&gt;_none (func))
+ (memory $0 0 1)
  (start $_start)
+ (func $A#constructor
+  (i32.store
+   (i32.const 0)
+   (i32.const 0)
+  )
+  (f32.store
+   (i32.const 4)
+   (f32.const 0)
+  )
+ )
  (func $foo (param $this#0 i32) (param $this#1 f32)
  )
  (func $foo2 (param $this#0 i32) (param $this#1 f32) (param $a i32)
@@ -14,4 +25,39 @@
  )
 )
 </Basis>
+    <Declare>
+(module
+ (type $none_=&gt;_none (func))
+ (global $a#0 (mut f64) (f64.const 0))
+ (global $a#1 (mut i32) (i32.const 0))
+ (memory $0 0 1)
+ (start $_start)
+ (func $A#constructor
+  (f64.store
+   (i32.const 0)
+   (f64.const 0)
+  )
+  (i32.store
+   (i32.const 8)
+   (i32.const 0)
+  )
+ )
+ (func $_start
+  (nop)
+  (block
+   (call $A#constructor)
+   (global.set $a#0
+    (f64.load
+     (i32.const 0)
+    )
+   )
+   (global.set $a#1
+    (i32.load
+     (i32.const 8)
+    )
+   )
+  )
+ )
+)
+</Declare>
 </snapshots>

@@ -40,10 +40,10 @@ public:
   ~Identifier() override = default;
   [[nodiscard]] std::string to_string() const override;
 
-  [[nodiscard]] std::variant<uint64_t, double, std::string> const &id() const noexcept { return id_; }
+  [[nodiscard]] std::variant<uint64_t, double, std::string> const &identifier() const noexcept { return identifier_; }
 
 private:
-  std::variant<uint64_t, double, std::string> id_;
+  std::variant<uint64_t, double, std::string> identifier_;
 };
 
 class PrefixExpression : public Expression {

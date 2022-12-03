@@ -68,6 +68,7 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
 
   auto setTypeAndNameForLocals = [&binaryenTypes, &localNames](std::shared_ptr<Local> const &local) {
     const auto &variantType = local->variantType();
+    // TODO(optimization)
     if (variantType->type() == VariantType::Type::Class) {
       auto underlyingTypeNames = std::dynamic_pointer_cast<Class>(variantType)->underlyingTypeNames();
       binaryenTypes.insert(binaryenTypes.end(), underlyingTypeNames.begin(), underlyingTypeNames.end());
@@ -87,6 +88,10 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
   BinaryenType argumentBinaryenType = BinaryenTypeCreate(binaryenTypes.data(), binaryenTypes.size());
   binaryenTypes.clear();
   BinaryenType returnType = signature()->returnType()->underlyingTypeName();
+  if (signature()->returnType()->type() == VariantType::Type::Class) {
+    // TODO(optimization when class has only )
+    returnType = BinaryenTypeNone();
+  }
 
   for (uint32_t i = argumentSize_; i < locals_.size(); i++) {
     setTypeAndNameForLocals(locals_[i]);

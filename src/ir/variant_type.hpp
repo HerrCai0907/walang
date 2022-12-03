@@ -34,10 +34,15 @@ public:
 
   Type type() const noexcept { return type_; }
   virtual std::string to_string() const;
+
   virtual BinaryenType underlyingTypeName() const = 0;
+  static std::shared_ptr<VariantType> from(BinaryenType underlyingType);
+
+  [[nodiscard]] virtual std::vector<BinaryenType> underlyingTypeNames() const { return {underlyingTypeName()}; }
   BinaryenExpressionRef underlyingDefaultValue(BinaryenModuleRef module) const;
   BinaryenExpressionRef underlyingConst(BinaryenModuleRef module, int64_t value) const;
   BinaryenExpressionRef underlyingConst(BinaryenModuleRef module, double value) const;
+
   virtual bool tryResolveTo(std::shared_ptr<VariantType> const &type) const;
 
   virtual BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
@@ -206,7 +211,7 @@ public:
 
   std::string to_string() const override;
   BinaryenType underlyingTypeName() const override;
-  std::vector<BinaryenType> underlyingTypeNames() const;
+  std::vector<BinaryenType> underlyingTypeNames() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                        BinaryenExpressionRef exprRef) const override;

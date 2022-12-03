@@ -1,6 +1,10 @@
 #include "symbol_table.hpp"
+#include "ast/expression.hpp"
 #include "helper/overload.hpp"
 #include "ir/variant_type.hpp"
+#include <memory>
+#include <string>
+#include <variant>
 
 namespace walang {
 
@@ -47,7 +51,16 @@ std::shared_ptr<ir::VariantType> const &VariantTypeMap::inferType(std::shared_pt
                    [](const std::string &s) -> std::shared_ptr<ir::VariantType> const & {
                      throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
                    }},
-        identifier->id());
+        identifier->identifier());
+  }
+  if (initExpr->type() == ast::ExpressionType::TypeCallExpression) {
+    auto callExpr = std::dynamic_pointer_cast<ast::CallExpression>(initExpr);
+    if (callExpr->caller()->type() == ast::ExpressionType::TypeIdentifier) {
+      auto identifier = std::dynamic_pointer_cast<ast::Identifier>(callExpr->caller())->identifier();
+      if (std::holds_alternative<std::string>(identifier)) {
+        return resolveType(std::get<std::string>(identifier));
+      }
+    }
   }
   throw std::runtime_error("cannot infer type from " + initExpr->to_string());
 }
