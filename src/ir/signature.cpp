@@ -21,7 +21,7 @@ std::string Signature::to_string() const {
   return fmt::format("({0}) => {1}", fmt::join(argumentStr, ", "), returnType_->to_string());
 }
 
-BinaryenType Signature::underlyingTypeName() const { return BinaryenTypeInt32(); }
+BinaryenType Signature::underlyingType() const { return BinaryenTypeInt32(); }
 
 BinaryenExpressionRef Signature::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                                 BinaryenExpressionRef exprRef) const {

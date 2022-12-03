@@ -35,10 +35,10 @@ public:
   Type type() const noexcept { return type_; }
   virtual std::string to_string() const;
 
-  static std::shared_ptr<VariantType> from(BinaryenType underlyingType);
+  static std::shared_ptr<VariantType> from(BinaryenType t);
 
-  virtual BinaryenType underlyingTypeName() const = 0;
-  [[nodiscard]] virtual std::vector<BinaryenType> underlyingTypeNames() const { return {underlyingTypeName()}; }
+  virtual BinaryenType underlyingType() const = 0;
+  [[nodiscard]] virtual std::vector<BinaryenType> underlyingTypes() const { return {underlyingType()}; }
   [[nodiscard]] BinaryenType underlyingReturnType() const;
   BinaryenExpressionRef underlyingDefaultValue(BinaryenModuleRef module) const;
   BinaryenExpressionRef underlyingConst(BinaryenModuleRef module, int64_t value) const;
@@ -62,7 +62,7 @@ class PendingResolveType : public VariantType {
 public:
   std::shared_ptr<VariantType> const &resolvedType() const;
   bool isResolved() const noexcept { return resolvedType_ != nullptr; }
-  BinaryenType underlyingTypeName() const override;
+  BinaryenType underlyingType() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                        BinaryenExpressionRef exprRef) const override;
@@ -91,7 +91,7 @@ public:
 class TypeNone : public VariantType {
 public:
   TypeNone() : VariantType(Type::None) {}
-  BinaryenType underlyingTypeName() const override;
+  BinaryenType underlyingType() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                        BinaryenExpressionRef exprRef) const override;
@@ -102,7 +102,7 @@ public:
 
 class Int32 : public VariantType {
 public:
-  BinaryenType underlyingTypeName() const override;
+  BinaryenType underlyingType() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                        BinaryenExpressionRef exprRef) const override;
@@ -130,7 +130,7 @@ public:
 
 class Int64 : public VariantType {
 public:
-  BinaryenType underlyingTypeName() const override;
+  BinaryenType underlyingType() const override;
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                        BinaryenExpressionRef exprRef) const override;
 
@@ -159,7 +159,7 @@ public:
 class TypeF32 : public VariantType {
 public:
   TypeF32() : VariantType(Type::F32) {}
-  BinaryenType underlyingTypeName() const override;
+  BinaryenType underlyingType() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                        BinaryenExpressionRef exprRef) const override;
@@ -171,7 +171,7 @@ public:
 class TypeF64 : public VariantType {
 public:
   TypeF64() : VariantType(Type::F64) {}
-  BinaryenType underlyingTypeName() const override;
+  BinaryenType underlyingType() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                        BinaryenExpressionRef exprRef) const override;
@@ -184,7 +184,7 @@ class Signature : public VariantType {
 public:
   Signature(std::vector<std::shared_ptr<VariantType>> argumentTypes, std::shared_ptr<VariantType> returnType);
   std::string to_string() const override;
-  BinaryenType underlyingTypeName() const override;
+  BinaryenType underlyingType() const override;
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                        BinaryenExpressionRef exprRef) const override;
   BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
@@ -211,8 +211,8 @@ public:
   void setMethodMap(std::map<std::string, std::shared_ptr<Function>> methodMap) { methodMap_ = std::move(methodMap); }
 
   std::string to_string() const override;
-  BinaryenType underlyingTypeName() const override;
-  std::vector<BinaryenType> underlyingTypeNames() const override;
+  BinaryenType underlyingType() const override;
+  std::vector<BinaryenType> underlyingTypes() const override;
 
   BinaryenExpressionRef handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                        BinaryenExpressionRef exprRef) const override;

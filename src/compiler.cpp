@@ -40,7 +40,7 @@ void Compiler::compile() {
       expressions.emplace_back(compileStatement(statement));
     }
     BinaryenExpressionRef body = BinaryenBlock(module_, nullptr, expressions.data(), expressions.size(),
-                                               startFunction_->signature()->returnType()->underlyingTypeName());
+                                               startFunction_->signature()->returnType()->underlyingType());
     BinaryenFunctionRef startFunctionRef = startFunction_->finalize(module_, body);
     BinaryenSetStart(module_, startFunctionRef);
   }
@@ -234,15 +234,14 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
   auto constructor = std::make_shared<ir::Function>(statement->name() + "#constructor", std::vector<std::string>{},
                                                     std::vector<std::shared_ptr<ir::VariantType>>{}, classType);
   std::vector<BinaryenExpressionRef> constructorChildren{};
-  auto underlyingTypeNames = classType->underlyingTypeNames();
-  constructorChildren.reserve(underlyingTypeNames.size());
+  auto underlyingTypes = classType->underlyingTypes();
+  constructorChildren.reserve(underlyingTypes.size());
   int32_t offset = 0;
-  for (auto underlyingTypeName : underlyingTypeNames) {
-    int32_t dataSize =
-        (underlyingTypeName == BinaryenTypeInt64() || underlyingTypeName == BinaryenTypeFloat64()) ? 8U : 4U;
-    constructorChildren.push_back(BinaryenStore(
-        module_, dataSize, 0, 0, BinaryenConst(module_, BinaryenLiteralInt32(offset)),
-        ir::VariantType::from(underlyingTypeName)->underlyingDefaultValue(module_), underlyingTypeName, "0"));
+  for (auto underlyingType : underlyingTypes) {
+    int32_t dataSize = (underlyingType == BinaryenTypeInt64() || underlyingType == BinaryenTypeFloat64()) ? 8U : 4U;
+    constructorChildren.push_back(
+        BinaryenStore(module_, dataSize, 0, 0, BinaryenConst(module_, BinaryenLiteralInt32(offset)),
+                      ir::VariantType::from(underlyingType)->underlyingDefaultValue(module_), underlyingType, "0"));
     offset += dataSize;
   }
   BinaryenExpressionRef body =
@@ -427,18 +426,17 @@ BinaryenExpressionRef Compiler::compileCallExpression(std::shared_ptr<ast::CallE
       std::vector<BinaryenExpressionRef> exprRefs{callRef};
 
       int32_t offset = 0;
-      for (auto const &underlyingTypeName : functionCaller->signature()->returnType()->underlyingTypeNames()) {
-        int32_t dataSize =
-            (underlyingTypeName == BinaryenTypeInt64() || underlyingTypeName == BinaryenTypeFloat64()) ? 8U : 4U;
-        exprRefs.push_back(BinaryenLoad(module_, dataSize, false, 0, 0, underlyingTypeName,
+      for (auto const &underlyingType : functionCaller->signature()->returnType()->underlyingTypes()) {
+        int32_t dataSize = (underlyingType == BinaryenTypeInt64() || underlyingType == BinaryenTypeFloat64()) ? 8U : 4U;
+        exprRefs.push_back(BinaryenLoad(module_, dataSize, false, 0, 0, underlyingType,
                                         BinaryenConst(module_, BinaryenLiteralInt32(offset)), "0"));
         offset += dataSize;
       }
       return BinaryenBlock(module_, nullptr, exprRefs.data(), exprRefs.size(),
-                           functionCaller->signature()->returnType()->underlyingTypeName());
+                           functionCaller->signature()->returnType()->underlyingType());
     } else {
       return BinaryenCall(module_, functionCaller->name().c_str(), expressionRefs.data(), expressionRefs.size(),
-                          functionCaller->signature()->returnType()->underlyingTypeName());
+                          functionCaller->signature()->returnType()->underlyingType());
     }
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
@@ -467,16 +465,16 @@ BinaryenExpressionRef Compiler::compileMemberExpression(std::shared_ptr<ast::Mem
       auto classType = std::dynamic_pointer_cast<ir::Class>(global->variantType());
       uint32_t offset = 0U;
       for (auto const &member : classType->member()) {
-        auto underlyingTypeNames = member.memberType_->underlyingTypeNames();
+        auto underlyingTypes = member.memberType_->underlyingTypes();
         if (expression->member() == member.memberName_) {
           std::vector<BinaryenExpressionRef> children{};
-          for (uint32_t index = 0; index < underlyingTypeNames.size(); index++) {
+          for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
             children.push_back(BinaryenGlobalGet(
-                module_, (global->name() + "#" + std::to_string(offset + index)).c_str(), underlyingTypeNames[index]));
+                module_, (global->name() + "#" + std::to_string(offset + index)).c_str(), underlyingTypes[index]));
           }
           return BinaryenBlock(module_, nullptr, children.data(), children.size(), BinaryenTypeAuto());
         }
-        offset += underlyingTypeNames.size();
+        offset += underlyingTypes.size();
       }
       break;
     }
@@ -501,15 +499,15 @@ BinaryenExpressionRef Compiler::compileMemberExpression(std::shared_ptr<ast::Mem
       auto classType = std::dynamic_pointer_cast<ir::Class>(local->variantType());
       uint32_t offset = 0U;
       for (auto const &member : classType->member()) {
-        auto underlyingTypeNames = member.memberType_->underlyingTypeNames();
+        auto underlyingTypes = member.memberType_->underlyingTypes();
         if (expression->member() == member.memberName_) {
           std::vector<BinaryenExpressionRef> children{};
-          for (uint32_t index = 0; index < underlyingTypeNames.size(); index++) {
-            children.push_back(BinaryenLocalGet(module_, offset + index, underlyingTypeNames[index]));
+          for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
+            children.push_back(BinaryenLocalGet(module_, offset + index, underlyingTypes[index]));
           }
           return BinaryenBlock(module_, nullptr, children.data(), children.size(), BinaryenTypeAuto());
         }
-        offset += underlyingTypeNames.size();
+        offset += underlyingTypes.size();
       }
       break;
     }

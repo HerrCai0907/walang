@@ -10,19 +10,19 @@ Class::Class(std::string className) : VariantType(Type::Class), className_(std::
 
 std::string Class::to_string() const { return className_; }
 
-BinaryenType Class::underlyingTypeName() const {
+BinaryenType Class::underlyingType() const {
   std::vector<BinaryenType> binaryenTypes{};
   binaryenTypes.reserve(member_.size());
   for (auto const &member : member_) {
-    binaryenTypes.push_back(member.memberType_->underlyingTypeName());
+    binaryenTypes.push_back(member.memberType_->underlyingType());
   }
   return BinaryenTypeCreate(binaryenTypes.data(), binaryenTypes.size());
 }
-std::vector<BinaryenType> Class::underlyingTypeNames() const {
+std::vector<BinaryenType> Class::underlyingTypes() const {
   std::vector<BinaryenType> binaryenTypes{};
   binaryenTypes.reserve(member_.size());
   for (auto const &member : member_) {
-    auto memberUnderlyingTypeNames = member.memberType_->underlyingTypeNames();
+    auto memberUnderlyingTypeNames = member.memberType_->underlyingTypes();
     binaryenTypes.insert(binaryenTypes.end(), memberUnderlyingTypeNames.begin(), memberUnderlyingTypeNames.end());
   }
   return binaryenTypes;

@@ -67,14 +67,14 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
   std::vector<std::string> localNames{};
 
   auto setTypeAndNameForLocals = [&binaryenTypes, &localNames](std::shared_ptr<Local> const &local) {
-    auto underlyingTypeNames = local->variantType()->underlyingTypeNames();
-    if (underlyingTypeNames.size() != 1) {
-      binaryenTypes.insert(binaryenTypes.end(), underlyingTypeNames.begin(), underlyingTypeNames.end());
-      for (uint32_t i = 0; i < underlyingTypeNames.size(); i++) {
+    auto underlyingTypes = local->variantType()->underlyingTypes();
+    if (underlyingTypes.size() != 1) {
+      binaryenTypes.insert(binaryenTypes.end(), underlyingTypes.begin(), underlyingTypes.end());
+      for (uint32_t i = 0; i < underlyingTypes.size(); i++) {
         localNames.emplace_back(local->name() + "#" + std::to_string(i));
       }
     } else {
-      binaryenTypes.push_back(underlyingTypeNames[0]);
+      binaryenTypes.push_back(underlyingTypes[0]);
       localNames.emplace_back(local->name());
     }
   };

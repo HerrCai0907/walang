@@ -16,13 +16,13 @@ Local::Local(uint32_t index, std::string name, std::shared_ptr<VariantType> cons
     : Variant(Type::TypeLocal, type), index_{index}, name_{std::move(name)} {}
 
 BinaryenExpressionRef Variant::makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
-  auto underlyingTypeNames = variantType_->underlyingTypeNames();
-  if (underlyingTypeNames.size() == 1) {
+  auto underlyingTypes = variantType_->underlyingTypes();
+  if (underlyingTypes.size() == 1) {
     return makeSingleValueAssign(module, exprRef);
   } else {
     BinaryenIndex exprRefCount = BinaryenBlockGetNumChildren(exprRef);
-    for (uint32_t index = 0; index < underlyingTypeNames.size(); index++) {
-      BinaryenIndex blockIndex = exprRefCount - underlyingTypeNames.size() + index;
+    for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
+      BinaryenIndex blockIndex = exprRefCount - underlyingTypes.size() + index;
       auto child = BinaryenBlockGetChildAt(exprRef, blockIndex);
       BinaryenBlockSetChildAt(exprRef, blockIndex, makeMultipleValueAssign(module, index, child));
       BinaryenExpressionSetType(exprRef, BinaryenTypeNone());
@@ -32,14 +32,14 @@ BinaryenExpressionRef Variant::makeAssign(BinaryenModuleRef module, BinaryenExpr
 }
 
 void Global::makeDefinition(BinaryenModuleRef module) {
-  auto underlyingTypeNames = variantType_->underlyingTypeNames();
-  if (underlyingTypeNames.size() == 1) {
-    BinaryenAddGlobal(module, name_.c_str(), variantType_->underlyingTypeName(), true,
+  auto underlyingTypes = variantType_->underlyingTypes();
+  if (underlyingTypes.size() == 1) {
+    BinaryenAddGlobal(module, name_.c_str(), variantType_->underlyingType(), true,
                       variantType_->underlyingDefaultValue(module));
   } else {
-    for (uint32_t index = 0; index < underlyingTypeNames.size(); index++) {
-      BinaryenAddGlobal(module, (name_ + "#" + std::to_string(index)).c_str(), underlyingTypeNames[index], true,
-                        VariantType::from(underlyingTypeNames[index])->underlyingDefaultValue(module));
+    for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
+      BinaryenAddGlobal(module, (name_ + "#" + std::to_string(index)).c_str(), underlyingTypes[index], true,
+                        VariantType::from(underlyingTypes[index])->underlyingDefaultValue(module));
     }
   }
 }
@@ -51,7 +51,7 @@ BinaryenExpressionRef Global::makeMultipleValueAssign(BinaryenModuleRef module, 
   return BinaryenGlobalSet(module, (name_ + "#" + std::to_string(index)).c_str(), exprRef);
 }
 BinaryenExpressionRef Global::makeGet(BinaryenModuleRef module) {
-  return BinaryenGlobalGet(module, name_.c_str(), variantType_->underlyingTypeName());
+  return BinaryenGlobalGet(module, name_.c_str(), variantType_->underlyingType());
 }
 
 BinaryenExpressionRef Local::makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
@@ -62,7 +62,7 @@ BinaryenExpressionRef Local::makeMultipleValueAssign(BinaryenModuleRef module, u
   return BinaryenLocalSet(module, index_ + index, exprRef);
 }
 BinaryenExpressionRef Local::makeGet(BinaryenModuleRef module) {
-  return BinaryenLocalGet(module, index_, variantType_->underlyingTypeName());
+  return BinaryenLocalGet(module, index_, variantType_->underlyingType());
 }
 
 } // namespace walang::ir

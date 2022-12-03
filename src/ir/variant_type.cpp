@@ -27,21 +27,21 @@ std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   return resolvedType_;
 }
 
-std::shared_ptr<VariantType> VariantType::from(BinaryenType underlyingType) {
-  if (underlyingType == BinaryenTypeInt32()) {
+std::shared_ptr<VariantType> VariantType::from(BinaryenType t) {
+  if (t == BinaryenTypeInt32()) {
     return std::make_shared<TypeI32>();
-  } else if (underlyingType == BinaryenTypeInt64()) {
+  } else if (t == BinaryenTypeInt64()) {
     return std::make_shared<TypeI64>();
-  } else if (underlyingType == BinaryenTypeFloat32()) {
+  } else if (t == BinaryenTypeFloat32()) {
     return std::make_shared<TypeF32>();
-  } else if (underlyingType == BinaryenTypeFloat64()) {
+  } else if (t == BinaryenTypeFloat64()) {
     return std::make_shared<TypeF64>();
   } else {
     throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
 [[nodiscard]] BinaryenType VariantType::underlyingReturnType() const {
-  auto typeNames = underlyingTypeNames();
+  auto typeNames = underlyingTypes();
   if (typeNames.size() == 1) {
     return typeNames[0];
   } else {
@@ -49,15 +49,15 @@ std::shared_ptr<VariantType> VariantType::from(BinaryenType underlyingType) {
   }
 }
 
-BinaryenType PendingResolveType::underlyingTypeName() const { return resolvedType()->underlyingTypeName(); }
-BinaryenType TypeNone::underlyingTypeName() const { return BinaryenTypeNone(); }
-BinaryenType Int32::underlyingTypeName() const { return BinaryenTypeInt32(); }
-BinaryenType Int64::underlyingTypeName() const { return BinaryenTypeInt64(); }
-BinaryenType TypeF32::underlyingTypeName() const { return BinaryenTypeFloat32(); }
-BinaryenType TypeF64::underlyingTypeName() const { return BinaryenTypeFloat64(); }
+BinaryenType PendingResolveType::underlyingType() const { return resolvedType()->underlyingType(); }
+BinaryenType TypeNone::underlyingType() const { return BinaryenTypeNone(); }
+BinaryenType Int32::underlyingType() const { return BinaryenTypeInt32(); }
+BinaryenType Int64::underlyingType() const { return BinaryenTypeInt64(); }
+BinaryenType TypeF32::underlyingType() const { return BinaryenTypeFloat32(); }
+BinaryenType TypeF64::underlyingType() const { return BinaryenTypeFloat64(); }
 
 BinaryenExpressionRef VariantType::underlyingDefaultValue(BinaryenModuleRef module) const {
-  auto typeName = underlyingTypeName();
+  auto typeName = underlyingType();
   if (typeName == BinaryenTypeInt32()) {
     return BinaryenConst(module, BinaryenLiteralInt32(0));
   } else if (typeName == BinaryenTypeInt64()) {
@@ -71,7 +71,7 @@ BinaryenExpressionRef VariantType::underlyingDefaultValue(BinaryenModuleRef modu
   }
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int64_t value) const {
-  auto typeName = underlyingTypeName();
+  auto typeName = underlyingType();
   if (typeName == BinaryenTypeInt32()) {
     return BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(value)));
   } else if (typeName == BinaryenTypeInt64()) {
@@ -85,13 +85,13 @@ BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int
   }
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, double value) const {
-  if (underlyingTypeName() == BinaryenTypeInt32()) {
+  if (underlyingType() == BinaryenTypeInt32()) {
     throw TypeConvertError(to_string(), "i32");
-  } else if (underlyingTypeName() == BinaryenTypeInt64()) {
+  } else if (underlyingType() == BinaryenTypeInt64()) {
     throw TypeConvertError(to_string(), "i64");
-  } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
+  } else if (underlyingType() == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(static_cast<float>(value)));
-  } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
+  } else if (underlyingType() == BinaryenTypeFloat64()) {
     return BinaryenConst(module, BinaryenLiteralFloat64(value));
   } else {
     throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
@@ -273,14 +273,14 @@ BinaryenExpressionRef TypeI32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
@@ -356,14 +356,14 @@ BinaryenExpressionRef TypeU32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
@@ -439,14 +439,14 @@ BinaryenExpressionRef TypeI64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
@@ -522,14 +522,14 @@ BinaryenExpressionRef TypeU64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
