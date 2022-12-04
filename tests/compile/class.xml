@@ -2,8 +2,7 @@
     <Basis>
 (module
  (type $none_=&gt;_none (func))
- (type $i32_f32_=&gt;_none (func (param i32 f32)))
- (type $i32_f32_i32_=&gt;_none (func (param i32 f32 i32)))
+ (type $i32_=&gt;_none (func (param i32)))
  (memory $0 0 1)
  (start $_start)
  (func $A#constructor
@@ -16,9 +15,53 @@
    (f32.const 0)
   )
  )
- (func $foo (param $this#0 i32) (param $this#1 f32)
+ (func $A#foo
+  (local $this#0 i32)
+  (local $this#1 f32)
+  (local.set $this#1
+   (f32.load
+    (i32.const 4)
+   )
+  )
+  (local.set $this#0
+   (i32.load
+    (i32.const 0)
+   )
+  )
+  (block
+  )
+  (i32.store
+   (i32.const 0)
+   (local.get $this#0)
+  )
+  (f32.store
+   (i32.const 4)
+   (local.get $this#1)
+  )
  )
- (func $foo2 (param $this#0 i32) (param $this#1 f32) (param $a i32)
+ (func $A#foo2 (param $a i32)
+  (local $this#0 i32)
+  (local $this#1 f32)
+  (local.set $this#1
+   (f32.load
+    (i32.const 4)
+   )
+  )
+  (local.set $this#0
+   (i32.load
+    (i32.const 0)
+   )
+  )
+  (block
+  )
+  (i32.store
+   (i32.const 0)
+   (local.get $this#0)
+  )
+  (f32.store
+   (i32.const 4)
+   (local.get $this#1)
+  )
  )
  (func $_start
   (nop)
@@ -96,4 +139,67 @@
  )
 )
 </Declare>
+    <CallMethod>
+(module
+ (type $none_=&gt;_none (func))
+ (type $none_=&gt;_f64 (func (result f64)))
+ (global $ga (mut f64) (f64.const 0))
+ (memory $0 0 1)
+ (start $_start)
+ (func $A#constructor (result f64)
+  (f64.const 0)
+ )
+ (func $A#setA
+  (local $this f64)
+  (local.set $this
+   (f64.load
+    (i32.const 0)
+   )
+  )
+  (block
+  )
+  (f64.store
+   (i32.const 0)
+   (local.get $this)
+  )
+ )
+ (func $foo
+  (local $la f64)
+  (local.set $la
+   (call $A#constructor)
+  )
+  (block
+   (f64.store
+    (i32.const 0)
+    (local.get $la)
+   )
+   (call $A#setA)
+   (local.set $la
+    (f64.load
+     (i32.const 0)
+    )
+   )
+  )
+ )
+ (func $_start
+  (nop)
+  (global.set $ga
+   (call $A#constructor)
+  )
+  (block
+   (f64.store
+    (i32.const 0)
+    (global.get $ga)
+   )
+   (call $A#setA)
+   (global.set $ga
+    (f64.load
+     (i32.const 0)
+    )
+   )
+  )
+  (nop)
+ )
+)
+</CallMethod>
 </snapshots>

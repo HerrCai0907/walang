@@ -28,6 +28,51 @@ class A {
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(compile.wat());
 }
+TEST_F(CompileClassTest, Declare) {
+  FileParser parser("test.wa", R"(
+class A {
+  a : f64;
+  b : i32;
+}
+class B {}
+class C {
+  c : i64;
+}
+let ga = A();
+let gb = B();
+let gc = C();
+function foo():void{
+  let la = A();
+  let lb = B();
+  let lc = C();
+}
+    )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(compile.wat());
+}
+TEST_F(CompileClassTest, CallMethod) {
+  FileParser parser("test.wa", R"(
+class A {
+  a : f64;
+  function setA():void{}
+}
+let ga = A();
+ga.setA();
+function foo():void{
+  let la = A();
+  la.setA();
+}
+    )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(compile.wat());
+}
+
 TEST_F(CompileClassTest, Error) {
   EXPECT_THROW(
       [] {
@@ -89,29 +134,4 @@ class A {
         snapshot.check(compile.wat());
       }(),
       RecursiveDefinedSymbol);
-}
-TEST_F(CompileClassTest, Declare) {
-  FileParser parser("test.wa", R"(
-class A {
-  a : f64;
-  b : i32;
-}
-class B {}
-class C {
-  c : i64;
-}
-let ga = A();
-let gb = B();
-let gc = C();
-function foo():void{
-  let la = A();
-  let lb = B();
-  let lc = C();
-}
-    )");
-  auto file = parser.parse();
-  Compiler compile{{file}};
-  compile.compile();
-  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
-  snapshot.check(compile.wat());
 }

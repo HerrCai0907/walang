@@ -290,7 +290,8 @@ std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::C
   std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
                                                     ? variantTypeMap_.resolveType(statement->returnType().value())
                                                     : std::make_shared<ir::TypeAuto>();
-  auto functionIr = std::make_shared<ir::Function>(statement->name(), argumentNames, argumentTypes, returnType);
+  auto functionIr = std::make_shared<ir::Function>(classType->className() + "#" + statement->name(), argumentNames,
+                                                   argumentTypes, returnType);
   functions_.insert(std::make_pair(classType->className() + "#" + statement->name(), functionIr));
   currentFunction_.push(functionIr);
   BinaryenExpressionRef body = compileBlockStatement(statement->body());
@@ -410,7 +411,11 @@ BinaryenExpressionRef Compiler::compileCallExpression(std::shared_ptr<ast::CallE
     auto functionCaller = std::dynamic_pointer_cast<ir::Function>(callerType);
     std::vector<std::shared_ptr<ir::VariantType>> const &signatureArgumentTypes =
         functionCaller->signature()->argumentTypes();
-    std::vector<std::shared_ptr<ast::Expression>> const &argumentExpressions = expression->arguments();
+    std::vector<std::shared_ptr<ast::Expression>> argumentExpressions = expression->arguments();
+    if (expression->caller()->type() == ast::ExpressionType::TypeMemberExpression) {
+      argumentExpressions.insert(argumentExpressions.begin(),
+                                 std::dynamic_pointer_cast<ast::MemberExpression>(expression->caller())->expr());
+    }
     // check
     if (signatureArgumentTypes.size() != argumentExpressions.size()) {
       auto e = ArgumentCountError(signatureArgumentTypes.size(), argumentExpressions.size());
@@ -424,19 +429,57 @@ BinaryenExpressionRef Compiler::compileCallExpression(std::shared_ptr<ast::CallE
     }
 
     // compile
-    std::vector<BinaryenExpressionRef> expressionRefs{};
+    std::vector<BinaryenExpressionRef> exprRefs{};
+    std::vector<BinaryenExpressionRef> postPrecessExprRefs{};
+    std::vector<BinaryenExpressionRef> operands{};
+
+    uint32_t memoryPosition = 0;
     for (uint32_t index = 0; index < signatureArgumentTypes.size(); index++) {
-      expressionRefs.push_back(compileExpression(argumentExpressions[index], signatureArgumentTypes[index]));
+      if (signatureArgumentTypes[index]->type() == ir::VariantType::Type::Class) {
+        auto classType = std::dynamic_pointer_cast<ir::Class>(signatureArgumentTypes[index]);
+        auto symbol = resolveVariant(argumentExpressions[index]);
+        switch (symbol->type()) {
+        case ir::Symbol::Type::TypeGlobal: {
+          std::string const &globalName = std::dynamic_pointer_cast<ir::Global>(symbol)->name();
+          auto toMemoryExprRefs = classType->fromGlobalToMemory(module_, globalName, memoryPosition);
+          exprRefs.insert(exprRefs.begin(), toMemoryExprRefs.begin(), toMemoryExprRefs.end());
+          auto fromMemoryExprRefs = classType->fromMemoryToGlobal(module_, globalName, memoryPosition);
+          postPrecessExprRefs.insert(postPrecessExprRefs.end(), fromMemoryExprRefs.cbegin(), fromMemoryExprRefs.cend());
+          break;
+        }
+        case ir::Symbol::Type::TypeLocal: {
+          auto localBasisIndex = std::dynamic_pointer_cast<ir::Local>(symbol)->index();
+          auto toMemoryExprRefs = classType->fromLocalToMemory(module_, localBasisIndex, memoryPosition);
+          exprRefs.insert(exprRefs.begin(), toMemoryExprRefs.begin(), toMemoryExprRefs.end());
+          auto fromMemoryExprRefs = classType->fromMemoryToLocal(module_, localBasisIndex, memoryPosition);
+          postPrecessExprRefs.insert(postPrecessExprRefs.end(), fromMemoryExprRefs.cbegin(), fromMemoryExprRefs.cend());
+          break;
+        }
+        case ir::Symbol::Type::TypeFunction:
+          throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
+        }
+        memoryPosition += ir::VariantType::getSize(classType->underlyingType());
+      } else {
+        operands.push_back(compileExpression(argumentExpressions[index], signatureArgumentTypes[index]));
+      }
     }
     switch (functionCaller->signature()->returnType()->underlyingReturnTypeStatus()) {
     case ir::VariantType::UnderlyingReturnTypeStatus::None:
     case ir::VariantType::UnderlyingReturnTypeStatus::ByReturnValue: {
-      return BinaryenCall(module_, functionCaller->name().c_str(), expressionRefs.data(), expressionRefs.size(),
-                          functionCaller->signature()->returnType()->underlyingType());
+      BinaryenExpressionRef callExprRef =
+          BinaryenCall(module_, functionCaller->name().c_str(), operands.data(), operands.size(),
+                       functionCaller->signature()->returnType()->underlyingType());
+      exprRefs.push_back(callExprRef);
+
+      exprRefs.insert(exprRefs.end(), postPrecessExprRefs.begin(), postPrecessExprRefs.end());
+
+      return exprRefs.size() == 1 ? callExprRef
+                                  : BinaryenBlock(module_, nullptr, exprRefs.data(), exprRefs.size(),
+                                                  functionCaller->signature()->returnType()->underlyingType());
     }
     case ir::VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
-      BinaryenExpressionRef callRef = BinaryenCall(module_, functionCaller->name().c_str(), expressionRefs.data(),
-                                                   expressionRefs.size(), BinaryenTypeNone());
+      BinaryenExpressionRef callRef =
+          BinaryenCall(module_, functionCaller->name().c_str(), operands.data(), operands.size(), BinaryenTypeNone());
       std::vector<BinaryenExpressionRef> exprRefs{callRef};
       int32_t offset = 0;
       for (auto const &underlyingType : functionCaller->signature()->returnType()->underlyingTypes()) {
@@ -456,7 +499,7 @@ BinaryenExpressionRef Compiler::compileMemberExpression(std::shared_ptr<ast::Mem
                                                         std::shared_ptr<ir::VariantType> const &expectedType) {
   // auto expressionType = std::make_shared<ir::TypeAuto>();
   // BinaryenExpressionRef exprRef = compileExpression(expression->expression(), expressionType);
-  auto symbol = resolveVariant(expression->expression());
+  auto symbol = resolveVariant(expression->expr());
   switch (symbol->type()) {
   case ir::Symbol::Type::TypeGlobal: {
     auto global = std::dynamic_pointer_cast<ir::Global>(symbol);
@@ -532,7 +575,8 @@ BinaryenExpressionRef Compiler::compileMemberExpression(std::shared_ptr<ast::Mem
 }
 
 std::shared_ptr<ir::Symbol> Compiler::resolveVariant(std::shared_ptr<ast::Expression> const &expression) {
-  if (std::dynamic_pointer_cast<ast::Identifier>(expression) != nullptr) {
+  switch (expression->type()) {
+  case ast::TypeIdentifier:
     return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<ir::Symbol> {
                                    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
                                  },
@@ -555,6 +599,23 @@ std::shared_ptr<ir::Symbol> Compiler::resolveVariant(std::shared_ptr<ast::Expres
                                    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
                                  }},
                       std::dynamic_pointer_cast<ast::Identifier>(expression)->identifier());
+  case ast::TypeMemberExpression: {
+    auto memberExpression = std::dynamic_pointer_cast<ast::MemberExpression>(expression);
+    auto masterExpression = resolveVariant(memberExpression->expr());
+    if (masterExpression->variantType()->type() == ir::VariantType::Type::Class) {
+      auto classType = std::dynamic_pointer_cast<ir::Class>(masterExpression->variantType());
+      auto it = classType->methodMap().find(memberExpression->member());
+      if (it != classType->methodMap().cend()) {
+        return it->second;
+      }
+    }
+    break;
+  }
+  case ast::TypePrefixExpression:
+  case ast::TypeBinaryExpression:
+  case ast::TypeTernaryExpression:
+  case ast::TypeCallExpression:
+    break;
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }

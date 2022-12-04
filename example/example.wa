@@ -1,2 +1,8 @@
-let a:f64 = 0;
-not a;
+class A {
+  a : i32;
+  function set_a(v:i32):void{
+  }
+}
+
+let a = A();
+a.set_a(100);

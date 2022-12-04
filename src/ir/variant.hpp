@@ -86,8 +86,8 @@ public:
     return std::dynamic_pointer_cast<Signature>(variantType_);
   }
 
-  std::shared_ptr<Local> const &addLocal(std::string const &name, std::shared_ptr<VariantType> const &localType);
-  std::shared_ptr<Local> const &addTempLocal(std::shared_ptr<VariantType> const &localType);
+  std::shared_ptr<Local> addLocal(std::string const &name, std::shared_ptr<VariantType> const &localType);
+  std::shared_ptr<Local> addTempLocal(std::shared_ptr<VariantType> const &localType);
   [[nodiscard]] std::shared_ptr<Local> findLocalByName(std::string const &name) const;
 
   std::string const &createBreakLabel(std::string const &prefix);
@@ -104,6 +104,7 @@ private:
   uint32_t argumentSize_;
 
   std::vector<std::shared_ptr<Local>> locals_{};
+  uint32_t localIndex_{0U};
 
   std::stack<std::string> currentBreakLabel_{};
   uint32_t breakLabelIndex_{0U};

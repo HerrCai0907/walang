@@ -124,7 +124,7 @@ public:
   ~MemberExpression() override = default;
   [[nodiscard]] std::string to_string() const override;
 
-  [[nodiscard]] std::shared_ptr<Expression> const &expression() const noexcept { return expr_; }
+  [[nodiscard]] std::shared_ptr<Expression> const &expr() const noexcept { return expr_; }
   [[nodiscard]] std::string const &member() const noexcept { return member_; }
 
 private:

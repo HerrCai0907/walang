@@ -55,11 +55,10 @@ int main(int argc, const char *argv[]) {
   auto file = parser.parse();
   walang::Compiler compiler({file});
   compiler.compile();
-  BinaryenModuleValidate(compiler.module());
-
   std::ofstream outputFile{outputFilePath};
   if (!outputFile.is_open()) {
     std::cerr << "output path invalid " << outputFilePath << std::endl;
   }
   outputFile << compiler.wat();
+  BinaryenModuleValidate(compiler.module());
 }

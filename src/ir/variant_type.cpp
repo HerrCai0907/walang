@@ -27,6 +27,26 @@ std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   return resolvedType_;
 }
 
+uint32_t VariantType::getSize(BinaryenType t) {
+  if (t == BinaryenTypeInt32() || t == BinaryenTypeFloat32()) {
+    return 4U;
+  } else if (t == BinaryenTypeInt64() || t == BinaryenTypeFloat64()) {
+    return 8U;
+  } else if (t == BinaryenTypeNone()) {
+    return 0U;
+  } else {
+    auto length = BinaryenTypeArity(t);
+    std::vector<BinaryenType> types{};
+    types.resize(length);
+    BinaryenTypeExpand(t, types.data());
+    uint32_t size = 0U;
+    for (auto type : types) {
+      size += getSize(type);
+    }
+    return size;
+  }
+}
+
 std::shared_ptr<VariantType> VariantType::from(BinaryenType t) {
   if (t == BinaryenTypeInt32()) {
     return std::make_shared<TypeI32>();

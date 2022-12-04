@@ -35,7 +35,8 @@ public:
   Type type() const noexcept { return type_; }
   virtual std::string to_string() const;
 
-  static std::shared_ptr<VariantType> from(BinaryenType t);
+  [[nodiscard]] static std::shared_ptr<VariantType> from(BinaryenType t);
+  [[nodiscard]] static uint32_t getSize(BinaryenType t);
 
   virtual BinaryenType underlyingType() const = 0;
   [[nodiscard]] virtual std::vector<BinaryenType> underlyingTypes() const { return {underlyingType()}; }
@@ -223,6 +224,15 @@ public:
   [[nodiscard]] std::string const &className() { return className_; }
   [[nodiscard]] std::vector<ClassMember> const &member() { return member_; }
   [[nodiscard]] std::map<std::string, std::shared_ptr<Function>> const &methodMap() { return methodMap_; }
+
+  [[nodiscard]] std::vector<BinaryenExpressionRef> fromMemoryToLocal(BinaryenModuleRef module, uint32_t localBasisIndex,
+                                                                     uint32_t memoryPosition) const;
+  [[nodiscard]] std::vector<BinaryenExpressionRef> fromLocalToMemory(BinaryenModuleRef module, uint32_t localBasisIndex,
+                                                                     uint32_t memoryPosition) const;
+  [[nodiscard]] std::vector<BinaryenExpressionRef>
+  fromMemoryToGlobal(BinaryenModuleRef module, std::string const &globalName, uint32_t memoryPosition) const;
+  [[nodiscard]] std::vector<BinaryenExpressionRef>
+  fromGlobalToMemory(BinaryenModuleRef module, std::string const &globalName, uint32_t memoryPosition) const;
 
 private:
   std::string className_;
