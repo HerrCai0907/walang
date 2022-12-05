@@ -56,14 +56,18 @@ function foo():void{
 TEST_F(CompileClassTest, CallMethod) {
   FileParser parser("test.wa", R"(
 class A {
-  a : f64;
-  function setA():void{}
+  a1 : f64;
+  function setA():void{
+    this.a1 = 10;
+  }
 }
-let ga = A();
-ga.setA();
-function foo():void{
-  let la = A();
-  la.setA();
+class B {
+  b1 : f64;
+  b2 : i32;
+  function setA():void{
+    this.b1 = 10;
+    this.b2 = 11;
+  }
 }
     )");
   auto file = parser.parse();

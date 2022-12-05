@@ -143,7 +143,6 @@
 (module
  (type $none_=&gt;_none (func))
  (type $none_=&gt;_f64 (func (result f64)))
- (global $ga (mut f64) (f64.const 0))
  (memory $0 0 1)
  (start $_start)
  (func $A#constructor (result f64)
@@ -157,47 +156,57 @@
    )
   )
   (block
+   (local.set $this
+    (f64.const 10)
+   )
   )
   (f64.store
    (i32.const 0)
    (local.get $this)
   )
  )
- (func $foo
-  (local $la f64)
-  (local.set $la
-   (call $A#constructor)
+ (func $B#constructor
+  (f64.store
+   (i32.const 0)
+   (f64.const 0)
+  )
+  (i32.store
+   (i32.const 8)
+   (i32.const 0)
+  )
+ )
+ (func $B#setA
+  (local $this#0 f64)
+  (local $this#1 i32)
+  (local.set $this#1
+   (i32.load
+    (i32.const 8)
+   )
+  )
+  (local.set $this#0
+   (f64.load
+    (i32.const 0)
+   )
   )
   (block
-   (f64.store
-    (i32.const 0)
-    (local.get $la)
+   (local.set $this#0
+    (f64.const 10)
    )
-   (call $A#setA)
-   (local.set $la
-    (f64.load
-     (i32.const 0)
-    )
+   (local.set $this#1
+    (i32.const 11)
    )
+  )
+  (f64.store
+   (i32.const 0)
+   (local.get $this#0)
+  )
+  (i32.store
+   (i32.const 8)
+   (local.get $this#1)
   )
  )
  (func $_start
   (nop)
-  (global.set $ga
-   (call $A#constructor)
-  )
-  (block
-   (f64.store
-    (i32.const 0)
-    (global.get $ga)
-   )
-   (call $A#setA)
-   (global.set $ga
-    (f64.load
-     (i32.const 0)
-    )
-   )
-  )
   (nop)
  )
 )

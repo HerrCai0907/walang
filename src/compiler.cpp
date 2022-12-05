@@ -292,6 +292,7 @@ std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::C
                                                     : std::make_shared<ir::TypeAuto>();
   auto functionIr = std::make_shared<ir::Function>(classType->className() + "#" + statement->name(), argumentNames,
                                                    argumentTypes, returnType);
+  functionIr->setThisClassType(classType);
   functions_.insert(std::make_pair(classType->className() + "#" + statement->name(), functionIr));
   currentFunction_.push(functionIr);
   BinaryenExpressionRef body = compileBlockStatement(statement->body());
@@ -601,12 +602,23 @@ std::shared_ptr<ir::Symbol> Compiler::resolveVariant(std::shared_ptr<ast::Expres
                       std::dynamic_pointer_cast<ast::Identifier>(expression)->identifier());
   case ast::TypeMemberExpression: {
     auto memberExpression = std::dynamic_pointer_cast<ast::MemberExpression>(expression);
-    auto masterExpression = resolveVariant(memberExpression->expr());
-    if (masterExpression->variantType()->type() == ir::VariantType::Type::Class) {
-      auto classType = std::dynamic_pointer_cast<ir::Class>(masterExpression->variantType());
-      auto it = classType->methodMap().find(memberExpression->member());
-      if (it != classType->methodMap().cend()) {
-        return it->second;
+    auto symbol = resolveVariant(memberExpression->expr());
+    auto exprVariantType = symbol->variantType();
+    if (exprVariantType->type() == ir::VariantType::Type::Class) {
+      auto classType = std::dynamic_pointer_cast<ir::Class>(exprVariantType);
+      auto methodIt = classType->methodMap().find(memberExpression->member());
+      if (methodIt != classType->methodMap().cend()) {
+        return methodIt->second;
+      }
+      auto const &members = classType->member();
+      auto memberIt =
+          std::find_if(members.begin(), members.end(), [&memberExpression](ir::Class::ClassMember const &member) {
+            return member.memberName_ == memberExpression->member();
+          });
+      if (memberIt != members.cend()) {
+        assert(symbol->type() == ir::Symbol::Type::TypeLocal);
+        auto localSymbol = std::dynamic_pointer_cast<ir::Local>(symbol);
+        return localSymbol->findMemberByName(memberIt->memberName_);
       }
     }
     break;

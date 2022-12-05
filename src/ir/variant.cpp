@@ -1,8 +1,10 @@
 #include "variant.hpp"
+#include "helper/diagnose.hpp"
 #include "ir/variant_type.hpp"
 #include <binaryen-c.h>
-
 #include <cassert>
+#include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 
@@ -11,9 +13,13 @@ namespace walang::ir {
 Global::Global(std::string name, std::shared_ptr<VariantType> const &type)
     : Variant(Type::TypeGlobal, type), name_{std::move(name)} {}
 Local::Local(uint32_t index, std::shared_ptr<VariantType> const &type)
-    : Variant(Type::TypeLocal, type), index_{index}, name_{} {}
+    : Variant(Type::TypeLocal, type), index_{index}, name_{} {
+  initMembers(type);
+}
 Local::Local(uint32_t index, std::string name, std::shared_ptr<VariantType> const &type)
-    : Variant(Type::TypeLocal, type), index_{index}, name_{std::move(name)} {}
+    : Variant(Type::TypeLocal, type), index_{index}, name_{std::move(name)} {
+  initMembers(type);
+}
 
 BinaryenExpressionRef Variant::makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
   auto underlyingTypes = variantType_->underlyingTypes();
@@ -33,6 +39,7 @@ BinaryenExpressionRef Variant::makeAssign(BinaryenModuleRef module, BinaryenExpr
   case VariantType::UnderlyingReturnTypeStatus::ByReturnValue:
     return makeSingleValueAssign(module, exprRef);
   }
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 void Global::makeDefinition(BinaryenModuleRef module) {
@@ -67,6 +74,23 @@ BinaryenExpressionRef Local::makeMultipleValueAssign(BinaryenModuleRef module, u
 }
 BinaryenExpressionRef Local::makeGet(BinaryenModuleRef module) {
   return BinaryenLocalGet(module, index_, variantType_->underlyingType());
+}
+
+void Local::initMembers(std::shared_ptr<VariantType> const &type) {
+  if (type->type() == VariantType::Type::Class) {
+    uint32_t index = index_;
+    for (auto const &member : std::dynamic_pointer_cast<Class>(type)->member()) {
+      members_.emplace(member.memberName_, std::make_shared<Local>(index, member.memberName_, member.memberType_));
+      index++;
+    }
+  }
+}
+std::shared_ptr<Local> Local::findMemberByName(std::string const &name) {
+  auto it = members_.find(name);
+  if (it == members_.end()) {
+    throw UnknownSymbol(name);
+  }
+  return it->second;
 }
 
 } // namespace walang::ir

@@ -70,9 +70,14 @@ public:
                                                 BinaryenExpressionRef exprRef) override;
   BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 
+  std::shared_ptr<Local> findMemberByName(std::string const &name);
+
 private:
   uint32_t index_;
   std::string name_;
+  std::map<std::string, std::shared_ptr<Local>> members_{};
+
+  void initMembers(std::shared_ptr<VariantType> const &type);
 };
 
 class Function : public Symbol {
@@ -85,6 +90,9 @@ public:
   [[nodiscard]] std::shared_ptr<Signature> signature() const noexcept {
     return std::dynamic_pointer_cast<Signature>(variantType_);
   }
+
+  std::shared_ptr<Class> thisClassType() { return thisClassType_.lock(); }
+  void setThisClassType(std::shared_ptr<Class> const &thisClassType) { thisClassType_ = thisClassType; }
 
   std::shared_ptr<Local> addLocal(std::string const &name, std::shared_ptr<VariantType> const &localType);
   std::shared_ptr<Local> addTempLocal(std::shared_ptr<VariantType> const &localType);
@@ -105,6 +113,8 @@ private:
 
   std::vector<std::shared_ptr<Local>> locals_{};
   uint32_t localIndex_{0U};
+
+  std::weak_ptr<Class> thisClassType_{};
 
   std::stack<std::string> currentBreakLabel_{};
   uint32_t breakLabelIndex_{0U};
