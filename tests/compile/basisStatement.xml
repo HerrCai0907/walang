@@ -4,6 +4,7 @@
  (type $none_=&gt;_none (func))
  (global $a (mut i32) (i32.const 0))
  (global $b (mut f64) (f64.const 0))
+ (memory $0 0 1)
  (start $_start)
  (func $_start
   (drop
@@ -30,6 +31,7 @@
     <logicAndExpression>
 (module
  (type $none_=&gt;_none (func))
+ (memory $0 0 1)
  (start $_start)
  (func $_start
   (local $0 i32)
@@ -48,6 +50,7 @@
     <logicOrExpression>
 (module
  (type $none_=&gt;_none (func))
+ (memory $0 0 1)
  (start $_start)
  (func $_start
   (local $0 i32)
@@ -70,6 +73,7 @@
  (global $b (mut i64) (i64.const 0))
  (global $c (mut f32) (f32.const 0))
  (global $d (mut f64) (f64.const 0))
+ (memory $0 0 1)
  (start $_start)
  (func $_start
   (global.set $a
@@ -136,6 +140,7 @@
     <ternaryExpression>
 (module
  (type $none_=&gt;_none (func))
+ (memory $0 0 1)
  (start $_start)
  (func $_start
   (drop
@@ -156,6 +161,7 @@
  (global $c (mut i32) (i32.const 0))
  (global $d (mut i64) (i64.const 0))
  (global $e (mut i64) (i64.const 0))
+ (memory $0 0 1)
  (start $_start)
  (func $_start
   (global.set $a

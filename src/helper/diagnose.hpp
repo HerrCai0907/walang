@@ -7,19 +7,25 @@
 #include <exception>
 #include <memory>
 #include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <utility>
 #include <variant>
 
 namespace walang {
 
-class CompilerError : public std::exception {
+template <class Child> class CompilerError : public std::exception {
 public:
   CompilerError() = default;
-  explicit CompilerError(ast::Range const &range) : range_(range) {}
 
-  virtual const char *what() const noexcept { return errorMessage_.c_str(); }
+  [[nodiscard]] const char *what() const noexcept override { return errorMessage_.c_str(); }
   void setRange(ast::Range const &range) {
     range_ = range;
     generateErrorMessage();
+  }
+  [[noreturn]] void setRangeAndThrow(ast::Range const &range) {
+    setRange(range);
+    throw *dynamic_cast<Child *>(this);
   }
 
 protected:
@@ -29,71 +35,86 @@ protected:
   virtual void generateErrorMessage() = 0;
 };
 
-class TypeConvertError : public CompilerError {
+class TypeConvertError : public CompilerError<TypeConvertError> {
 public:
-  TypeConvertError(std::shared_ptr<ir::VariantType const> const &from,
-                   std::shared_ptr<ir::VariantType const> const &to);
-  TypeConvertError(std::shared_ptr<ir::VariantType const> const &from, std::shared_ptr<ir::VariantType const> const &to,
-                   ast::Range const &range);
+  TypeConvertError(std::string from, std::string to);
 
 private:
-  std::shared_ptr<ir::VariantType const> const from_;
-  std::shared_ptr<ir::VariantType const> const to_;
+  std::string from_;
+  std::string to_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
-class InvalidOperator : public CompilerError {
+class InvalidOperator : public CompilerError<InvalidOperator> {
 public:
-  InvalidOperator(std::shared_ptr<ir::VariantType const> const &type, ast::PrefixOp op);
-  InvalidOperator(std::shared_ptr<ir::VariantType const> const &type, ast::BinaryOp op);
+  InvalidOperator(std::shared_ptr<ir::VariantType const> type, ast::PrefixOp op);
+  InvalidOperator(std::shared_ptr<ir::VariantType const> type, ast::BinaryOp op);
 
 private:
   std::variant<ast::PrefixOp, ast::BinaryOp> const op_;
   std::shared_ptr<ir::VariantType const> const type_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
-class ArgumentCountError : public CompilerError {
+class ArgumentCountError : public CompilerError<ArgumentCountError> {
 public:
-  ArgumentCountError(uint32_t expected, uint32_t actual, ast::Range const &range);
+  ArgumentCountError(uint32_t expected, uint32_t actual);
 
 private:
   uint32_t expected_;
   uint32_t actual_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
-class JumpStatementError : public CompilerError {
+class JumpStatementError : public CompilerError<JumpStatementError> {
 public:
-  JumpStatementError(std::string const &statement);
+  explicit JumpStatementError(std::string statement);
 
 private:
   std::string statement_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
-class RedefinedSymbol : public CompilerError {
+class RedefinedSymbol : public CompilerError<RedefinedSymbol> {
 public:
-  RedefinedSymbol(std::string const &symbol);
+  explicit RedefinedSymbol(std::string symbol);
 
 private:
   std::string symbol_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
 };
 
-class UnknownSymbol : public CompilerError {
+class UnknownSymbol : public CompilerError<UnknownSymbol> {
 public:
-  UnknownSymbol(std::string const &symbol);
+  explicit UnknownSymbol(std::string symbol);
 
 private:
   std::string symbol_;
 
-  virtual void generateErrorMessage() override;
+  void generateErrorMessage() override;
+};
+
+class RecursiveDefinedSymbol : public CompilerError<RecursiveDefinedSymbol> {
+public:
+  explicit RecursiveDefinedSymbol(std::string symbol);
+
+private:
+  std::string symbol_;
+
+  void generateErrorMessage() override;
+};
+
+class CannotInferType : public CompilerError<CannotInferType> {
+public:
+  explicit CannotInferType();
+
+private:
+  void generateErrorMessage() override;
 };
 
 } // namespace walang

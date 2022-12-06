@@ -1,5 +1,6 @@
 # ide
 /.vscode/
+/.idea/
 
 # python
 /venv/
@@ -11,6 +12,7 @@
 # cpp
 /build*/*
 /bazel-*/
+/cmake-build-debug/
 
 # wasm
 *.wat

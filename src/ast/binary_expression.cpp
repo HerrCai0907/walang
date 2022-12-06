@@ -2,14 +2,14 @@
 #include <cassert>
 #include <fmt/core.h>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
 BinaryExpression::BinaryExpression() noexcept
-    : Expression(Type::_BinaryExpression), op_(static_cast<BinaryOp>(0)), leftExpr_(nullptr), rightExpr_(nullptr) {}
+    : Expression(ExpressionType::TypeBinaryExpression), op_(static_cast<BinaryOp>(0)), leftExpr_(nullptr),
+      rightExpr_(nullptr) {}
 BinaryExpression::BinaryExpression(walangParser::BinaryExpressionContext *ctx,
                                    std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
-    : Expression(Type::_BinaryExpression) {
+    : Expression(ExpressionType::TypeBinaryExpression) {
 
   auto leftChild = dynamic_cast<antlr4::ParserRuleContext *>(ctx->binaryExpressionLeft()->children.at(0));
   assert(map.count(leftChild) == 1);
@@ -32,7 +32,7 @@ BinaryExpression::BinaryExpression(walangParser::BinaryExpressionContext *ctx,
     }
   }
 }
-void BinaryExpression::appendExpr(BinaryOp op, std::shared_ptr<Expression> rightExpr) {
+void BinaryExpression::appendExpr(BinaryOp op, const std::shared_ptr<Expression> &rightExpr) {
   if (Operator::getOpPriority(op_) <= Operator::getOpPriority(op)) {
     // self as new operator's left
     auto newLeft = std::make_shared<BinaryExpression>();
@@ -60,5 +60,4 @@ std::string BinaryExpression::to_string() const {
   return fmt::format("({0} {1} {2})", Operator::to_string(op_), leftExpr_->to_string(), rightExpr_->to_string());
 }
 
-} // namespace ast
-} // namespace walang
+} // namespace walang::ast

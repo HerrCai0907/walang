@@ -1,0 +1,226 @@
+<snapshots>
+    <Basis>
+(module
+ (type $none_=&gt;_none (func))
+ (type $i32_=&gt;_none (func (param i32)))
+ (memory $0 0 1)
+ (start $_start)
+ (func $A#constructor
+  (i32.store
+   (i32.const 0)
+   (i32.const 0)
+  )
+  (f32.store
+   (i32.const 4)
+   (f32.const 0)
+  )
+ )
+ (func $A#foo
+  (local $this#0 i32)
+  (local $this#1 f32)
+  (local.set $this#1
+   (f32.load
+    (i32.const 4)
+   )
+  )
+  (local.set $this#0
+   (i32.load
+    (i32.const 0)
+   )
+  )
+  (block
+  )
+  (i32.store
+   (i32.const 0)
+   (local.get $this#0)
+  )
+  (f32.store
+   (i32.const 4)
+   (local.get $this#1)
+  )
+ )
+ (func $A#foo2 (param $a i32)
+  (local $this#0 i32)
+  (local $this#1 f32)
+  (local.set $this#1
+   (f32.load
+    (i32.const 4)
+   )
+  )
+  (local.set $this#0
+   (i32.load
+    (i32.const 0)
+   )
+  )
+  (block
+  )
+  (i32.store
+   (i32.const 0)
+   (local.get $this#0)
+  )
+  (f32.store
+   (i32.const 4)
+   (local.get $this#1)
+  )
+ )
+ (func $_start
+  (nop)
+ )
+)
+</Basis>
+    <Declare>
+(module
+ (type $none_=&gt;_none (func))
+ (type $none_=&gt;_i64 (func (result i64)))
+ (global $ga#0 (mut f64) (f64.const 0))
+ (global $ga#1 (mut i32) (i32.const 0))
+ (global $gc (mut i64) (i64.const 0))
+ (memory $0 0 1)
+ (start $_start)
+ (func $A#constructor
+  (f64.store
+   (i32.const 0)
+   (f64.const 0)
+  )
+  (i32.store
+   (i32.const 8)
+   (i32.const 0)
+  )
+ )
+ (func $B#constructor
+ )
+ (func $C#constructor (result i64)
+  (i64.const 0)
+ )
+ (func $foo
+  (local $la#0 f64)
+  (local $la#1 i32)
+  (local $lc i64)
+  (block
+   (call $A#constructor)
+   (local.set $la#0
+    (f64.load
+     (i32.const 0)
+    )
+   )
+   (local.set $la#1
+    (i32.load
+     (i32.const 8)
+    )
+   )
+  )
+  (call $B#constructor)
+  (local.set $lc
+   (call $C#constructor)
+  )
+ )
+ (func $_start
+  (nop)
+  (nop)
+  (nop)
+  (block
+   (call $A#constructor)
+   (global.set $ga#0
+    (f64.load
+     (i32.const 0)
+    )
+   )
+   (global.set $ga#1
+    (i32.load
+     (i32.const 8)
+    )
+   )
+  )
+  (call $B#constructor)
+  (global.set $gc
+   (call $C#constructor)
+  )
+  (nop)
+ )
+)
+</Declare>
+    <CallMethod>
+(module
+ (type $none_=&gt;_none (func))
+ (type $none_=&gt;_f64 (func (result f64)))
+ (memory $0 0 1)
+ (start $_start)
+ (func $A#constructor (result f64)
+  (f64.const 0)
+ )
+ (func $A#setA
+  (local $this f64)
+  (local $a1 f64)
+  (local.set $this
+   (f64.load
+    (i32.const 0)
+   )
+  )
+  (block
+   (local.set $this
+    (f64.const 10)
+   )
+   (local.set $a1
+    (local.get $this)
+   )
+  )
+  (f64.store
+   (i32.const 0)
+   (local.get $this)
+  )
+ )
+ (func $B#constructor
+  (f64.store
+   (i32.const 0)
+   (f64.const 0)
+  )
+  (i32.store
+   (i32.const 8)
+   (i32.const 0)
+  )
+ )
+ (func $B#setA
+  (local $this#0 f64)
+  (local $this#1 i32)
+  (local $b1 f64)
+  (local $b2 i32)
+  (local.set $this#1
+   (i32.load
+    (i32.const 8)
+   )
+  )
+  (local.set $this#0
+   (f64.load
+    (i32.const 0)
+   )
+  )
+  (block
+   (local.set $this#0
+    (f64.const 10)
+   )
+   (local.set $this#1
+    (i32.const 11)
+   )
+   (local.set $b1
+    (local.get $this#0)
+   )
+   (local.set $b2
+    (local.get $this#1)
+   )
+  )
+  (f64.store
+   (i32.const 0)
+   (local.get $this#0)
+  )
+  (i32.store
+   (i32.const 8)
+   (local.get $this#1)
+  )
+ )
+ (func $_start
+  (nop)
+  (nop)
+ )
+)
+</CallMethod>
+</snapshots>

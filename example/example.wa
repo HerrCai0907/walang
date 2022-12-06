@@ -1,2 +1,17 @@
-let a:f64 = 0;
-not a;
+class A {
+  a1 : f64;
+  function setA():void{
+    this.a1 = 10;
+    let a1:f64 = this.a1;
+  }
+}
+class B {
+  b1 : f64;
+  b2 : i32;
+  function setA():void{
+    this.b1 = 10;
+    this.b2 = 11;
+    let b1 = this.b1;
+    let b2 = this.b2;
+  }
+}

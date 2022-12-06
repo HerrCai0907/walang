@@ -3,7 +3,8 @@
 #include "ast/op.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
-#include "ir/function.hpp"
+#include "symbol_table.hpp"
+#include "variant.hpp"
 #include <binaryen-c.h>
 #include <cstdint>
 #include <fmt/core.h>
@@ -13,46 +14,9 @@
 #include <stdexcept>
 #include <string>
 
-namespace walang {
-namespace ir {
+namespace walang::ir {
 
-class VariantTypeMap {
-public:
-  static VariantTypeMap &instance() {
-    static VariantTypeMap ins{};
-    return ins;
-  }
-  void registerType(std::string const &name, std::shared_ptr<VariantType> const &type) {
-    auto ret = map_.try_emplace(name, type);
-    if (ret.second == false) {
-      throw RedefinedSymbol(type->to_string());
-    }
-  }
-  std::shared_ptr<VariantType> const &findVariantType(std::string const &name) {
-    auto it = map_.find(name);
-    if (it == map_.end()) {
-      throw UnknownSymbol(name);
-    }
-    return it->second;
-  }
-
-private:
-  std::map<std::string, std::shared_ptr<VariantType>> map_{};
-
-  VariantTypeMap() { registerDefault(); }
-
-  void registerDefault() {
-    registerType("i32", std::make_shared<TypeI32>());
-    registerType("u32", std::make_shared<TypeU32>());
-    registerType("i64", std::make_shared<TypeI64>());
-    registerType("u64", std::make_shared<TypeU64>());
-    registerType("f32", std::make_shared<TypeF32>());
-    registerType("f64", std::make_shared<TypeF64>());
-    registerType("void", std::make_shared<TypeNone>());
-  }
-};
-
-VariantType::VariantType(Type typeName) : type_(typeName) {}
+VariantType::VariantType(Type type) : type_(type) {}
 
 std::string VariantType::to_string() const { return fmt::format("{}", magic_enum::enum_name(type_)); }
 
@@ -63,79 +27,95 @@ std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   return resolvedType_;
 }
 
-std::shared_ptr<VariantType> const &VariantType::getTypeFromDeclare(ast::DeclareStatement const &declare) {
-  if (declare.type() == "") {
-    return VariantType::inferType(declare.init());
+uint32_t VariantType::getSize(BinaryenType t) {
+  if (t == BinaryenTypeInt32() || t == BinaryenTypeFloat32()) {
+    return 4U;
+  } else if (t == BinaryenTypeInt64() || t == BinaryenTypeFloat64()) {
+    return 8U;
+  } else if (t == BinaryenTypeNone()) {
+    return 0U;
   } else {
-    return VariantType::resolveType(declare.type());
+    auto length = BinaryenTypeArity(t);
+    std::vector<BinaryenType> types{};
+    types.resize(length);
+    BinaryenTypeExpand(t, types.data());
+    uint32_t size = 0U;
+    for (auto type : types) {
+      size += getSize(type);
+    }
+    return size;
   }
-}
-std::shared_ptr<VariantType> const &VariantType::resolveType(std::string const &typeName) {
-  return VariantTypeMap::instance().findVariantType(typeName);
-}
-std::shared_ptr<VariantType> const &VariantType::inferType(std::shared_ptr<ast::Expression> const &initExpr) {
-  if (initExpr->type() == ast::Expression::Type::_Identifier) {
-    auto identifier = std::dynamic_pointer_cast<ast::Identifier>(initExpr);
-    return std::visit(overloaded{[](uint64_t i) -> std::shared_ptr<VariantType> const & { return resolveType("i32"); },
-                                 [](double d) -> std::shared_ptr<VariantType> const & { return resolveType("f32"); },
-                                 [](const std::string &s) -> std::shared_ptr<VariantType> const & {
-                                   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
-                                 }},
-                      identifier->id());
-  }
-  throw std::runtime_error("cannot infer type from " + initExpr->to_string());
 }
 
-BinaryenType VariantType::underlyingTypeName() const {
-  throw std::runtime_error("underlyingTypeName not supported type '" + to_string() + "'");
+std::shared_ptr<VariantType> VariantType::from(BinaryenType t) {
+  if (t == BinaryenTypeInt32()) {
+    return std::make_shared<TypeI32>();
+  } else if (t == BinaryenTypeInt64()) {
+    return std::make_shared<TypeI64>();
+  } else if (t == BinaryenTypeFloat32()) {
+    return std::make_shared<TypeF32>();
+  } else if (t == BinaryenTypeFloat64()) {
+    return std::make_shared<TypeF64>();
+  } else {
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
+  }
 }
-BinaryenType PendingResolveType::underlyingTypeName() const { return resolvedType()->underlyingTypeName(); }
-BinaryenType TypeNone::underlyingTypeName() const { return BinaryenTypeNone(); }
-BinaryenType Int32::underlyingTypeName() const { return BinaryenTypeInt32(); }
-BinaryenType Int64::underlyingTypeName() const { return BinaryenTypeInt64(); }
-BinaryenType TypeF32::underlyingTypeName() const { return BinaryenTypeFloat32(); }
-BinaryenType TypeF64::underlyingTypeName() const { return BinaryenTypeFloat64(); }
+[[nodiscard]] VariantType::UnderlyingReturnTypeStatus VariantType::underlyingReturnTypeStatus() const {
+  if (underlyingType() == BinaryenTypeNone()) {
+    return UnderlyingReturnTypeStatus::None;
+  }
+  if (underlyingTypes().size() == 1) {
+    return UnderlyingReturnTypeStatus::ByReturnValue;
+  }
+  return UnderlyingReturnTypeStatus::LoadFromMemory;
+}
+
+BinaryenType PendingResolveType::underlyingType() const { return resolvedType()->underlyingType(); }
+BinaryenType TypeNone::underlyingType() const { return BinaryenTypeNone(); }
+BinaryenType Int32::underlyingType() const { return BinaryenTypeInt32(); }
+BinaryenType Int64::underlyingType() const { return BinaryenTypeInt64(); }
+BinaryenType TypeF32::underlyingType() const { return BinaryenTypeFloat32(); }
+BinaryenType TypeF64::underlyingType() const { return BinaryenTypeFloat64(); }
 
 BinaryenExpressionRef VariantType::underlyingDefaultValue(BinaryenModuleRef module) const {
-  if (underlyingTypeName() == BinaryenTypeInt32()) {
+  auto typeName = underlyingType();
+  if (typeName == BinaryenTypeInt32()) {
     return BinaryenConst(module, BinaryenLiteralInt32(0));
-  } else if (underlyingTypeName() == BinaryenTypeInt64()) {
+  } else if (typeName == BinaryenTypeInt64()) {
     return BinaryenConst(module, BinaryenLiteralInt64(0));
-  } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
+  } else if (typeName == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(0));
-  } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
+  } else if (typeName == BinaryenTypeFloat64()) {
     return BinaryenConst(module, BinaryenLiteralFloat64(0));
   } else {
-    assert(false);
-    std::abort();
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, int64_t value) const {
-  if (underlyingTypeName() == BinaryenTypeInt32()) {
+  auto typeName = underlyingType();
+  if (typeName == BinaryenTypeInt32()) {
     return BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(value)));
-  } else if (underlyingTypeName() == BinaryenTypeInt64()) {
+  } else if (typeName == BinaryenTypeInt64()) {
     return BinaryenConst(module, BinaryenLiteralInt64(value));
-  } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
+  } else if (typeName == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(static_cast<float>(value)));
-  } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
+  } else if (typeName == BinaryenTypeFloat64()) {
     return BinaryenConst(module, BinaryenLiteralFloat64(static_cast<double>(value)));
   } else {
-    assert(false);
-    std::abort();
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
 BinaryenExpressionRef VariantType::underlyingConst(BinaryenModuleRef module, double value) const {
-  if (underlyingTypeName() == BinaryenTypeInt32()) {
-    throw TypeConvertError(shared_from_this(), resolveType("i32"));
-  } else if (underlyingTypeName() == BinaryenTypeInt64()) {
-    throw TypeConvertError(shared_from_this(), resolveType("i64"));
-  } else if (underlyingTypeName() == BinaryenTypeFloat32()) {
+  if (underlyingType() == BinaryenTypeInt32()) {
+    throw TypeConvertError(to_string(), "i32");
+  } else if (underlyingType() == BinaryenTypeInt64()) {
+    throw TypeConvertError(to_string(), "i64");
+  } else if (underlyingType() == BinaryenTypeFloat32()) {
     return BinaryenConst(module, BinaryenLiteralFloat32(static_cast<float>(value)));
-  } else if (underlyingTypeName() == BinaryenTypeFloat64()) {
+  } else if (underlyingType() == BinaryenTypeFloat64()) {
     return BinaryenConst(module, BinaryenLiteralFloat64(value));
   } else {
-    assert(false);
-    std::abort();
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
   }
 }
 
@@ -183,8 +163,7 @@ BinaryenExpressionRef Int32::handlePrefixOp(BinaryenModuleRef module, ast::Prefi
     return BinaryenUnary(module, BinaryenEqZInt32(), exprRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Int64::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                             BinaryenExpressionRef exprRef) const {
@@ -200,8 +179,7 @@ BinaryenExpressionRef Int64::handlePrefixOp(BinaryenModuleRef module, ast::Prefi
     return BinaryenUnary(module, BinaryenEqZInt64(), exprRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeF32::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                               BinaryenExpressionRef exprRef) const {
@@ -217,8 +195,7 @@ BinaryenExpressionRef TypeF32::handlePrefixOp(BinaryenModuleRef module, ast::Pre
     throw InvalidOperator(shared_from_this(), op);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeF64::handlePrefixOp(BinaryenModuleRef module, ast::PrefixOp op,
                                               BinaryenExpressionRef exprRef) const {
@@ -234,8 +211,7 @@ BinaryenExpressionRef TypeF64::handlePrefixOp(BinaryenModuleRef module, ast::Pre
     throw InvalidOperator(shared_from_this(), op);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 BinaryenExpressionRef PendingResolveType::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op,
@@ -318,19 +294,18 @@ BinaryenExpressionRef TypeI32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeU32::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -402,19 +377,18 @@ BinaryenExpressionRef TypeU32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeI64::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -486,19 +460,18 @@ BinaryenExpressionRef TypeI64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef TypeU64::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                               BinaryenExpressionRef rightRef,
@@ -570,19 +543,18 @@ BinaryenExpressionRef TypeU64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
   }
   case ast::BinaryOp::LOGIC_AND: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, rightRef, loadLeftExprResult);
   }
   case ast::BinaryOp::LOGIC_OR: {
     auto tempLocal = function->addTempLocal(shared_from_this());
-    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingTypeName());
-    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingTypeName());
+    auto conditionalExprRef = BinaryenLocalTee(module, tempLocal->index(), leftRef, underlyingType());
+    auto loadLeftExprResult = BinaryenLocalGet(module, tempLocal->index(), underlyingType());
     return BinaryenIf(module, conditionalExprRef, loadLeftExprResult, rightRef);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 BinaryenExpressionRef TypeF32::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
@@ -641,8 +613,7 @@ BinaryenExpressionRef TypeF32::handleBinaryOp(BinaryenModuleRef module, ast::Bin
     throw InvalidOperator(shared_from_this(), op);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 BinaryenExpressionRef TypeF64::handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
@@ -701,9 +672,7 @@ BinaryenExpressionRef TypeF64::handleBinaryOp(BinaryenModuleRef module, ast::Bin
     throw InvalidOperator(shared_from_this(), op);
   }
   }
-  assert(false);
-  std::abort();
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
-} // namespace ir
-} // namespace walang
+} // namespace walang::ir

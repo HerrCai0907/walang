@@ -1,14 +1,13 @@
 #pragma once
 
 #include "ParserRuleContext.h"
-#include "fmt/core.h"
-#include "fmt/format.h"
 #include <cstdint>
+#include <fmt/core.h>
+#include <fmt/format.h>
 #include <memory>
 #include <string_view>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
 class File;
 
@@ -19,18 +18,17 @@ struct Position {
 
 class Range {
 public:
-  Range() {}
+  Range() = default;
   Range(std::shared_ptr<File> const &file, antlr4::ParserRuleContext *ctx);
-  std::string to_string() const;
+  [[nodiscard]] std::string to_string() const;
 
 private:
   std::weak_ptr<File> file_;
-  Position start_;
-  Position end_;
+  Position start_{};
+  Position end_{};
 };
 
-} // namespace ast
-} // namespace walang
+} // namespace walang::ast
 
 template <> struct fmt::formatter<walang::ast::Range> : fmt::formatter<std::string_view> {
   // parse is inherited from formatter<string_view>.

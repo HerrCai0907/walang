@@ -3,6 +3,7 @@
 (module
  (type $i64_f32_=&gt;_none (func (param i64 f32)))
  (type $none_=&gt;_none (func))
+ (memory $0 0 1)
  (start $_start)
  (func $foo (param $a i64) (param $b f32)
   (local $c i32)

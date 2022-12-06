@@ -21,7 +21,8 @@ statement:
 	| whileStatement
 	| breakStatement
 	| continueStatement
-	| functionStatement;
+	| functionStatement
+	| classStatement;
 
 // basis statement
 expressionStatement: expression ';';
@@ -44,6 +45,10 @@ parameter: Identifier ':' type;
 parameterList: (parameter (',' parameter)*)?;
 functionStatement:
 	'function' Identifier '(' parameterList ')' (':' type)? blockStatement;
+
+member: Identifier ':' type ';';
+classStatement:
+	'class' Identifier '{' (functionStatement | member)* '}';
 
 // expression
 prefixOperator: 'not' | '+' | '-';
@@ -78,14 +83,16 @@ binaryExpressionLeft:
 	| prefixExpression
 	| parenthesesExpression
 	// | binaryExpression | ternaryExpression
-	| callExpression;
+	| callExpression
+	| memberExpression;
 binaryExpressionRight:
 	identifier
 	| prefixExpression
 	| parenthesesExpression
 	| binaryExpression
 	//| ternaryExpression
-	| callExpression;
+	| callExpression
+	| memberExpression;
 binaryExpression:
 	binaryExpressionLeft binaryExpressionRightWithOp+;
 
@@ -96,12 +103,21 @@ ternaryExpressionCondition:
 	| parenthesesExpression
 	| binaryExpression
 	// | ternaryExpression
-	| callExpression;
+	| callExpression
+	| memberExpression;
 ternaryExpression:
 	ternaryExpressionCondition ternaryExpressionBody+;
 
+callOrMemberExpressionLeft: identifier | parenthesesExpression;
 callExpressionRight: '(' (expression (',' expression)*)? ')';
-callExpression: identifier callExpressionRight+;
+memberExpressionRight: '.' Identifier;
+callOrMemberExpressionRight:
+	callExpressionRight
+	| memberExpressionRight;
+callExpression:
+	callOrMemberExpressionLeft callOrMemberExpressionRight* callExpressionRight;
+memberExpression:
+	callOrMemberExpressionLeft callOrMemberExpressionRight* memberExpressionRight;
 
 expression:
 	identifier
@@ -109,7 +125,8 @@ expression:
 	| parenthesesExpression
 	| binaryExpression
 	| ternaryExpression
-	| callExpression;
+	| callExpression
+	| memberExpression;
 
 // Keyword
 
@@ -121,6 +138,7 @@ CONTINUE: 'continue';
 LET: 'let';
 NOT: 'not';
 FUNCTION: 'function';
+CLASS: 'class';
 
 // Operator
 LParenthesis: '(';

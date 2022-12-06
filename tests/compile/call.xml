@@ -4,6 +4,7 @@
  (type $none_=&gt;_none (func))
  (type $i32_f64_=&gt;_none (func (param i32 f64)))
  (global $v (mut f64) (f64.const 0))
+ (memory $0 0 1)
  (start $_start)
  (func $foo1
  )

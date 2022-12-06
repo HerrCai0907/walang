@@ -2,15 +2,13 @@
 #include "statement.hpp"
 #include <cassert>
 #include <fmt/core.h>
-#include <fmt/format.h>
 #include <memory>
 
-namespace walang {
-namespace ast {
+namespace walang::ast {
 
 WhileStatement::WhileStatement(walangParser::WhileStatementContext *ctx,
                                std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map)
-    : Statement(Statement::Type::_WhileStatement) {
+    : Statement(StatementType::TypeWhileStatement) {
   assert(map.count(ctx->expression()) == 1);
   condition_ = std::dynamic_pointer_cast<Expression>(map.find(ctx->expression())->second);
   assert(map.count(ctx->blockStatement()) == 1);
@@ -21,5 +19,4 @@ std::string WhileStatement::to_string() const {
   return fmt::format("while {0} {1}", condition_->to_string(), block_->to_string());
 }
 
-} // namespace ast
-} // namespace walang
+} // namespace walang::ast

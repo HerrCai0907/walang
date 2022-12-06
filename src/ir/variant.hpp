@@ -6,24 +6,24 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
-namespace walang {
-namespace ir {
+namespace walang::ir {
 
 class Symbol {
 public:
   enum class Type {
-    _Global,
-    _Local,
-    _Function,
+    TypeGlobal,
+    TypeLocal,
+    TypeFunction,
   };
-  explicit Symbol(Type type, std::shared_ptr<VariantType> const &variantType)
-      : type_(type), variantType_(variantType) {}
+  explicit Symbol(Type type, std::shared_ptr<VariantType> variantType)
+      : type_(type), variantType_(std::move(variantType)) {}
   virtual ~Symbol() = default;
 
-  Type type() const noexcept { return type_; }
-  std::shared_ptr<VariantType> const &variantType() const noexcept { return variantType_; }
+  [[nodiscard]] Type type() const noexcept { return type_; }
+  [[nodiscard]] std::shared_ptr<VariantType> const &variantType() const noexcept { return variantType_; }
 
 protected:
   const Type type_;
@@ -32,40 +32,96 @@ protected:
 
 class Variant : public Symbol {
 public:
-  explicit Variant(Type type, std::shared_ptr<VariantType> const &variantType) : Symbol(type, variantType) {}
-  virtual ~Variant() = default;
+  explicit Variant(std::string name, Type type, std::shared_ptr<VariantType> const &variantType)
+      : Symbol(type, variantType), name_(std::move(name)) {}
+  ~Variant() override = default;
 
-  virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) = 0;
+  [[nodiscard]] std::string name() const noexcept { return name_; }
+
+  BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                   uint32_t fromMemoryPosition);
+  virtual BinaryenExpressionRef makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) = 0;
+  virtual BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                                        uint32_t fromMemoryPosition) = 0;
   virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) = 0;
+
+protected:
+  std::string name_;
 };
 
 class Global : public Variant {
 public:
-  Global(std::string const &name, std::shared_ptr<VariantType> const &type);
-  virtual ~Global() override = default;
-  std::string name() const noexcept { return name_; }
-  virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
-  virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
-
-private:
-  std::string name_;
+  Global(std::string name, std::shared_ptr<VariantType> const &type);
+  ~Global() override = default;
+  void makeDefinition(BinaryenModuleRef module);
+  BinaryenExpressionRef makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                                uint32_t fromMemoryPosition) override;
+  BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 };
 
 class Local : public Variant {
 public:
   Local(uint32_t index, std::shared_ptr<VariantType> const &type);
-  Local(uint32_t index, std::string const &name, std::shared_ptr<VariantType> const &type);
-  ~Local() = default;
+  Local(uint32_t index, std::string name, std::shared_ptr<VariantType> const &type);
+  ~Local() override = default;
 
-  uint32_t index() const noexcept { return index_; }
-  std::string name() const noexcept { return name_; }
-  virtual BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
-  virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
+  [[nodiscard]] uint32_t index() const noexcept { return index_; }
+  BinaryenExpressionRef makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                                uint32_t fromMemoryPosition) override;
+  BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
+
+  std::shared_ptr<Local> findMemberByName(std::string const &name);
 
 private:
   uint32_t index_;
-  std::string name_;
+  std::map<std::string, std::shared_ptr<Local>> members_{};
+
+  void initMembers(std::shared_ptr<VariantType> const &type);
 };
 
-} // namespace ir
-} // namespace walang
+class Function : public Symbol {
+public:
+  Function(std::string name, std::vector<std::string> const &argumentNames,
+           std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
+           std::shared_ptr<VariantType> const &returnType);
+
+  [[nodiscard]] std::string name() const noexcept { return name_; }
+  [[nodiscard]] std::shared_ptr<Signature> signature() const noexcept {
+    return std::dynamic_pointer_cast<Signature>(variantType_);
+  }
+  [[nodiscard]] std::vector<std::shared_ptr<Local>> const &locals() const noexcept { return locals_; }
+
+  std::shared_ptr<Class> thisClassType() { return thisClassType_.lock(); }
+  void setThisClassType(std::shared_ptr<Class> const &thisClassType) { thisClassType_ = thisClassType; }
+
+  std::shared_ptr<Local> addLocal(std::string const &name, std::shared_ptr<VariantType> const &localType);
+  std::shared_ptr<Local> addTempLocal(std::shared_ptr<VariantType> const &localType);
+  [[nodiscard]] std::shared_ptr<Local> findLocalByName(std::string const &name) const;
+
+  std::string const &createBreakLabel(std::string const &prefix);
+  [[nodiscard]] std::string const &topBreakLabel() const;
+  void freeBreakLabel();
+  std::string const &createContinueLabel(std::string const &prefix);
+  [[nodiscard]] std::string const &topContinueLabel() const;
+  void freeContinueLabel();
+
+  BinaryenFunctionRef finalize(BinaryenModuleRef module, BinaryenExpressionRef body);
+
+private:
+  std::string name_;
+  uint32_t argumentSize_;
+
+  std::vector<std::shared_ptr<Local>> locals_{};
+  uint32_t localIndex_{0U};
+
+  std::weak_ptr<Class> thisClassType_{};
+
+  std::stack<std::string> currentBreakLabel_{};
+  uint32_t breakLabelIndex_{0U};
+  std::stack<std::string> currentContinueLabel_{};
+  uint32_t continueLabelIndex_{0U};
+};
+
+} // namespace walang::ir
