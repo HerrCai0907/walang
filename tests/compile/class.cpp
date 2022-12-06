@@ -59,6 +59,7 @@ class A {
   a1 : f64;
   function setA():void{
     this.a1 = 10;
+    let a1:f64 = this.a1;
   }
 }
 class B {
@@ -67,6 +68,8 @@ class B {
   function setA():void{
     this.b1 = 10;
     this.b2 = 11;
+    let b1:f64 = this.b1;
+    let b2:i32 = this.b2;
   }
 }
     )");

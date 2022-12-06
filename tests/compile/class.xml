@@ -109,7 +109,7 @@
     )
    )
   )
-  (nop)
+  (call $B#constructor)
   (local.set $lc
    (call $C#constructor)
   )
@@ -131,7 +131,7 @@
     )
    )
   )
-  (nop)
+  (call $B#constructor)
   (global.set $gc
    (call $C#constructor)
   )
@@ -150,6 +150,7 @@
  )
  (func $A#setA
   (local $this f64)
+  (local $a1 f64)
   (local.set $this
    (f64.load
     (i32.const 0)
@@ -158,6 +159,9 @@
   (block
    (local.set $this
     (f64.const 10)
+   )
+   (local.set $a1
+    (local.get $this)
    )
   )
   (f64.store
@@ -178,6 +182,8 @@
  (func $B#setA
   (local $this#0 f64)
   (local $this#1 i32)
+  (local $b1 f64)
+  (local $b2 i32)
   (local.set $this#1
    (i32.load
     (i32.const 8)
@@ -194,6 +200,12 @@
    )
    (local.set $this#1
     (i32.const 11)
+   )
+   (local.set $b1
+    (local.get $this#0)
+   )
+   (local.set $b2
+    (local.get $this#1)
    )
   )
   (f64.store

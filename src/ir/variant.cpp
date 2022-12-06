@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace walang::ir {
 
@@ -21,21 +22,14 @@ Local::Local(uint32_t index, std::string name, std::shared_ptr<VariantType> cons
   initMembers(type);
 }
 
-BinaryenExpressionRef Variant::makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
+BinaryenExpressionRef Variant::makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                          uint32_t fromMemoryPosition) {
   auto underlyingTypes = variantType_->underlyingTypes();
   switch (variantType_->underlyingReturnTypeStatus()) {
   case VariantType::UnderlyingReturnTypeStatus::None:
-    return BinaryenNop(module);
-  case VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
-    BinaryenIndex exprRefCount = BinaryenBlockGetNumChildren(exprRef);
-    for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
-      BinaryenIndex blockIndex = exprRefCount - underlyingTypes.size() + index;
-      auto child = BinaryenBlockGetChildAt(exprRef, blockIndex);
-      BinaryenBlockSetChildAt(exprRef, blockIndex, makeMultipleValueAssign(module, index, child));
-      BinaryenExpressionSetType(exprRef, BinaryenTypeNone());
-    }
     return exprRef;
-  }
+  case VariantType::UnderlyingReturnTypeStatus::LoadFromMemory:
+    return makeMultipleValueAssign(module, exprRef, fromMemoryPosition);
   case VariantType::UnderlyingReturnTypeStatus::ByReturnValue:
     return makeSingleValueAssign(module, exprRef);
   }
@@ -57,9 +51,11 @@ void Global::makeDefinition(BinaryenModuleRef module) {
 BinaryenExpressionRef Global::makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
   return BinaryenGlobalSet(module, name_.c_str(), exprRef);
 }
-BinaryenExpressionRef Global::makeMultipleValueAssign(BinaryenModuleRef module, uint32_t index,
-                                                      BinaryenExpressionRef exprRef) {
-  return BinaryenGlobalSet(module, (name_ + "#" + std::to_string(index)).c_str(), exprRef);
+BinaryenExpressionRef Global::makeMultipleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                                      uint32_t fromMemoryPosition) {
+  auto exprRefs = std::dynamic_pointer_cast<Class>(variantType_)->fromMemoryToGlobal(module, name_, fromMemoryPosition);
+  exprRefs.insert(exprRefs.begin(), exprRef);
+  return BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeAuto());
 }
 BinaryenExpressionRef Global::makeGet(BinaryenModuleRef module) {
   return BinaryenGlobalGet(module, name_.c_str(), variantType_->underlyingType());
@@ -68,9 +64,11 @@ BinaryenExpressionRef Global::makeGet(BinaryenModuleRef module) {
 BinaryenExpressionRef Local::makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) {
   return BinaryenLocalSet(module, index_, exprRef);
 }
-BinaryenExpressionRef Local::makeMultipleValueAssign(BinaryenModuleRef module, uint32_t index,
-                                                     BinaryenExpressionRef exprRef) {
-  return BinaryenLocalSet(module, index_ + index, exprRef);
+BinaryenExpressionRef Local::makeMultipleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                                     uint32_t fromMemoryPosition) {
+  auto exprRefs = std::dynamic_pointer_cast<Class>(variantType_)->fromMemoryToLocal(module, index_, fromMemoryPosition);
+  exprRefs.insert(exprRefs.begin(), exprRef);
+  return BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeAuto());
 }
 BinaryenExpressionRef Local::makeGet(BinaryenModuleRef module) {
   return BinaryenLocalGet(module, index_, variantType_->underlyingType());

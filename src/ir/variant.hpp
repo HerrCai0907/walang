@@ -35,10 +35,11 @@ public:
   explicit Variant(Type type, std::shared_ptr<VariantType> const &variantType) : Symbol(type, variantType) {}
   ~Variant() override = default;
 
-  BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef);
+  BinaryenExpressionRef makeAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                   uint32_t fromMemoryPosition);
   virtual BinaryenExpressionRef makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) = 0;
-  virtual BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, uint32_t index,
-                                                        BinaryenExpressionRef exprRef) = 0;
+  virtual BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                                        uint32_t fromMemoryPosition) = 0;
   virtual BinaryenExpressionRef makeGet(BinaryenModuleRef module) = 0;
 };
 
@@ -49,8 +50,8 @@ public:
   [[nodiscard]] std::string name() const noexcept { return name_; }
   void makeDefinition(BinaryenModuleRef module);
   BinaryenExpressionRef makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
-  BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, uint32_t index,
-                                                BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                                uint32_t fromMemoryPosition) override;
   BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 
 private:
@@ -66,8 +67,8 @@ public:
   [[nodiscard]] uint32_t index() const noexcept { return index_; }
   [[nodiscard]] std::string name() const noexcept { return name_; }
   BinaryenExpressionRef makeSingleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef) override;
-  BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, uint32_t index,
-                                                BinaryenExpressionRef exprRef) override;
+  BinaryenExpressionRef makeMultipleValueAssign(BinaryenModuleRef module, BinaryenExpressionRef exprRef,
+                                                uint32_t fromMemoryPosition) override;
   BinaryenExpressionRef makeGet(BinaryenModuleRef module) override;
 
   std::shared_ptr<Local> findMemberByName(std::string const &name);
