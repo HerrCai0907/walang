@@ -1,7 +1,10 @@
 #include "compiler.hpp"
+#include "fmt/color.h"
+#include "fmt/core.h"
 #include "parser.hpp"
 #include <algorithm>
 #include <cstdlib>
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <list>
@@ -54,7 +57,12 @@ int main(int argc, const char *argv[]) {
   walang::FileParser parser(inputFilePath, source);
   auto file = parser.parse();
   walang::Compiler compiler({file});
-  compiler.compile();
+  try {
+    compiler.compile();
+  } catch (std::exception const &e) {
+    std::cerr << fmt::format("Compile Failed:\n{}", fmt::styled(e.what(), fmt::fg(fmt::color::orange))) << "\n";
+    std::exit(-1);
+  }
   std::ofstream outputFile{outputFilePath};
   if (!outputFile.is_open()) {
     std::cerr << "output path invalid " << outputFilePath << std::endl;

@@ -68,8 +68,8 @@ class B {
   function setA():void{
     this.b1 = 10;
     this.b2 = 11;
-    let b1:f64 = this.b1;
-    let b2:i32 = this.b2;
+    let b1 = this.b1;
+    let b2 = this.b2;
   }
 }
     )");

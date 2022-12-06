@@ -12,13 +12,13 @@
 namespace walang::ir {
 
 Global::Global(std::string name, std::shared_ptr<VariantType> const &type)
-    : Variant(Type::TypeGlobal, type), name_{std::move(name)} {}
+    : Variant(std::move(name), Type::TypeGlobal, type) {}
 Local::Local(uint32_t index, std::shared_ptr<VariantType> const &type)
-    : Variant(Type::TypeLocal, type), index_{index}, name_{} {
+    : Variant("", Type::TypeLocal, type), index_{index} {
   initMembers(type);
 }
 Local::Local(uint32_t index, std::string name, std::shared_ptr<VariantType> const &type)
-    : Variant(Type::TypeLocal, type), index_{index}, name_{std::move(name)} {
+    : Variant(std::move(name), Type::TypeLocal, type), index_{index} {
   initMembers(type);
 }
 

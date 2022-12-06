@@ -1,8 +1,17 @@
 class A {
-  a : i32;
-  function set_a(v:i32):void{
+  a1 : f64;
+  function setA():void{
+    this.a1 = 10;
+    let a1:f64 = this.a1;
   }
 }
-
-let a = A();
-a.set_a(100);
+class B {
+  b1 : f64;
+  b2 : i32;
+  function setA():void{
+    this.b1 = 10;
+    this.b2 = 11;
+    let b1 = this.b1;
+    let b2 = this.b2;
+  }
+}

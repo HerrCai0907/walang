@@ -40,4 +40,7 @@ void RecursiveDefinedSymbol::generateErrorMessage() {
   errorMessage_ = fmt::format("recursive defined symbol {0} \n\t{1}", symbol_, range_);
 }
 
+CannotInferType::CannotInferType() : CompilerError() {}
+void CannotInferType::generateErrorMessage() { errorMessage_ = fmt::format("cannot infer type\n\t{}", range_); }
+
 } // namespace walang

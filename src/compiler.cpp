@@ -93,7 +93,13 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
-  std::shared_ptr<ir::VariantType> const &variantType = variantTypeMap_.getTypeFromDeclare(*statement);
+  std::vector<std::shared_ptr<ir::Variant>> symbols{};
+  symbols.reserve(globals_.size() + currentFunction()->locals().size());
+  for (auto const &global : globals_) {
+    symbols.push_back(global.second);
+  }
+  symbols.insert(symbols.end(), currentFunction()->locals().begin(), currentFunction()->locals().end());
+  std::shared_ptr<ir::VariantType> const &variantType = variantTypeMap_.getTypeFromDeclare(*statement, symbols);
   BinaryenExpressionRef init = compileExpression(statement->init(), variantType);
   if (currentFunction() == startFunction_) {
     // in global
@@ -503,9 +509,9 @@ BinaryenExpressionRef Compiler::compileMemberExpression(std::shared_ptr<ast::Mem
     return std::dynamic_pointer_cast<ir::Local>(symbol)->makeGet(module_);
   case ir::Symbol::Type::TypeGlobal:
   case ir::Symbol::Type::TypeFunction:
-    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
     break;
   }
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 std::shared_ptr<ir::Symbol> Compiler::resolveVariant(std::shared_ptr<ast::Expression> const &expression) {
