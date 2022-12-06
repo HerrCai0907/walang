@@ -49,6 +49,9 @@ public:
   void exitContinueStatement(walangParser::ContinueStatementContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::ContinueStatement>());
   }
+  void exitReturnStatement(walangParser::ReturnStatementContext *ctx) override {
+    astNodes_.emplace(ctx, std::make_shared<ast::ReturnStatement>(ctx, astNodes_));
+  }
   void exitFunctionStatement(walangParser::FunctionStatementContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::FunctionStatement>(ctx, astNodes_));
   }
