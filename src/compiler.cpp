@@ -68,27 +68,33 @@ std::string Compiler::wat() const {
 // ███████    ██    ██   ██    ██    ███████ ██      ██ ███████ ██   ████    ██
 
 BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement> const &statement) {
-  switch (statement->type()) {
-  case ast::StatementType::TypeDeclareStatement:
-    return compileDeclareStatement(std::dynamic_pointer_cast<ast::DeclareStatement>(statement));
-  case ast::StatementType::TypeAssignStatement:
-    return compileAssignStatement(std::dynamic_pointer_cast<ast::AssignStatement>(statement));
-  case ast::StatementType::TypeExpressionStatement:
-    return compileExpressionStatement(std::dynamic_pointer_cast<ast::ExpressionStatement>(statement));
-  case ast::StatementType::TypeBlockStatement:
-    return compileBlockStatement(std::dynamic_pointer_cast<ast::BlockStatement>(statement));
-  case ast::StatementType::TypeIfStatement:
-    return compileIfStatement(std::dynamic_pointer_cast<ast::IfStatement>(statement));
-  case ast::StatementType::TypeWhileStatement:
-    return compileWhileStatement(std::dynamic_pointer_cast<ast::WhileStatement>(statement));
-  case ast::StatementType::TypeBreakStatement:
-    return compileBreakStatement(std::dynamic_pointer_cast<ast::BreakStatement>(statement));
-  case ast::StatementType::TypeContinueStatement:
-    return compileContinueStatement(std::dynamic_pointer_cast<ast::ContinueStatement>(statement));
-  case ast::StatementType::TypeFunctionStatement:
-    return compileFunctionStatement(std::dynamic_pointer_cast<ast::FunctionStatement>(statement));
-  case ast::StatementType::TypeClassStatement:
-    return compileClassStatement(std::dynamic_pointer_cast<ast::ClassStatement>(statement));
+  try {
+    switch (statement->type()) {
+    case ast::StatementType::TypeDeclareStatement:
+      return compileDeclareStatement(std::dynamic_pointer_cast<ast::DeclareStatement>(statement));
+    case ast::StatementType::TypeAssignStatement:
+      return compileAssignStatement(std::dynamic_pointer_cast<ast::AssignStatement>(statement));
+    case ast::StatementType::TypeExpressionStatement:
+      return compileExpressionStatement(std::dynamic_pointer_cast<ast::ExpressionStatement>(statement));
+    case ast::StatementType::TypeBlockStatement:
+      return compileBlockStatement(std::dynamic_pointer_cast<ast::BlockStatement>(statement));
+    case ast::StatementType::TypeIfStatement:
+      return compileIfStatement(std::dynamic_pointer_cast<ast::IfStatement>(statement));
+    case ast::StatementType::TypeWhileStatement:
+      return compileWhileStatement(std::dynamic_pointer_cast<ast::WhileStatement>(statement));
+    case ast::StatementType::TypeBreakStatement:
+      return compileBreakStatement(std::dynamic_pointer_cast<ast::BreakStatement>(statement));
+    case ast::StatementType::TypeContinueStatement:
+      return compileContinueStatement(std::dynamic_pointer_cast<ast::ContinueStatement>(statement));
+    case ast::StatementType::TypeFunctionStatement:
+      return compileFunctionStatement(std::dynamic_pointer_cast<ast::FunctionStatement>(statement));
+    case ast::StatementType::TypeClassStatement:
+      return compileClassStatement(std::dynamic_pointer_cast<ast::ClassStatement>(statement));
+    case ast::TypeReturnStatement:
+      return compileReturnStatement(std::dynamic_pointer_cast<ast::ReturnStatement>(statement));
+    }
+  } catch (CompilerErrorBase &e) {
+    e.setRangeAndThrow(statement->range());
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
@@ -176,21 +182,16 @@ BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::While
   return BinaryenBlock(module_, breakLabel.c_str(), &loop, 1U, BinaryenTypeNone());
 }
 BinaryenExpressionRef Compiler::compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement) {
-  try {
-    return BinaryenBreak(module_, currentFunction()->topBreakLabel().c_str(), nullptr, nullptr);
-  } catch (JumpStatementError &e) {
-    e.setRange(statement->range());
-    std::rethrow_exception(std::make_exception_ptr(e));
-  }
+  return BinaryenBreak(module_, currentFunction()->topBreakLabel().c_str(), nullptr, nullptr);
 }
 BinaryenExpressionRef Compiler::compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement) {
-  try {
-    return BinaryenBreak(module_, currentFunction()->topContinueLabel().c_str(), nullptr, nullptr);
-  } catch (JumpStatementError &e) {
-    e.setRange(statement->range());
-    std::rethrow_exception(std::make_exception_ptr(e));
-  }
+  return BinaryenBreak(module_, currentFunction()->topContinueLabel().c_str(), nullptr, nullptr);
 }
+BinaryenExpressionRef Compiler::compileReturnStatement(std::shared_ptr<ast::ReturnStatement> const &statement) {
+  BinaryenExpressionRef exprRef = compileExpression(statement->expr(), currentFunction()->signature()->returnType());
+  return BinaryenReturn(module_, exprRef);
+}
+
 BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement) {
   std::vector<std::string> argumentNames{};
   std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
@@ -221,12 +222,7 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
   std::vector<ir::Class::ClassMember> members{};
   members.reserve(statement->members().size());
   for (auto const &member : statement->members()) {
-    try {
-      redefinedChecker.check(member.name_);
-    } catch (RedefinedSymbol &e) {
-      e.setRange(statement->range());
-      std::rethrow_exception(std::make_exception_ptr(e));
-    }
+    redefinedChecker.check(member.name_);
     if (member.type_ == statement->name()) {
       auto e = RecursiveDefinedSymbol(member.type_);
       e.setRange(statement->range());
@@ -266,12 +262,7 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
 
   std::map<std::string, std::shared_ptr<ir::Function>> methodMap{};
   for (auto const &method : statement->methods()) {
-    try {
-      redefinedChecker.check(method->name());
-    } catch (RedefinedSymbol &e) {
-      e.setRange(statement->range());
-      std::rethrow_exception(std::make_exception_ptr(e));
-    }
+    redefinedChecker.check(method->name());
     auto emplaceResult = methodMap.insert(std::make_pair(method->name(), compileClassMethod(classType, method)));
     if (!emplaceResult.second) {
       auto e = RedefinedSymbol(method->name());
@@ -315,19 +306,23 @@ std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::C
 
 BinaryenExpressionRef Compiler::compileExpression(std::shared_ptr<ast::Expression> const &expression,
                                                   std::shared_ptr<ir::VariantType> const &expectedType) {
-  switch (expression->type()) {
-  case ast::ExpressionType::TypeIdentifier:
-    return compileIdentifier(std::dynamic_pointer_cast<ast::Identifier>(expression), expectedType);
-  case ast::ExpressionType::TypePrefixExpression:
-    return compilePrefixExpression(std::dynamic_pointer_cast<ast::PrefixExpression>(expression), expectedType);
-  case ast::ExpressionType::TypeBinaryExpression:
-    return compileBinaryExpression(std::dynamic_pointer_cast<ast::BinaryExpression>(expression), expectedType);
-  case ast::ExpressionType::TypeTernaryExpression:
-    return compileTernaryExpression(std::dynamic_pointer_cast<ast::TernaryExpression>(expression), expectedType);
-  case ast::ExpressionType::TypeCallExpression:
-    return compileCallExpression(std::dynamic_pointer_cast<ast::CallExpression>(expression), expectedType);
-  case ast::ExpressionType::TypeMemberExpression:
-    return compileMemberExpression(std::dynamic_pointer_cast<ast::MemberExpression>(expression), expectedType);
+  try {
+    switch (expression->type()) {
+    case ast::ExpressionType::TypeIdentifier:
+      return compileIdentifier(std::dynamic_pointer_cast<ast::Identifier>(expression), expectedType);
+    case ast::ExpressionType::TypePrefixExpression:
+      return compilePrefixExpression(std::dynamic_pointer_cast<ast::PrefixExpression>(expression), expectedType);
+    case ast::ExpressionType::TypeBinaryExpression:
+      return compileBinaryExpression(std::dynamic_pointer_cast<ast::BinaryExpression>(expression), expectedType);
+    case ast::ExpressionType::TypeTernaryExpression:
+      return compileTernaryExpression(std::dynamic_pointer_cast<ast::TernaryExpression>(expression), expectedType);
+    case ast::ExpressionType::TypeCallExpression:
+      return compileCallExpression(std::dynamic_pointer_cast<ast::CallExpression>(expression), expectedType);
+    case ast::ExpressionType::TypeMemberExpression:
+      return compileMemberExpression(std::dynamic_pointer_cast<ast::MemberExpression>(expression), expectedType);
+    }
+  } catch (CompilerErrorBase &e) {
+    e.setRangeAndThrow(expression->range());
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
@@ -348,12 +343,7 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                    // not resolve, default f32
                                    pendingType->tryResolveTo(std::make_shared<ir::TypeF32>());
                                  }
-                                 try {
-                                   return expectedType->underlyingConst(module_, d);
-                                 } catch (TypeConvertError &e) {
-                                   e.setRange(expression->range());
-                                   std::rethrow_exception(std::make_exception_ptr(e));
-                                 }
+                                 return expectedType->underlyingConst(module_, d);
                                },
                                [this, &expression, &expectedType](const std::string &s) -> BinaryenExpressionRef {
                                  auto local = currentFunction()->findLocalByName(s);
@@ -383,23 +373,13 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
 BinaryenExpressionRef Compiler::compilePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression,
                                                         std::shared_ptr<ir::VariantType> const &expectedType) {
   BinaryenExpressionRef exprRef = compileExpression(expression->expr(), expectedType);
-  try {
-    return expectedType->handlePrefixOp(module_, expression->op(), exprRef);
-  } catch (InvalidOperator &e) {
-    e.setRange(expression->range());
-    std::rethrow_exception(std::make_exception_ptr(e));
-  }
+  return expectedType->handlePrefixOp(module_, expression->op(), exprRef);
 }
 BinaryenExpressionRef Compiler::compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression,
                                                         std::shared_ptr<ir::VariantType> const &expectedType) {
   BinaryenExpressionRef leftExprRef = compileExpression(expression->leftExpr(), expectedType);
   BinaryenExpressionRef rightExprRef = compileExpression(expression->rightExpr(), expectedType);
-  try {
-    return expectedType->handleBinaryOp(module_, expression->op(), leftExprRef, rightExprRef, currentFunction());
-  } catch (InvalidOperator &e) {
-    e.setRange(expression->range());
-    std::rethrow_exception(std::make_exception_ptr(e));
-  }
+  return expectedType->handleBinaryOp(module_, expression->op(), leftExprRef, rightExprRef, currentFunction());
 }
 BinaryenExpressionRef Compiler::compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression,
                                                          std::shared_ptr<ir::VariantType> const &expectedType) {

@@ -38,6 +38,7 @@ private:
   BinaryenExpressionRef compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement);
   BinaryenExpressionRef compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement);
   BinaryenExpressionRef compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement);
+  BinaryenExpressionRef compileReturnStatement(std::shared_ptr<ast::ReturnStatement> const &statement);
   BinaryenExpressionRef compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement);
   std::shared_ptr<ir::Function> compileClassMethod(std::shared_ptr<ir::Class> const &classType,
                                                    std::shared_ptr<ast::FunctionStatement> const &statement);
