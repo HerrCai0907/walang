@@ -34,7 +34,7 @@ TEST_F(CompileCallTest, ReturnValue) {
 function add(a:i32,b:i32):i32{
   return a+b;
 }
-let c:i32 = add(1,2);
+let c = add(1,2);
     )");
   auto file = parser.parse();
   Compiler compile{{file}};

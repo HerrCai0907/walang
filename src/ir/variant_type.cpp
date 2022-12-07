@@ -3,8 +3,8 @@
 #include "ast/op.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
-#include "symbol_table.hpp"
 #include "variant.hpp"
+#include "variant_type_table.hpp"
 #include <binaryen-c.h>
 #include <cstdint>
 #include <fmt/core.h>

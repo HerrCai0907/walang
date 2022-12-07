@@ -6,7 +6,8 @@
 #include "helper/redefined_checker.hpp"
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
-#include "symbol_table.hpp"
+#include "resolver.hpp"
+#include "variant_type_table.hpp"
 #include <algorithm>
 #include <binaryen-c.h>
 #include <cstdint>
@@ -24,7 +25,8 @@
 namespace walang {
 
 Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files)
-    : module_{BinaryenModuleCreate()}, files_{std::move(files)} {
+    : module_{BinaryenModuleCreate()}, files_{std::move(files)}, variantTypeMap_{std::make_shared<VariantTypeMap>()},
+      resolver_(variantTypeMap_) {
   BinaryenMemoryRef a;
   BinaryenSetMemory(module_, 0, 1, nullptr, nullptr, nullptr, nullptr, nullptr, 0, false, false, "0");
 }
@@ -33,8 +35,9 @@ void Compiler::compile() {
   for (auto const &file : files_) {
     startFunction_ = std::make_shared<ir::Function>("_start", std::vector<std::string>{},
                                                     std::vector<std::shared_ptr<ir::VariantType>>{},
-                                                    variantTypeMap_.resolveType("void"));
+                                                    variantTypeMap_->findVariantType("void"));
     currentFunction_.push(startFunction_);
+    resolver_.setCurrentFunction(currentFunction());
     std::vector<BinaryenExpressionRef> expressions{};
     for (auto &statement : file->statement()) {
       expressions.emplace_back(compileStatement(statement));
@@ -99,19 +102,15 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
-  std::vector<std::shared_ptr<ir::Variant>> symbols{};
-  symbols.reserve(globals_.size() + currentFunction()->locals().size());
-  for (auto const &global : globals_) {
-    symbols.push_back(global.second);
-  }
-  symbols.insert(symbols.end(), currentFunction()->locals().begin(), currentFunction()->locals().end());
-  std::shared_ptr<ir::VariantType> const &variantType = variantTypeMap_.getTypeFromDeclare(*statement, symbols);
+  std::shared_ptr<ir::VariantType> const &variantType =
+      statement->variantType().empty() ? resolver_.resolveTypeExpression(statement->init())
+                                       : variantTypeMap_->findVariantType(statement->variantType());
   BinaryenExpressionRef init = compileExpression(statement->init(), variantType);
   if (currentFunction() == startFunction_) {
     // in global
     auto global = std::make_shared<ir::Global>(statement->variantName(), variantType);
     global->makeDefinition(module_);
-    globals_.emplace(statement->variantName(), global);
+    resolver_.addGlobal(statement->variantName(), global);
     return global->makeAssign(module_, init, 0);
   } else {
     // in function
@@ -197,17 +196,19 @@ BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::Fu
   std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
   for (auto const &argument : statement->arguments()) {
     argumentNames.push_back(argument.name_);
-    argumentTypes.push_back(variantTypeMap_.resolveType(argument.type_));
+    argumentTypes.push_back(variantTypeMap_->findVariantType(argument.type_));
   }
   std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
-                                                    ? variantTypeMap_.resolveType(statement->returnType().value())
+                                                    ? variantTypeMap_->findVariantType(statement->returnType().value())
                                                     : std::make_shared<ir::TypeAuto>();
   auto functionIr = std::make_shared<ir::Function>(statement->name(), argumentNames, argumentTypes, returnType);
-  functions_.insert(std::make_pair(statement->name(), functionIr));
+  resolver_.addFunction(statement->name(), functionIr);
   currentFunction_.push(functionIr);
+  resolver_.setCurrentFunction(currentFunction());
   BinaryenExpressionRef body = compileBlockStatement(statement->body());
   currentFunction()->finalize(module_, body);
   currentFunction_.pop();
+  resolver_.setCurrentFunction(currentFunction());
   return BinaryenNop(module_);
 }
 BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement) {
@@ -215,7 +216,7 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
     throw std::runtime_error("class should only be defined in top scope");
   }
   auto classType = std::make_shared<ir::Class>(statement->name());
-  variantTypeMap_.registerType(statement->name(), classType);
+  variantTypeMap_->registerType(statement->name(), classType);
 
   RedefinedChecker redefinedChecker{};
 
@@ -229,7 +230,7 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
       throw e;
     }
     members.push_back(ir::Class::ClassMember{.memberName_ = member.name_,
-                                             .memberType_ = variantTypeMap_.findVariantType(member.type_)});
+                                             .memberType_ = variantTypeMap_->findVariantType(member.type_)});
   }
   classType->setMembers(members);
 
@@ -258,7 +259,7 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
   BinaryenExpressionRef body =
       BinaryenBlock(module_, nullptr, constructorChildren.data(), constructorChildren.size(), BinaryenTypeAuto());
   constructor->finalize(module_, body);
-  functions_.emplace(statement->name(), constructor);
+  resolver_.addFunction(statement->name(), constructor);
 
   std::map<std::string, std::shared_ptr<ir::Function>> methodMap{};
   for (auto const &method : statement->methods()) {
@@ -282,19 +283,21 @@ std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::C
   argumentTypes.emplace_back(classType);
   for (auto const &argument : statement->arguments()) {
     argumentNames.emplace_back(argument.name_);
-    argumentTypes.emplace_back(variantTypeMap_.resolveType(argument.type_));
+    argumentTypes.emplace_back(variantTypeMap_->findVariantType(argument.type_));
   }
   std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
-                                                    ? variantTypeMap_.resolveType(statement->returnType().value())
+                                                    ? variantTypeMap_->findVariantType(statement->returnType().value())
                                                     : std::make_shared<ir::TypeAuto>();
   auto functionIr = std::make_shared<ir::Function>(classType->className() + "#" + statement->name(), argumentNames,
                                                    argumentTypes, returnType);
   functionIr->setThisClassType(classType);
-  functions_.insert(std::make_pair(classType->className() + "#" + statement->name(), functionIr));
+  resolver_.addFunction(classType->className() + "#" + statement->name(), functionIr);
   currentFunction_.push(functionIr);
+  resolver_.setCurrentFunction(currentFunction());
   BinaryenExpressionRef body = compileBlockStatement(statement->body());
   currentFunction()->finalize(module_, body);
   currentFunction_.pop();
+  resolver_.setCurrentFunction(currentFunction());
   return functionIr;
 }
 
@@ -356,8 +359,8 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                    }
                                    return local->makeGet(module_);
                                  }
-                                 auto globalIt = globals_.find(s);
-                                 if (globalIt != globals_.end()) {
+                                 auto globalIt = resolver_.globals_.find(s);
+                                 if (globalIt != resolver_.globals_.end()) {
                                    if (!expectedType->tryResolveTo(globalIt->second->variantType())) {
                                      auto e = TypeConvertError(globalIt->second->variantType()->to_string(),
                                                                expectedType->to_string());
@@ -508,12 +511,12 @@ std::shared_ptr<ir::Symbol> Compiler::resolveVariant(std::shared_ptr<ast::Expres
                                    if (local != nullptr) {
                                      return local;
                                    }
-                                   auto globalIt = globals_.find(s);
-                                   if (globalIt != globals_.end()) {
+                                   auto globalIt = resolver_.globals_.find(s);
+                                   if (globalIt != resolver_.globals_.end()) {
                                      return globalIt->second;
                                    }
-                                   auto functionIt = functions_.find(s);
-                                   if (functionIt != functions_.cend()) {
+                                   auto functionIt = resolver_.functions_.find(s);
+                                   if (functionIt != resolver_.functions_.cend()) {
                                      return functionIt->second;
                                    }
                                    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));

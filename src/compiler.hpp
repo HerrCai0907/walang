@@ -6,7 +6,8 @@
 
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
-#include "symbol_table.hpp"
+#include "resolver.hpp"
+#include "variant_type_table.hpp"
 #include <binaryen-c.h>
 #include <memory>
 #include <stack>
@@ -61,18 +62,13 @@ private:
                                                 std::shared_ptr<ir::VariantType> const &expectedType);
 
   std::shared_ptr<ir::Symbol> resolveVariant(std::shared_ptr<ast::Expression> const &expression);
-
   [[nodiscard]] std::shared_ptr<ir::Function> const &currentFunction() const { return currentFunction_.top(); }
 
 private:
   BinaryenModuleRef module_;
-
   std::vector<std::shared_ptr<ast::File>> files_;
-
-  VariantTypeMap variantTypeMap_{};
-
-  std::unordered_map<std::string, std::shared_ptr<ir::Global>> globals_{};
-  std::unordered_map<std::string, std::shared_ptr<ir::Function>> functions_{};
+  std::shared_ptr<VariantTypeMap> variantTypeMap_;
+  Resolver resolver_;
 
   std::stack<std::shared_ptr<ir::Function>> currentFunction_{};
   std::shared_ptr<ir::Function> startFunction_{};
