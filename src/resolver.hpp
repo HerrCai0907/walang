@@ -58,8 +58,6 @@ private:
   std::unordered_map<std::string, std::shared_ptr<ir::Global>> globals_{};
   std::unordered_map<std::string, std::shared_ptr<ir::Function>> functions_{};
   std::shared_ptr<ir::Function> currentFunction_{};
-
-  friend class Compiler; // TODO(fixme)
 };
 
 } // namespace walang

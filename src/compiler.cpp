@@ -359,8 +359,8 @@ BinaryenExpressionRef Compiler::compileIdentifier(std::shared_ptr<ast::Identifie
                                    }
                                    return local->makeGet(module_);
                                  }
-                                 auto globalIt = resolver_.globals_.find(s);
-                                 if (globalIt != resolver_.globals_.end()) {
+                                 auto globalIt = resolver_.globals().find(s);
+                                 if (globalIt != resolver_.globals().end()) {
                                    if (!expectedType->tryResolveTo(globalIt->second->variantType())) {
                                      auto e = TypeConvertError(globalIt->second->variantType()->to_string(),
                                                                expectedType->to_string());
@@ -511,12 +511,12 @@ std::shared_ptr<ir::Symbol> Compiler::resolveVariant(std::shared_ptr<ast::Expres
                                    if (local != nullptr) {
                                      return local;
                                    }
-                                   auto globalIt = resolver_.globals_.find(s);
-                                   if (globalIt != resolver_.globals_.end()) {
+                                   auto globalIt = resolver_.globals().find(s);
+                                   if (globalIt != resolver_.globals().end()) {
                                      return globalIt->second;
                                    }
-                                   auto functionIt = resolver_.functions_.find(s);
-                                   if (functionIt != resolver_.functions_.cend()) {
+                                   auto functionIt = resolver_.functions().find(s);
+                                   if (functionIt != resolver_.functions().cend()) {
                                      return functionIt->second;
                                    }
                                    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));

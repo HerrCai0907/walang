@@ -2,6 +2,7 @@
 #include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
 #include "ir/variant.hpp"
+#include "ir/variant_type.hpp"
 #include <algorithm>
 #include <memory>
 
@@ -25,12 +26,11 @@ std::shared_ptr<ir::Symbol> Resolver::resolveExpression(std::shared_ptr<ast::Exp
   throw CannotInferType{};
 }
 std::shared_ptr<ir::Symbol> Resolver::resolveIdentifier(std::shared_ptr<ast::Identifier> const &expression) {
-  return std::visit(overloaded{[this](uint64_t i) -> std::shared_ptr<ir::Symbol> {
-                                 // TODO(literal)
-                                 return std::make_shared<ir::Local>(-1, variantTypeMap_->findVariantType("i32"));
+  return std::visit(overloaded{[&expression](uint64_t i) -> std::shared_ptr<ir::Symbol> {
+                                 CannotInferType{}.setRangeAndThrow(expression->range());
                                },
-                               [this](double d) -> std::shared_ptr<ir::Symbol> {
-                                 return std::make_shared<ir::Local>(-1, variantTypeMap_->findVariantType("f32"));
+                               [&expression](double d) -> std::shared_ptr<ir::Symbol> {
+                                 CannotInferType{}.setRangeAndThrow(expression->range());
                                },
                                [&expression, this](const std::string &s) -> std::shared_ptr<ir::Symbol> {
                                  auto locals = currentFunction_->locals();
@@ -55,20 +55,22 @@ std::shared_ptr<ir::Symbol> Resolver::resolveIdentifier(std::shared_ptr<ast::Ide
 
 std::shared_ptr<ir::Symbol>
 Resolver::resolvePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression) {
-  throw CannotInferType{};
+  return resolveExpression(expression->expr());
 }
 
 std::shared_ptr<ir::Symbol>
 Resolver::resolveBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression) {
-  throw CannotInferType{};
+  return resolveExpression(expression->leftExpr()); // TODO(handle right expression)
 }
 
 std::shared_ptr<ir::Symbol>
 Resolver::resolveTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression) {
-  throw CannotInferType{};
+  return resolveExpression(expression->leftExpr()); // TODO(handle right expression)
 }
 
 std::shared_ptr<ir::Symbol> Resolver::resolveCallExpression(std::shared_ptr<ast::CallExpression> const &expression) {
+  static_cast<void>(this);
+  static_cast<void>(expression);
   throw CannotInferType{};
 }
 
@@ -114,19 +116,26 @@ std::shared_ptr<ir::VariantType> Resolver::resolveTypeExpression(std::shared_ptr
   throw CannotInferType{};
 }
 std::shared_ptr<ir::VariantType> Resolver::resolveTypeIdentifier(std::shared_ptr<ast::Identifier> const &expression) {
-  return resolveIdentifier(expression)->variantType();
+  return std::visit(
+      overloaded{
+          [this](uint64_t i) -> std::shared_ptr<ir::VariantType> { return variantTypeMap_->findVariantType("i32"); },
+          [this](double d) -> std::shared_ptr<ir::VariantType> { return variantTypeMap_->findVariantType("f32"); },
+          [&expression, this](const std::string &s) -> std::shared_ptr<ir::VariantType> {
+            return resolveIdentifier(expression)->variantType();
+          }},
+      expression->identifier());
 }
 std::shared_ptr<ir::VariantType>
 Resolver::resolveTypePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression) {
-  throw CannotInferType{};
+  return resolveTypeExpression(expression->expr());
 }
 std::shared_ptr<ir::VariantType>
 Resolver::resolveTypeBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression) {
-  throw CannotInferType{};
+  return resolveTypeExpression(expression->leftExpr());
 }
 std::shared_ptr<ir::VariantType>
 Resolver::resolveTypeTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression) {
-  throw CannotInferType{};
+  return resolveTypeExpression(expression->leftExpr());
 }
 std::shared_ptr<ir::VariantType>
 Resolver::resolveTypeCallExpression(std::shared_ptr<ast::CallExpression> const &expression) {
@@ -142,7 +151,18 @@ Resolver::resolveTypeCallExpression(std::shared_ptr<ast::CallExpression> const &
 }
 std::shared_ptr<ir::VariantType>
 Resolver::resolveTypeMemberExpression(std::shared_ptr<ast::MemberExpression> const &expression) {
-  return resolveMemberExpression(expression)->variantType();
+  // this.a
+  auto type = resolveTypeExpression(expression->expr());
+  if (type->type() == ir::VariantType::Type::Class) {
+    auto classMember = std::dynamic_pointer_cast<ir::Class>(type)->member();
+    auto it = std::find_if(classMember.begin(), classMember.end(), [&expression](ir::Class::ClassMember const &member) {
+      return member.memberName_ == expression->member();
+    });
+    if (it != classMember.end()) {
+      return it->memberType_;
+    }
+  }
+  throw CannotInferType{};
 }
 
 } // namespace walang
