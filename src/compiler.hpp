@@ -61,7 +61,6 @@ private:
   BinaryenExpressionRef compileMemberExpression(std::shared_ptr<ast::MemberExpression> const &expression,
                                                 std::shared_ptr<ir::VariantType> const &expectedType);
 
-  std::shared_ptr<ir::Symbol> resolveVariant(std::shared_ptr<ast::Expression> const &expression);
   [[nodiscard]] std::shared_ptr<ir::Function> const &currentFunction() const { return currentFunction_.top(); }
 
 private:

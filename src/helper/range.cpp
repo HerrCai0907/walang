@@ -13,8 +13,9 @@ Range::Range(std::shared_ptr<File> const &file, antlr4::ParserRuleContext *ctx)
 
 std::string Range::to_string() const {
   // vscode use 1 base column
-  return fmt::format("{0}:{1}:{2} - {0}:{3}:{4}", file_.lock()->filename(), start_.line, start_.column + 1, end_.line,
-                     end_.column + 1);
+  auto file = file_.lock();
+  return fmt::format("{0}:{1}:{2} - {0}:{3}:{4}", file ? file->filename() : "unknown file", start_.line,
+                     start_.column + 1, end_.line, end_.column + 1);
 }
 
 } // namespace walang::ast
