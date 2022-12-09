@@ -297,7 +297,7 @@ BinaryenExpressionRef MemoryData::assignFromStack(BinaryenModuleRef module, Bina
     auto setExprRef =
         BinaryenStore(module, bytes, 0, 0,
                       BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryPosition_ + offset))),
-                      exprRef, underlyingType, "0");
+                      valueExprRef, underlyingType, "0");
     BinaryenBlockSetChildAt(exprRef, index, setExprRef);
     offset += bytes;
   }

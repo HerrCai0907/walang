@@ -43,6 +43,7 @@ private:
   BinaryenExpressionRef compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement);
   std::shared_ptr<ir::Function> compileClassMethod(std::shared_ptr<ir::Class> const &classType,
                                                    std::shared_ptr<ast::FunctionStatement> const &statement);
+  void compileClassConstructor(std::shared_ptr<ir::Class> const &classType);
 
   BinaryenExpressionRef compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement);
 

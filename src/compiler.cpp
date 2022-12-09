@@ -249,34 +249,7 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
                                              .memberType_ = variantTypeMap_->findVariantType(member.type_)});
   }
   classType->setMembers(members);
-
-  auto constructor = std::make_shared<ir::Function>(statement->name() + "#constructor", std::vector<std::string>{},
-                                                    std::vector<std::shared_ptr<ir::VariantType>>{}, classType);
-  std::vector<BinaryenExpressionRef> constructorChildren{};
-  switch (classType->underlyingReturnTypeStatus()) {
-  case ir::VariantType::UnderlyingReturnTypeStatus::None:
-    break;
-  case ir::VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
-    int32_t offset = 0;
-    for (auto underlyingType : classType->underlyingTypes()) {
-      int32_t dataSize = (underlyingType == BinaryenTypeInt64() || underlyingType == BinaryenTypeFloat64()) ? 8U : 4U;
-      constructorChildren.push_back(
-          BinaryenStore(module_, dataSize, 0, 0, BinaryenConst(module_, BinaryenLiteralInt32(offset)),
-                        ir::VariantType::from(underlyingType)->underlyingDefaultValue(module_), underlyingType, "0"));
-      offset += dataSize;
-    }
-    break;
-  }
-  case ir::VariantType::UnderlyingReturnTypeStatus::ByReturnValue: {
-    constructorChildren.push_back(classType->underlyingDefaultValue(module_));
-    break;
-  }
-  }
-  BinaryenExpressionRef body =
-      BinaryenBlock(module_, nullptr, constructorChildren.data(), constructorChildren.size(), BinaryenTypeAuto());
-  constructor->finalize(module_, body);
-  resolver_.addFunction(statement->name(), constructor);
-
+  compileClassConstructor(classType);
   std::map<std::string, std::shared_ptr<ir::Function>> methodMap{};
   for (auto const &method : statement->methods()) {
     redefinedChecker.check(method->name());
@@ -288,7 +261,6 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
     }
   }
   classType->setMethodMap(methodMap);
-
   return BinaryenNop(module_);
 }
 std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::Class> const &classType,
@@ -315,6 +287,30 @@ std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::C
   currentFunction_.pop();
   resolver_.setCurrentFunction(currentFunction());
   return functionIr;
+}
+void Compiler::compileClassConstructor(std::shared_ptr<ir::Class> const &classType) {
+  auto constructor = std::make_shared<ir::Function>(classType->className() + "#constructor", std::vector<std::string>{},
+                                                    std::vector<std::shared_ptr<ir::VariantType>>{}, classType);
+  BinaryenExpressionRef body;
+  switch (classType->underlyingReturnTypeStatus()) {
+  case ir::VariantType::UnderlyingReturnTypeStatus::None:
+    body = BinaryenBlock(module_, nullptr, nullptr, 0, BinaryenTypeNone());
+    break;
+  case ir::VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
+    std::vector<BinaryenExpressionRef> refs{};
+    for (auto underlyingType : classType->underlyingTypes()) {
+      refs.push_back(ir::VariantType::from(underlyingType)->underlyingDefaultValue(module_));
+    }
+    BinaryenExpressionRef initValueRef = BinaryenBlock(module_, nullptr, refs.data(), refs.size(), BinaryenTypeAuto());
+    body = ir::MemoryData{0, classType}.assignFromStack(module_, initValueRef);
+    break;
+  }
+  case ir::VariantType::UnderlyingReturnTypeStatus::ByReturnValue:
+    body = classType->underlyingDefaultValue(module_);
+    break;
+  }
+  constructor->finalize(module_, body);
+  resolver_.addFunction(classType->className(), constructor);
 }
 
 // ███████ ██   ██ ██████  ██████  ███████ ███████ ███████ ██  ██████  ███    ██
