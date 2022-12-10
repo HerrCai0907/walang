@@ -108,7 +108,7 @@
     )
    )
   )
-  (nop)
+  (call $B#constructor)
   (local.set $lc
    (call $C#constructor)
   )
@@ -129,7 +129,7 @@
     )
    )
   )
-  (nop)
+  (call $B#constructor)
   (global.set $gc
    (call $C#constructor)
   )

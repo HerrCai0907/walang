@@ -80,9 +80,9 @@ Resolver::resolveMemberExpression(std::shared_ptr<ast::MemberExpression> const &
   auto exprSymbol = resolveExpression(expression->expr());
   switch (exprSymbol->type()) {
   case ir::Symbol::Type::TypeLocal: {
-    try {
-      return std::dynamic_pointer_cast<ir::Local>(exprSymbol)->findMemberByName(expression->member());
-    } catch (...) { // TODO(fixme)
+    auto member = std::dynamic_pointer_cast<ir::Local>(exprSymbol)->findMemberByName(expression->member());
+    if (member != nullptr) {
+      return member;
     }
     auto methodMap = std::dynamic_pointer_cast<ir::Class>(exprSymbol->variantType())->methodMap();
     auto it = methodMap.find(expression->member());
@@ -91,8 +91,21 @@ Resolver::resolveMemberExpression(std::shared_ptr<ast::MemberExpression> const &
     }
     break;
   }
-  case ir::Symbol::Type::TypeGlobal:
+  case ir::Symbol::Type::TypeGlobal: {
+    auto member = std::dynamic_pointer_cast<ir::Global>(exprSymbol)->findMemberByName(expression->member());
+    if (member != nullptr) {
+      return member;
+    }
+    auto methodMap = std::dynamic_pointer_cast<ir::Class>(exprSymbol->variantType())->methodMap();
+    auto it = methodMap.find(expression->member());
+    if (it != methodMap.cend()) {
+      return it->second;
+    }
+    break;
+  }
   case ir::Symbol::Type::TypeFunction:
+  case ir::Symbol::Type::TypeMemoryData:
+  case ir::Symbol::Type::TypeStackData:
     break;
   }
   throw CannotInferType{};
@@ -145,6 +158,8 @@ Resolver::resolveTypeCallExpression(std::shared_ptr<ast::CallExpression> const &
     return std::dynamic_pointer_cast<ir::Function>(callerSymbol)->signature()->returnType();
   case ir::Symbol::Type::TypeGlobal:
   case ir::Symbol::Type::TypeLocal:
+  case ir::Symbol::Type::TypeMemoryData:
+  case ir::Symbol::Type::TypeStackData:
     break;
   }
   throw CannotInferType{};

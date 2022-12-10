@@ -19,6 +19,13 @@ namespace walang::ir {
 VariantType::VariantType(Type type) : type_(type) {}
 
 std::string VariantType::to_string() const { return fmt::format("{}", magic_enum::enum_name(type_)); }
+std::string PendingResolveType::to_string() const {
+  if (isResolved()) {
+    return resolvedType_->to_string();
+  } else {
+    return fmt::format("{}", magic_enum::enum_name(type_));
+  }
+}
 
 std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   if (resolvedType_ == nullptr) {

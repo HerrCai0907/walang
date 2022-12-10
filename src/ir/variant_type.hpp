@@ -63,6 +63,7 @@ protected:
 class PendingResolveType : public VariantType {
 public:
   std::shared_ptr<VariantType> const &resolvedType() const;
+  std::string to_string() const override;
   bool isResolved() const noexcept { return resolvedType_ != nullptr; }
   BinaryenType underlyingType() const override;
 

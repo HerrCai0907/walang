@@ -12,15 +12,20 @@
 
 namespace walang::ir {
 
-Global::Global(std::string name, std::shared_ptr<VariantType> const &type)
-    : Variant(std::move(name), Type::TypeGlobal, type) {}
-Local::Local(uint32_t index, std::shared_ptr<VariantType> const &type)
-    : Variant("", Type::TypeLocal, type), index_{index} {
-  initMembers(type);
-}
-Local::Local(uint32_t index, std::string name, std::shared_ptr<VariantType> const &type)
-    : Variant(std::move(name), Type::TypeLocal, type), index_{index} {
-  initMembers(type);
+BinaryenExpressionRef Variant::assignTo(BinaryenModuleRef module, Variant const *to) const {
+  switch (to->type()) {
+  case Symbol::Type::TypeGlobal:
+    return assignToGlobal(module, *dynamic_cast<Global const *>(to));
+  case Symbol::Type::TypeLocal:
+    return assignToLocal(module, *dynamic_cast<Local const *>(to));
+  case Symbol::Type::TypeMemoryData:
+    return assignToMemory(module, *dynamic_cast<MemoryData const *>(to));
+  case Symbol::Type::TypeStackData:
+    return assignToStack(module);
+  case Symbol::Type::TypeFunction:
+    break;
+  }
+  throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
 void Global::makeDefinition(BinaryenModuleRef module) {
@@ -36,6 +41,20 @@ void Global::makeDefinition(BinaryenModuleRef module) {
   }
 }
 
+void Global::initMembers(std::shared_ptr<VariantType> const &type) {
+  if (type->type() == VariantType::Type::Class) {
+    for (auto const &member : std::dynamic_pointer_cast<Class>(type)->member()) {
+      members_.emplace(member.memberName_, std::make_shared<Global>(member.memberName_, member.memberType_));
+    }
+  }
+}
+std::shared_ptr<Global> Global::findMemberByName(std::string const &name) const {
+  auto it = members_.find(name);
+  if (it == members_.end()) {
+    return nullptr;
+  }
+  return it->second;
+}
 void Local::initMembers(std::shared_ptr<VariantType> const &type) {
   if (type->type() == VariantType::Type::Class) {
     uint32_t index = index_;
@@ -48,7 +67,7 @@ void Local::initMembers(std::shared_ptr<VariantType> const &type) {
 std::shared_ptr<Local> Local::findMemberByName(std::string const &name) const {
   auto it = members_.find(name);
   if (it == members_.end()) {
-    throw UnknownSymbol(name);
+    return nullptr;
   }
   return it->second;
 }
@@ -113,24 +132,6 @@ BinaryenExpressionRef Global::assignToStack(BinaryenModuleRef module) const {
   return exprRefs.size() == 1 ? exprRefs.front()
                               : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
 }
-BinaryenExpressionRef Global::assignFromStack(BinaryenModuleRef module, BinaryenExpressionRef exprRef) const {
-  auto underlyingTypes = variantType_->underlyingTypes();
-  if (underlyingTypes.empty()) {
-    return exprRef;
-  }
-  if (underlyingTypes.size() == 1) {
-    return BinaryenGlobalSet(module, name_.c_str(), exprRef);
-  }
-  assert(BinaryenExpressionGetId(exprRef) == static_cast<uint32_t>(binaryen::Id::BlockId));
-  assert(BinaryenBlockGetNumChildren(exprRef) == underlyingTypes.size());
-  for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
-    auto valueExprRef = BinaryenBlockGetChildAt(exprRef, index);
-    auto setExprRef = BinaryenGlobalSet(module, (name_ + "#" + std::to_string(index)).c_str(), valueExprRef);
-    BinaryenBlockSetChildAt(exprRef, index, setExprRef);
-  }
-  BinaryenExpressionSetType(exprRef, BinaryenTypeNone());
-  return exprRef;
-}
 
 BinaryenExpressionRef Local::assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
@@ -188,24 +189,6 @@ BinaryenExpressionRef Local::assignToStack(BinaryenModuleRef module) const {
   }
   return exprRefs.size() == 1 ? exprRefs.front()
                               : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
-}
-BinaryenExpressionRef Local::assignFromStack(BinaryenModuleRef module, BinaryenExpressionRef exprRef) const {
-  auto underlyingTypes = variantType_->underlyingTypes();
-  if (underlyingTypes.empty()) {
-    return exprRef;
-  }
-  if (underlyingTypes.size() == 1) {
-    return BinaryenLocalSet(module, index_, exprRef);
-  }
-  assert(BinaryenExpressionGetId(exprRef) == static_cast<uint32_t>(binaryen::Id::BlockId));
-  assert(BinaryenBlockGetNumChildren(exprRef) == underlyingTypes.size());
-  for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
-    auto valueExprRef = BinaryenBlockGetChildAt(exprRef, index);
-    auto setExprRef = BinaryenLocalSet(module, index_ + index, valueExprRef);
-    BinaryenBlockSetChildAt(exprRef, index, setExprRef);
-  }
-  BinaryenExpressionSetType(exprRef, BinaryenTypeNone());
-  return exprRef;
 }
 
 BinaryenExpressionRef MemoryData::assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const {
@@ -275,34 +258,74 @@ BinaryenExpressionRef MemoryData::assignToStack(BinaryenModuleRef module) const 
   return exprRefs.size() == 1 ? exprRefs.front()
                               : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
 }
-BinaryenExpressionRef MemoryData::assignFromStack(BinaryenModuleRef module, BinaryenExpressionRef exprRef) const {
+
+BinaryenExpressionRef StackData::assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const {
   auto underlyingTypes = variantType_->underlyingTypes();
   if (underlyingTypes.empty()) {
-    return exprRef;
+    return exprRef_;
   }
   if (underlyingTypes.size() == 1) {
     auto underlyingType = variantType_->underlyingType();
     auto bytes = VariantType::getSize(underlyingType);
     return BinaryenStore(module, bytes, 0, 0,
-                         BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryPosition_))), exprRef,
-                         underlyingType, "0");
+                         BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryData.memoryPosition()))),
+                         exprRef_, underlyingType, "0");
   }
-  assert(BinaryenExpressionGetId(exprRef) == static_cast<uint32_t>(binaryen::Id::BlockId));
-  assert(BinaryenBlockGetNumChildren(exprRef) == underlyingTypes.size());
+  assert(BinaryenExpressionGetId(exprRef_) == static_cast<uint32_t>(binaryen::Id::BlockId));
+  assert(BinaryenBlockGetNumChildren(exprRef_) >= underlyingTypes.size());
   uint32_t offset = 0;
   for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
+    BinaryenIndex blockIndex = BinaryenBlockGetNumChildren(exprRef_) - underlyingTypes.size() + index;
     auto underlyingType = underlyingTypes[index];
     auto bytes = VariantType::getSize(underlyingType);
-    auto valueExprRef = BinaryenBlockGetChildAt(exprRef, index);
-    auto setExprRef =
-        BinaryenStore(module, bytes, 0, 0,
-                      BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryPosition_ + offset))),
-                      valueExprRef, underlyingType, "0");
-    BinaryenBlockSetChildAt(exprRef, index, setExprRef);
+    auto valueExprRef = BinaryenBlockGetChildAt(exprRef_, blockIndex);
+    auto setExprRef = BinaryenStore(
+        module, bytes, 0, 0,
+        BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryData.memoryPosition() + offset))),
+        valueExprRef, underlyingType, "0");
+    BinaryenBlockSetChildAt(exprRef_, blockIndex, setExprRef);
     offset += bytes;
   }
-  BinaryenExpressionSetType(exprRef, BinaryenTypeNone());
-  return exprRef;
+  BinaryenExpressionSetType(exprRef_, BinaryenTypeNone());
+  return exprRef_;
+}
+
+BinaryenExpressionRef StackData::assignToLocal(BinaryenModuleRef module, Local const &local) const {
+  auto underlyingTypes = variantType_->underlyingTypes();
+  if (underlyingTypes.empty()) {
+    return exprRef_;
+  }
+  if (underlyingTypes.size() == 1) {
+    return BinaryenLocalSet(module, local.index(), exprRef_);
+  }
+  assert(BinaryenExpressionGetId(exprRef_) == static_cast<uint32_t>(binaryen::Id::BlockId));
+  assert(BinaryenBlockGetNumChildren(exprRef_) == underlyingTypes.size());
+  for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
+    auto valueExprRef = BinaryenBlockGetChildAt(exprRef_, index);
+    auto setExprRef = BinaryenLocalSet(module, local.index() + index, valueExprRef);
+    BinaryenBlockSetChildAt(exprRef_, index, setExprRef);
+  }
+  BinaryenExpressionSetType(exprRef_, BinaryenTypeNone());
+  return exprRef_;
+}
+
+BinaryenExpressionRef StackData::assignToGlobal(BinaryenModuleRef module, Global const &global) const {
+  auto underlyingTypes = variantType_->underlyingTypes();
+  if (underlyingTypes.empty()) {
+    return exprRef_;
+  }
+  if (underlyingTypes.size() == 1) {
+    return BinaryenGlobalSet(module, global.name().c_str(), exprRef_);
+  }
+  assert(BinaryenExpressionGetId(exprRef_) == static_cast<uint32_t>(binaryen::Id::BlockId));
+  assert(BinaryenBlockGetNumChildren(exprRef_) == underlyingTypes.size());
+  for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
+    auto valueExprRef = BinaryenBlockGetChildAt(exprRef_, index);
+    auto setExprRef = BinaryenGlobalSet(module, (global.name() + "#" + std::to_string(index)).c_str(), valueExprRef);
+    BinaryenBlockSetChildAt(exprRef_, index, setExprRef);
+  }
+  BinaryenExpressionSetType(exprRef_, BinaryenTypeNone());
+  return exprRef_;
 }
 
 } // namespace walang::ir
