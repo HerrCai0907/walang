@@ -4,8 +4,6 @@
 #include "ir/variant_type.hpp"
 #include <binaryen-c.h>
 #include <cstdint>
-#include <exception>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
