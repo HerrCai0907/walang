@@ -50,4 +50,65 @@
  )
 )
 </ReturnValue>
+    <ReturnClass>
+(module
+ (type $none_=&gt;_none (func))
+ (type $none_=&gt;_i32 (func (result i32)))
+ (memory $0 0 1)
+ (start $_start)
+ (func $A#constructor
+ )
+ (func $B#constructor (result i32)
+  (i32.const 0)
+ )
+ (func $C#constructor
+  (i32.store
+   (i32.const 0)
+   (i32.const 0)
+  )
+  (f64.store
+   (i32.const 4)
+   (f64.const 0)
+  )
+ )
+ (func $createA
+  (block
+   (call $A#constructor)
+   (return)
+  )
+ )
+ (func $createB (result i32)
+  (return
+   (call $B#constructor)
+  )
+ )
+ (func $createC
+  (block
+   (block
+    (i32.store
+     (i32.const 0)
+     (i32.load
+      (i32.const 0)
+     )
+    )
+    (f64.store
+     (i32.const 4)
+     (f64.load
+      (i32.const 4)
+     )
+    )
+   )
+   (return)
+  )
+ )
+ (func $_start
+  (nop)
+  (nop)
+  (nop)
+  (nop)
+  (nop)
+  (nop)
+ )
+)
+</ReturnClass>
 </snapshots>

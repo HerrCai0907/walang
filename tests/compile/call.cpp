@@ -1,3 +1,4 @@
+#include "binaryen-c.h"
 #include "compiler.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/snapshot.hpp"
@@ -39,6 +40,34 @@ let c = add(1,2);
   auto file = parser.parse();
   Compiler compile{{file}};
   compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(compile.wat());
+}
+
+TEST_F(CompileCallTest, ReturnClass) {
+  FileParser parser("test.wa", R"(
+class A {}
+class B {
+  v:i32;
+}
+class C {
+  v1:i32;
+  v2:f64;
+}
+function createA():A{
+  return A();
+}
+function createB():B{
+  return B();
+}
+function createC():C{
+  return C();
+}
+    )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  BinaryenModulePrint(compile.module());
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(compile.wat());
 }
