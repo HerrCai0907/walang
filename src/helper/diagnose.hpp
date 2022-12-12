@@ -14,25 +14,32 @@
 
 namespace walang {
 
-template <class Child> class CompilerError : public std::exception {
+class CompilerErrorBase : public std::exception {
 public:
-  CompilerError() = default;
-
   [[nodiscard]] const char *what() const noexcept override { return errorMessage_.c_str(); }
   void setRange(ast::Range const &range) {
-    range_ = range;
-    generateErrorMessage();
+    if (errorMessage_.empty()) {
+      range_ = range;
+      generateErrorMessage();
+    }
   }
-  [[noreturn]] void setRangeAndThrow(ast::Range const &range) {
-    setRange(range);
-    throw *dynamic_cast<Child *>(this);
-  }
+  [[noreturn]] virtual void setRangeAndThrow(ast::Range const &range) = 0;
 
 protected:
   std::string errorMessage_{};
   ast::Range range_{};
 
   virtual void generateErrorMessage() = 0;
+};
+
+template <class Child> class CompilerError : public CompilerErrorBase {
+public:
+  CompilerError() = default;
+
+  [[noreturn]] void setRangeAndThrow(ast::Range const &range) override {
+    setRange(range);
+    throw *dynamic_cast<Child *>(this);
+  }
 };
 
 class TypeConvertError : public CompilerError<TypeConvertError> {

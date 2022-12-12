@@ -6,7 +6,8 @@
 
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
-#include "symbol_table.hpp"
+#include "resolver.hpp"
+#include "variant_type_table.hpp"
 #include <binaryen-c.h>
 #include <memory>
 #include <stack>
@@ -38,40 +39,38 @@ private:
   BinaryenExpressionRef compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement);
   BinaryenExpressionRef compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement);
   BinaryenExpressionRef compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement);
+  BinaryenExpressionRef compileReturnStatement(std::shared_ptr<ast::ReturnStatement> const &statement);
   BinaryenExpressionRef compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement);
   std::shared_ptr<ir::Function> compileClassMethod(std::shared_ptr<ir::Class> const &classType,
                                                    std::shared_ptr<ast::FunctionStatement> const &statement);
+  void compileClassConstructor(std::shared_ptr<ir::Class> const &classType);
 
   BinaryenExpressionRef compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement);
 
-  BinaryenExpressionRef compileExpression(std::shared_ptr<ast::Expression> const &expression,
-                                          std::shared_ptr<ir::VariantType> const &expectedType);
-  BinaryenExpressionRef compileIdentifier(std::shared_ptr<ast::Identifier> const &expression,
-                                          std::shared_ptr<ir::VariantType> const &expectedType);
-  BinaryenExpressionRef compilePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression,
-                                                std::shared_ptr<ir::VariantType> const &expectedType);
-  BinaryenExpressionRef compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression,
-                                                std::shared_ptr<ir::VariantType> const &expectedType);
-  BinaryenExpressionRef compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression,
+  BinaryenExpressionRef compileExpressionToExpressionRef(std::shared_ptr<ast::Expression> const &expression,
+                                                         std::shared_ptr<ir::VariantType> const &expectedType);
+  std::shared_ptr<ir::Variant> compileExpression(std::shared_ptr<ast::Expression> const &expression,
                                                  std::shared_ptr<ir::VariantType> const &expectedType);
-  BinaryenExpressionRef compileCallExpression(std::shared_ptr<ast::CallExpression> const &expression,
-                                              std::shared_ptr<ir::VariantType> const &expectedType);
-  BinaryenExpressionRef compileMemberExpression(std::shared_ptr<ast::MemberExpression> const &expression,
-                                                std::shared_ptr<ir::VariantType> const &expectedType);
-
-  std::shared_ptr<ir::Symbol> resolveVariant(std::shared_ptr<ast::Expression> const &expression);
+  std::shared_ptr<ir::Variant> compileIdentifier(std::shared_ptr<ast::Identifier> const &expression,
+                                                 std::shared_ptr<ir::VariantType> const &expectedType);
+  std::shared_ptr<ir::Variant> compilePrefixExpression(std::shared_ptr<ast::PrefixExpression> const &expression,
+                                                       std::shared_ptr<ir::VariantType> const &expectedType);
+  std::shared_ptr<ir::Variant> compileBinaryExpression(std::shared_ptr<ast::BinaryExpression> const &expression,
+                                                       std::shared_ptr<ir::VariantType> const &expectedType);
+  std::shared_ptr<ir::Variant> compileTernaryExpression(std::shared_ptr<ast::TernaryExpression> const &expression,
+                                                        std::shared_ptr<ir::VariantType> const &expectedType);
+  std::shared_ptr<ir::Variant> compileCallExpression(std::shared_ptr<ast::CallExpression> const &expression,
+                                                     std::shared_ptr<ir::VariantType> const &expectedType);
+  std::shared_ptr<ir::Variant> compileMemberExpression(std::shared_ptr<ast::MemberExpression> const &expression,
+                                                       std::shared_ptr<ir::VariantType> const &expectedType);
 
   [[nodiscard]] std::shared_ptr<ir::Function> const &currentFunction() const { return currentFunction_.top(); }
 
 private:
   BinaryenModuleRef module_;
-
   std::vector<std::shared_ptr<ast::File>> files_;
-
-  VariantTypeMap variantTypeMap_{};
-
-  std::unordered_map<std::string, std::shared_ptr<ir::Global>> globals_{};
-  std::unordered_map<std::string, std::shared_ptr<ir::Function>> functions_{};
+  std::shared_ptr<VariantTypeMap> variantTypeMap_;
+  Resolver resolver_;
 
   std::stack<std::shared_ptr<ir::Function>> currentFunction_{};
   std::shared_ptr<ir::Function> startFunction_{};

@@ -21,6 +21,7 @@ statement:
 	| whileStatement
 	| breakStatement
 	| continueStatement
+	| returnStatement
 	| functionStatement
 	| classStatement;
 
@@ -29,6 +30,7 @@ expressionStatement: expression ';';
 declareStatement:
 	'let' Identifier (':' type)? '=' expression ';';
 assignStatement: expression '=' expression ';';
+returnStatement: 'return' expression ';';
 
 // flow statement
 blockStatement: '{' statement* '}';
@@ -139,6 +141,7 @@ LET: 'let';
 NOT: 'not';
 FUNCTION: 'function';
 CLASS: 'class';
+RETURN: 'return';
 
 // Operator
 LParenthesis: '(';

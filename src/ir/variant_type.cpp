@@ -3,8 +3,8 @@
 #include "ast/op.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
-#include "symbol_table.hpp"
 #include "variant.hpp"
+#include "variant_type_table.hpp"
 #include <binaryen-c.h>
 #include <cstdint>
 #include <fmt/core.h>
@@ -19,6 +19,13 @@ namespace walang::ir {
 VariantType::VariantType(Type type) : type_(type) {}
 
 std::string VariantType::to_string() const { return fmt::format("{}", magic_enum::enum_name(type_)); }
+std::string PendingResolveType::to_string() const {
+  if (isResolved()) {
+    return resolvedType_->to_string();
+  } else {
+    return fmt::format("{}", magic_enum::enum_name(type_));
+  }
+}
 
 std::shared_ptr<VariantType> const &PendingResolveType::resolvedType() const {
   if (resolvedType_ == nullptr) {

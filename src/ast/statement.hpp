@@ -22,6 +22,7 @@ enum StatementType {
   TypeWhileStatement,
   TypeBreakStatement,
   TypeContinueStatement,
+  TypeReturnStatement,
   TypeFunctionStatement,
   TypeClassStatement,
 };
@@ -133,6 +134,18 @@ public:
   ContinueStatement() : Statement(StatementType::TypeContinueStatement) {}
   ~ContinueStatement() override = default;
   [[nodiscard]] std::string to_string() const override { return "continue\n"; }
+};
+
+class ReturnStatement : public Statement {
+public:
+  ReturnStatement(walangParser::ReturnStatementContext *ctx,
+                  std::unordered_map<antlr4::ParserRuleContext *, std::shared_ptr<Node>> const &map);
+  ~ReturnStatement() override = default;
+  [[nodiscard]] std::string to_string() const override;
+  [[nodiscard]] std::shared_ptr<Expression> const &expr() { return expr_; }
+
+private:
+  std::shared_ptr<Expression> expr_;
 };
 
 class FunctionStatement : public Statement {

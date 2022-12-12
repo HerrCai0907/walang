@@ -97,7 +97,6 @@
   (local $la#1 i32)
   (local $lc i64)
   (block
-   (call $A#constructor)
    (local.set $la#0
     (f64.load
      (i32.const 0)
@@ -119,7 +118,6 @@
   (nop)
   (nop)
   (block
-   (call $A#constructor)
    (global.set $ga#0
     (f64.load
      (i32.const 0)

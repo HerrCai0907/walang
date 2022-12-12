@@ -29,6 +29,20 @@ foo2(1,v);
   snapshot.check(compile.wat());
 }
 
+TEST_F(CompileCallTest, ReturnValue) {
+  FileParser parser("test.wa", R"(
+function add(a:i32,b:i32):i32{
+  return a+b;
+}
+let c = add(1,2);
+    )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(compile.wat());
+}
+
 TEST_F(CompileCallTest, ArgumentNotMatch) {
   EXPECT_THROW(
       [] {

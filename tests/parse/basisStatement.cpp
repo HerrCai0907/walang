@@ -40,3 +40,12 @@ TEST(ParseBasisStatement, AssignStatement) {
   ASSERT_NE(std::dynamic_pointer_cast<AssignStatement>(file->statement()[0]), nullptr);
   ASSERT_EQ(file->statement()[0]->to_string(), "a <- 4\n");
 }
+
+TEST(ParseBasisStatement, ReturnStatement) {
+  FileParser parser("test.wa", "return a;");
+  auto file = parser.parse();
+
+  ASSERT_EQ(file->statement().size(), 1);
+  ASSERT_NE(std::dynamic_pointer_cast<ReturnStatement>(file->statement()[0]), nullptr);
+  ASSERT_EQ(file->statement()[0]->to_string(), "return a\n");
+}
