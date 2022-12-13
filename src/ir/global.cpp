@@ -1,3 +1,4 @@
+#include "binaryen/utils.hpp"
 #include "variant.hpp"
 
 namespace walang::ir {
@@ -45,8 +46,7 @@ BinaryenExpressionRef Global::assignToMemory(BinaryenModuleRef module, MemoryDat
     exprRefs.push_back(storeExpr);
     offset += dataSize;
   }
-  return exprRefs.size() == 1 ? exprRefs.front()
-                              : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
+  return binaryen::Utils::combineExprRef(module, exprRefs);
 }
 BinaryenExpressionRef Global::assignToLocal(BinaryenModuleRef module, Local const &local) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
@@ -60,8 +60,7 @@ BinaryenExpressionRef Global::assignToLocal(BinaryenModuleRef module, Local cons
     exprRefs.push_back(storeExpr);
     offset += dataSize;
   }
-  return exprRefs.size() == 1 ? exprRefs.front()
-                              : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
+  return binaryen::Utils::combineExprRef(module, exprRefs);
 }
 BinaryenExpressionRef Global::assignToGlobal(BinaryenModuleRef module, Global const &global) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
@@ -76,8 +75,7 @@ BinaryenExpressionRef Global::assignToGlobal(BinaryenModuleRef module, Global co
     exprRefs.push_back(storeExpr);
     offset += dataSize;
   }
-  return exprRefs.size() == 1 ? exprRefs.front()
-                              : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
+  return binaryen::Utils::combineExprRef(module, exprRefs);
 }
 BinaryenExpressionRef Global::assignToStack(BinaryenModuleRef module) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
@@ -87,8 +85,7 @@ BinaryenExpressionRef Global::assignToStack(BinaryenModuleRef module) const {
     auto loadExpr = BinaryenGlobalGet(module, globalName.c_str(), underlyingTypes[index]);
     exprRefs.push_back(loadExpr);
   }
-  return exprRefs.size() == 1 ? exprRefs.front()
-                              : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
+  return binaryen::Utils::combineExprRef(module, exprRefs);
 }
 
 } // namespace walang::ir
