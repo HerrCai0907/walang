@@ -14,7 +14,7 @@ namespace walang::ir {
 
 Function::Function(std::string name, std::vector<std::string> const &argumentNames,
                    std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
-                   std::shared_ptr<VariantType> const &returnType)
+                   std::shared_ptr<VariantType> const &returnType, BinaryenModuleRef module)
     : Symbol(Type::TypeFunction, std::make_shared<Signature>(argumentTypes, returnType)), name_(std::move(name)),
       argumentSize_(argumentNames.size()) {
   assert(argumentNames.size() == argumentTypes.size());
@@ -27,6 +27,31 @@ Function::Function(std::string name, std::vector<std::string> const &argumentNam
   for (std::size_t i = 0; i < argumentSize_; i++) {
     if (argumentTypes[i]->type() == VariantType::Type::Class) {
       addLocal(argumentNames[i], argumentTypes[i]);
+    }
+  }
+  uint32_t memoryPosition = 0U;
+  uint32_t returnValueSize = ir::VariantType::getSize(returnType->underlyingType());
+  for (uint32_t i = 0; i < argumentSize_; i++) {
+    if (locals_[i]->variantType()->type() == VariantType::Type::Class) {
+      auto local = (locals_[i]);
+      auto underlyingTypes = local->variantType()->underlyingTypes();
+      for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
+        auto underlyingType = underlyingTypes[index];
+        auto dataSize = VariantType::getSize(underlyingType);
+
+        prefixExprRefs_.insert(
+            prefixExprRefs_.begin(),
+            BinaryenLocalSet(
+                module, local->index() + index,
+                BinaryenLoad(module, dataSize, false, 0, 0, underlyingType,
+                             BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryPosition))), "0")));
+
+        postExprRefs_.push_back(BinaryenStore(
+            module, dataSize, 0, 0,
+            BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryPosition + returnValueSize))),
+            BinaryenLocalGet(module, local->index() + index, underlyingType), underlyingType, "0"));
+        memoryPosition += dataSize;
+      }
     }
   }
 }
@@ -81,8 +106,6 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
   std::vector<BinaryenType> localBinaryenTypes{};
   std::vector<std::string> localNames{};
 
-  std::deque<BinaryenExpressionRef> bodyWithMemoryOperatorDeque{body};
-
   auto handleLocal = [](std::shared_ptr<Local> const &local, std::vector<BinaryenType> &binaryenTypes,
                         std::vector<std::string> &names) {
     auto underlyingTypes = local->variantType()->underlyingTypes();
@@ -97,26 +120,8 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
     }
   };
 
-  uint32_t memoryPosition = 0;
-  auto handlePassValueByMemory = [&module, &memoryPosition,
-                                  &bodyWithMemoryOperatorDeque](std::shared_ptr<Local> const &local) {
-    auto underlyingTypes = local->variantType()->underlyingTypes();
-    for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
-      auto underlyingType = underlyingTypes[index];
-      auto dataSize = VariantType::getSize(underlyingType);
-      bodyWithMemoryOperatorDeque.push_front(BinaryenLocalSet(
-          module, local->index() + index,
-          BinaryenLoad(module, dataSize, false, 0, 0, underlyingType,
-                       BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryPosition))), "0")));
-      bodyWithMemoryOperatorDeque.push_back(BinaryenStore(
-          module, dataSize, 0, 0, BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryPosition))),
-          BinaryenLocalGet(module, local->index() + index, underlyingType), underlyingType, "0"));
-      memoryPosition += dataSize;
-    }
-  };
   for (uint32_t i = 0; i < argumentSize_; i++) {
     if (locals_[i]->variantType()->type() == VariantType::Type::Class) {
-      handlePassValueByMemory(locals_[i]);
       handleLocal(locals_[i], localBinaryenTypes, localNames);
     } else {
       handleLocal(locals_[i], argumentBinaryenTypes, argumentNames);
@@ -138,15 +143,15 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
     handleLocal(locals_[i], localBinaryenTypes, localNames);
   }
 
-  std::vector<BinaryenExpressionRef> bodyWithMemoryOperatorVec{bodyWithMemoryOperatorDeque.cbegin(),
-                                                               bodyWithMemoryOperatorDeque.cend()};
-  BinaryenExpressionRef bodyWithMemoryOperatorRef =
-      bodyWithMemoryOperatorVec.size() > 1 ? BinaryenBlock(module, nullptr, bodyWithMemoryOperatorVec.data(),
-                                                           bodyWithMemoryOperatorVec.size(), BinaryenTypeAuto())
-                                           : body;
-  BinaryenFunctionRef funcRef =
-      BinaryenAddFunction(module, name_.c_str(), argumentBinaryenType, returnType, localBinaryenTypes.data(),
-                          localBinaryenTypes.size(), bodyWithMemoryOperatorRef);
+  std::vector<BinaryenExpressionRef> bodyBlock{};
+  bodyBlock.insert(bodyBlock.end(), prefixExprRefs_.begin(), prefixExprRefs_.end());
+  bodyBlock.push_back(body);
+  bodyBlock.insert(bodyBlock.end(), postExprRefs_.begin(), postExprRefs_.end());
+  BinaryenExpressionRef bodyBlockRef =
+      bodyBlock.size() > 1 ? BinaryenBlock(module, nullptr, bodyBlock.data(), bodyBlock.size(), BinaryenTypeAuto())
+                           : body;
+  BinaryenFunctionRef funcRef = BinaryenAddFunction(module, name_.c_str(), argumentBinaryenType, returnType,
+                                                    localBinaryenTypes.data(), localBinaryenTypes.size(), bodyBlockRef);
 
   std::size_t i = 0;
   for (; i < argumentNames.size(); i++) {
@@ -163,6 +168,13 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
   }
 
   return funcRef;
+}
+
+std::vector<BinaryenExpressionRef> Function::finalizeReturn(BinaryenModuleRef module,
+                                                            BinaryenExpressionRef returnExpr) {
+  std::vector<BinaryenExpressionRef> ret{postExprRefs_.begin(), postExprRefs_.end()};
+  ret.push_back(returnExpr);
+  return ret;
 }
 
 } // namespace walang::ir

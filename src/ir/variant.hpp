@@ -134,7 +134,7 @@ class Function : public Symbol {
 public:
   Function(std::string name, std::vector<std::string> const &argumentNames,
            std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
-           std::shared_ptr<VariantType> const &returnType);
+           std::shared_ptr<VariantType> const &returnType, BinaryenModuleRef module);
 
   [[nodiscard]] std::string name() const noexcept { return name_; }
   [[nodiscard]] std::shared_ptr<Signature> signature() const noexcept {
@@ -157,6 +157,7 @@ public:
   void freeContinueLabel();
 
   BinaryenFunctionRef finalize(BinaryenModuleRef module, BinaryenExpressionRef body);
+  std::vector<BinaryenExpressionRef> finalizeReturn(BinaryenModuleRef module, BinaryenExpressionRef returnExpr);
 
 private:
   std::string name_;
@@ -171,6 +172,9 @@ private:
   uint32_t breakLabelIndex_{0U};
   std::stack<std::string> currentContinueLabel_{};
   uint32_t continueLabelIndex_{0U};
+
+  std::vector<BinaryenExpressionRef> prefixExprRefs_{};
+  std::vector<BinaryenExpressionRef> postExprRefs_{};
 };
 
 } // namespace walang::ir

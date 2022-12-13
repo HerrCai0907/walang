@@ -1,6 +1,7 @@
 #include "compiler.hpp"
 #include "ast/expression.hpp"
 #include "ast/statement.hpp"
+#include "binaryen/utils.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/overload.hpp"
 #include "helper/redefined_checker.hpp"
@@ -36,7 +37,7 @@ void Compiler::compile() {
   for (auto const &file : files_) {
     startFunction_ = std::make_shared<ir::Function>("_start", std::vector<std::string>{},
                                                     std::vector<std::shared_ptr<ir::VariantType>>{},
-                                                    variantTypeMap_->findVariantType("void"));
+                                                    variantTypeMap_->findVariantType("void"), module_);
     currentFunction_.push(startFunction_);
     resolver_.setCurrentFunction(currentFunction());
     std::vector<BinaryenExpressionRef> expressions{};
@@ -199,14 +200,15 @@ BinaryenExpressionRef Compiler::compileReturnStatement(std::shared_ptr<ast::Retu
   switch (signature->returnType()->underlyingReturnTypeStatus()) {
   case ir::VariantType::UnderlyingReturnTypeStatus::None:
   case ir::VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
-    std::array<BinaryenExpressionRef, 2U> exprRefs{
-        returnValue->assignToMemory(module_, ir::MemoryData{0, signature->returnType()}),
-        BinaryenReturn(module_, nullptr),
-    };
-    return BinaryenBlock(module_, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeAuto());
+    auto exprRefs = currentFunction()->finalizeReturn(module_, BinaryenReturn(module_, nullptr));
+    exprRefs.insert(exprRefs.begin(), returnValue->assignToMemory(module_, ir::MemoryData{0, signature->returnType()}));
+    return binaryen::Utils::combineExprRef(module_, exprRefs);
   }
-  case ir::VariantType::UnderlyingReturnTypeStatus::ByReturnValue:
-    return BinaryenReturn(module_, returnValue->assignToStack(module_));
+  case ir::VariantType::UnderlyingReturnTypeStatus::ByReturnValue: {
+    auto exprRefs =
+        currentFunction()->finalizeReturn(module_, BinaryenReturn(module_, returnValue->assignToStack(module_)));
+    return binaryen::Utils::combineExprRef(module_, exprRefs);
+  }
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
@@ -221,7 +223,8 @@ BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::Fu
   std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
                                                     ? variantTypeMap_->findVariantType(statement->returnType().value())
                                                     : std::make_shared<ir::TypeAuto>();
-  auto functionIr = std::make_shared<ir::Function>(statement->name(), argumentNames, argumentTypes, returnType);
+  auto functionIr =
+      std::make_shared<ir::Function>(statement->name(), argumentNames, argumentTypes, returnType, module_);
   resolver_.addFunction(statement->name(), functionIr);
   currentFunction_.push(functionIr);
   resolver_.setCurrentFunction(currentFunction());
@@ -281,7 +284,7 @@ std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::C
                                                     ? variantTypeMap_->findVariantType(statement->returnType().value())
                                                     : std::make_shared<ir::TypeAuto>();
   auto functionIr = std::make_shared<ir::Function>(classType->className() + "#" + statement->name(), argumentNames,
-                                                   argumentTypes, returnType);
+                                                   argumentTypes, returnType, module_);
   functionIr->setThisClassType(classType);
   resolver_.addFunction(classType->className() + "#" + statement->name(), functionIr);
   currentFunction_.push(functionIr);
@@ -293,8 +296,9 @@ std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::C
   return functionIr;
 }
 void Compiler::compileClassConstructor(std::shared_ptr<ir::Class> const &classType) {
-  auto constructor = std::make_shared<ir::Function>(classType->className() + "#constructor", std::vector<std::string>{},
-                                                    std::vector<std::shared_ptr<ir::VariantType>>{}, classType);
+  auto constructor =
+      std::make_shared<ir::Function>(classType->className() + "#constructor", std::vector<std::string>{},
+                                     std::vector<std::shared_ptr<ir::VariantType>>{}, classType, module_);
   BinaryenExpressionRef body;
   switch (classType->underlyingReturnTypeStatus()) {
   case ir::VariantType::UnderlyingReturnTypeStatus::None:
@@ -496,19 +500,19 @@ std::shared_ptr<ir::Variant> Compiler::compileCallExpression(std::shared_ptr<ast
     exprRefs.push_back(callExprRef);
     exprRefs.insert(exprRefs.end(), postPrecessExprRefs.begin(), postPrecessExprRefs.end());
 
-    return std::make_shared<ir::StackData>(
-        exprRefs.size() == 1 ? callExprRef
-                             : BinaryenBlock(module_, nullptr, exprRefs.data(), exprRefs.size(),
-                                             functionCaller->signature()->returnType()->underlyingType()),
-        expectedType);
+    return std::make_shared<ir::StackData>(binaryen::Utils::combineExprRef(module_, exprRefs), expectedType);
   }
   case ir::VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
     BinaryenExpressionRef callExprRef =
         BinaryenCall(module_, functionCaller->name().c_str(), operands.data(), operands.size(), BinaryenTypeNone());
     exprRefs.push_back(callExprRef);
     exprRefs.insert(exprRefs.end(), postPrecessExprRefs.begin(), postPrecessExprRefs.end());
-    ir::MemoryData returnValue{0, expectedType};
-    return std::make_shared<ir::StackData>(returnValue.assignToStack(module_), expectedType);
+    auto assign = (ir::MemoryData{0, expectedType}.assignToStack(module_));
+    auto assignSize = BinaryenBlockGetNumChildren(assign);
+    for (uint32_t i = 0; i < assignSize; i++) {
+      exprRefs.push_back(BinaryenBlockGetChildAt(assign, i));
+    }
+    return std::make_shared<ir::StackData>(binaryen::Utils::combineExprRef(module_, exprRefs), expectedType);
   }
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));

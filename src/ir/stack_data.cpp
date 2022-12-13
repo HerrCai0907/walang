@@ -1,3 +1,4 @@
+#include "binaryen-c.h"
 #include "binaryen/enum.hpp"
 #include "variant.hpp"
 
@@ -43,11 +44,12 @@ BinaryenExpressionRef StackData::assignToLocal(BinaryenModuleRef module, Local c
     return BinaryenLocalSet(module, local.index(), exprRef_);
   }
   assert(BinaryenExpressionGetId(exprRef_) == static_cast<uint32_t>(binaryen::Id::BlockId));
-  assert(BinaryenBlockGetNumChildren(exprRef_) == underlyingTypes.size());
+  assert(BinaryenBlockGetNumChildren(exprRef_) >= underlyingTypes.size());
   for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
-    auto valueExprRef = BinaryenBlockGetChildAt(exprRef_, index);
+    BinaryenIndex blockIndex = BinaryenBlockGetNumChildren(exprRef_) - underlyingTypes.size() + index;
+    auto valueExprRef = BinaryenBlockGetChildAt(exprRef_, blockIndex);
     auto setExprRef = BinaryenLocalSet(module, local.index() + index, valueExprRef);
-    BinaryenBlockSetChildAt(exprRef_, index, setExprRef);
+    BinaryenBlockSetChildAt(exprRef_, blockIndex, setExprRef);
   }
   BinaryenExpressionSetType(exprRef_, BinaryenTypeNone());
   return exprRef_;
@@ -62,11 +64,12 @@ BinaryenExpressionRef StackData::assignToGlobal(BinaryenModuleRef module, Global
     return BinaryenGlobalSet(module, global.name().c_str(), exprRef_);
   }
   assert(BinaryenExpressionGetId(exprRef_) == static_cast<uint32_t>(binaryen::Id::BlockId));
-  assert(BinaryenBlockGetNumChildren(exprRef_) == underlyingTypes.size());
+  assert(BinaryenBlockGetNumChildren(exprRef_) >= underlyingTypes.size());
   for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
-    auto valueExprRef = BinaryenBlockGetChildAt(exprRef_, index);
+    BinaryenIndex blockIndex = BinaryenBlockGetNumChildren(exprRef_) - underlyingTypes.size() + index;
+    auto valueExprRef = BinaryenBlockGetChildAt(exprRef_, blockIndex);
     auto setExprRef = BinaryenGlobalSet(module, (global.name() + "#" + std::to_string(index)).c_str(), valueExprRef);
-    BinaryenBlockSetChildAt(exprRef_, index, setExprRef);
+    BinaryenBlockSetChildAt(exprRef_, blockIndex, setExprRef);
   }
   BinaryenExpressionSetType(exprRef_, BinaryenTypeNone());
   return exprRef_;
