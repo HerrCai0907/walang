@@ -63,29 +63,35 @@ public:
     auto *child = dynamic_cast<antlr4::ParserRuleContext *>(ctx->children.at(0));
     assert(astNodes_.count(child) == 1);
     astNodes_.emplace(ctx, astNodes_.find(child)->second);
-    astNodes_.find(child)->second->setRange(file_, ctx);
   }
   void exitIdentifier(walangParser::IdentifierContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::Identifier>(ctx, astNodes_));
+    astNodes_.find(ctx)->second->setRange(file_, ctx);
   }
   void exitBinaryExpression(walangParser::BinaryExpressionContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::BinaryExpression>(ctx, astNodes_));
+    astNodes_.find(ctx)->second->setRange(file_, ctx);
   }
   void exitTernaryExpression(walangParser::TernaryExpressionContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::TernaryExpression>(ctx, astNodes_));
+    astNodes_.find(ctx)->second->setRange(file_, ctx);
   }
   void exitPrefixExpression(walangParser::PrefixExpressionContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::PrefixExpression>(ctx, astNodes_));
+    astNodes_.find(ctx)->second->setRange(file_, ctx);
   }
   void exitParenthesesExpression(walangParser::ParenthesesExpressionContext *ctx) override {
     assert(astNodes_.count(ctx->expression()) == 1);
     astNodes_.emplace(ctx, astNodes_.find(ctx->expression())->second);
+    astNodes_.find(ctx)->second->setRange(file_, ctx);
   }
   void exitCallExpression(walangParser::CallExpressionContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::CallExpression>(ctx, astNodes_));
+    astNodes_.find(ctx)->second->setRange(file_, ctx);
   }
   void exitMemberExpression(walangParser::MemberExpressionContext *ctx) override {
     astNodes_.emplace(ctx, std::make_shared<ast::MemberExpression>(ctx, astNodes_));
+    astNodes_.find(ctx)->second->setRange(file_, ctx);
   }
 
   void visitErrorNode(antlr4::tree::ErrorNode *node) override {
