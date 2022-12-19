@@ -1,5 +1,4 @@
 #include "binaryen-c.h"
-#include "binaryen/enum.hpp"
 #include "variant.hpp"
 
 namespace walang::ir {
@@ -16,7 +15,7 @@ BinaryenExpressionRef StackData::assignToMemory(BinaryenModuleRef module, Memory
                          BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryData.memoryPosition()))),
                          exprRef_, underlyingType, "0");
   }
-  assert(BinaryenExpressionGetId(exprRef_) == static_cast<uint32_t>(binaryen::Id::BlockId));
+  assert(BinaryenExpressionGetId(exprRef_) == BinaryenBlockId());
   assert(BinaryenBlockGetNumChildren(exprRef_) >= underlyingTypes.size());
   uint32_t offset = 0;
   for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
@@ -43,7 +42,7 @@ BinaryenExpressionRef StackData::assignToLocal(BinaryenModuleRef module, Local c
   if (underlyingTypes.size() == 1) {
     return BinaryenLocalSet(module, local.index(), exprRef_);
   }
-  assert(BinaryenExpressionGetId(exprRef_) == static_cast<uint32_t>(binaryen::Id::BlockId));
+  assert(BinaryenExpressionGetId(exprRef_) == BinaryenBlockId());
   assert(BinaryenBlockGetNumChildren(exprRef_) >= underlyingTypes.size());
   for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
     BinaryenIndex blockIndex = BinaryenBlockGetNumChildren(exprRef_) - underlyingTypes.size() + index;
@@ -63,7 +62,7 @@ BinaryenExpressionRef StackData::assignToGlobal(BinaryenModuleRef module, Global
   if (underlyingTypes.size() == 1) {
     return BinaryenGlobalSet(module, global.name().c_str(), exprRef_);
   }
-  assert(BinaryenExpressionGetId(exprRef_) == static_cast<uint32_t>(binaryen::Id::BlockId));
+  assert(BinaryenExpressionGetId(exprRef_) == BinaryenBlockId());
   assert(BinaryenBlockGetNumChildren(exprRef_) >= underlyingTypes.size());
   for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
     BinaryenIndex blockIndex = BinaryenBlockGetNumChildren(exprRef_) - underlyingTypes.size() + index;

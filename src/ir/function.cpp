@@ -1,3 +1,4 @@
+#include "binaryen/utils.hpp"
 #include "helper/diagnose.hpp"
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
@@ -20,39 +21,12 @@ Function::Function(std::string name, std::vector<std::string> const &argumentNam
   assert(argumentNames.size() == argumentTypes.size());
   // re-order arguments
   for (std::size_t i = 0; i < argumentSize_; i++) {
-    if (argumentTypes[i]->type() != VariantType::Type::Class) {
-      addLocal(argumentNames[i], argumentTypes[i]);
-    }
+    addLocal(argumentNames[i], argumentTypes[i]);
   }
-  for (std::size_t i = 0; i < argumentSize_; i++) {
-    if (argumentTypes[i]->type() == VariantType::Type::Class) {
-      addLocal(argumentNames[i], argumentTypes[i]);
-    }
-  }
-  uint32_t memoryPosition = 0U;
-  uint32_t returnValueSize = ir::VariantType::getSize(returnType->underlyingType());
-  for (uint32_t i = 0; i < argumentSize_; i++) {
-    if (locals_[i]->variantType()->type() == VariantType::Type::Class) {
-      auto local = (locals_[i]);
-      auto underlyingTypes = local->variantType()->underlyingTypes();
-      for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
-        auto underlyingType = underlyingTypes[index];
-        auto dataSize = VariantType::getSize(underlyingType);
-
-        prefixExprRefs_.insert(
-            prefixExprRefs_.begin(),
-            BinaryenLocalSet(
-                module, local->index() + index,
-                BinaryenLoad(module, dataSize, false, 0, 0, underlyingType,
-                             BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryPosition))), "0")));
-
-        postExprRefs_.push_back(BinaryenStore(
-            module, dataSize, 0, 0,
-            BinaryenConst(module, BinaryenLiteralInt32(static_cast<int32_t>(memoryPosition + returnValueSize))),
-            BinaryenLocalGet(module, local->index() + index, underlyingType), underlyingType, "0"));
-        memoryPosition += dataSize;
-      }
-    }
+  if (!argumentNames.empty() && argumentNames[0] == "this") {
+    // any change for `this` should be assigned back
+    postExprRefs_.push_back(locals_[0]->assignToMemory(
+        module, MemoryData{ir::VariantType::getSize(returnType->underlyingType()), locals_[0]->variantType()}));
   }
 }
 
@@ -119,13 +93,8 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
       }
     }
   };
-
   for (uint32_t i = 0; i < argumentSize_; i++) {
-    if (locals_[i]->variantType()->type() == VariantType::Type::Class) {
-      handleLocal(locals_[i], localBinaryenTypes, localNames);
-    } else {
-      handleLocal(locals_[i], argumentBinaryenTypes, argumentNames);
-    }
+    handleLocal(locals_[i], argumentBinaryenTypes, argumentNames);
   }
   BinaryenType argumentBinaryenType = BinaryenTypeCreate(argumentBinaryenTypes.data(), argumentBinaryenTypes.size());
 
@@ -144,12 +113,9 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
   }
 
   std::vector<BinaryenExpressionRef> bodyBlock{};
-  bodyBlock.insert(bodyBlock.end(), prefixExprRefs_.begin(), prefixExprRefs_.end());
   bodyBlock.push_back(body);
   bodyBlock.insert(bodyBlock.end(), postExprRefs_.begin(), postExprRefs_.end());
-  BinaryenExpressionRef bodyBlockRef =
-      bodyBlock.size() > 1 ? BinaryenBlock(module, nullptr, bodyBlock.data(), bodyBlock.size(), BinaryenTypeAuto())
-                           : body;
+  BinaryenExpressionRef bodyBlockRef = binaryen::Utils::combineExprRef(module, bodyBlock);
   BinaryenFunctionRef funcRef = BinaryenAddFunction(module, name_.c_str(), argumentBinaryenType, returnType,
                                                     localBinaryenTypes.data(), localBinaryenTypes.size(), bodyBlockRef);
 
@@ -175,6 +141,18 @@ std::vector<BinaryenExpressionRef> Function::finalizeReturn(BinaryenModuleRef mo
   std::vector<BinaryenExpressionRef> ret{postExprRefs_.begin(), postExprRefs_.end()};
   ret.push_back(returnExpr);
   return ret;
+}
+
+void Function::checkArgumentAndReturnType(std::vector<std::shared_ptr<ast::Expression>> const &argumentExpressions,
+                                          std::shared_ptr<ir::VariantType> const &expectedReturnType) const {
+  if (argumentSize_ != argumentExpressions.size()) {
+    auto e = ArgumentCountError(argumentSize_, argumentExpressions.size());
+    throw e;
+  }
+  if (!expectedReturnType->tryResolveTo(signature()->returnType())) {
+    auto e = TypeConvertError(signature()->returnType()->to_string(), expectedReturnType->to_string());
+    throw e;
+  }
 }
 
 } // namespace walang::ir

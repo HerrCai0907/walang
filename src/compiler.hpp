@@ -49,6 +49,10 @@ private:
 
   BinaryenExpressionRef compileExpressionToExpressionRef(std::shared_ptr<ast::Expression> const &expression,
                                                          std::shared_ptr<ir::VariantType> const &expectedType);
+  std::vector<BinaryenExpressionRef>
+  compileExpressionToExpressionRefs(std::shared_ptr<ast::Expression> const &expression,
+                                    std::shared_ptr<ir::VariantType> const &expectedType);
+
   std::shared_ptr<ir::Variant> compileExpression(std::shared_ptr<ast::Expression> const &expression,
                                                  std::shared_ptr<ir::VariantType> const &expectedType);
   std::shared_ptr<ir::Variant> compileIdentifier(std::shared_ptr<ast::Identifier> const &expression,

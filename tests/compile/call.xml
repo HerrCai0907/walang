@@ -116,6 +116,7 @@
 (module
  (type $none_=&gt;_none (func))
  (type $none_=&gt;_i32 (func (result i32)))
+ (type $i32_i32_f64_=&gt;_none (func (param i32 i32 f64)))
  (global $b (mut i32) (i32.const 0))
  (global $c#0 (mut i32) (i32.const 0))
  (global $c#1 (mut f64) (f64.const 0))
@@ -138,68 +139,24 @@
    (f64.const 0)
   )
  )
- (func $create
-  (local $b i32)
-  (local $c#0 i32)
-  (local $c#1 f64)
-  (local.set $c#1
-   (f64.load
-    (i32.const 8)
-   )
-  )
-  (local.set $c#0
-   (i32.load
-    (i32.const 4)
-   )
-  )
-  (local.set $b
-   (i32.load
-    (i32.const 0)
-   )
-  )
+ (func $create (param $b i32) (param $c#0 i32) (param $c#1 f64)
   (block
    (block
-    (block
-     (call $C#constructor)
-     (i32.store
+    (call $C#constructor)
+    (i32.store
+     (i32.const 0)
+     (i32.load
       (i32.const 0)
-      (i32.load
-       (i32.const 0)
-      )
      )
-     (f64.store
-      (i32.const 4)
-      (f64.load
-       (i32.const 4)
-      )
-     )
-    )
-    (i32.store
-     (i32.const 12)
-     (local.get $b)
-    )
-    (i32.store
-     (i32.const 16)
-     (local.get $c#0)
     )
     (f64.store
-     (i32.const 20)
-     (local.get $c#1)
+     (i32.const 4)
+     (f64.load
+      (i32.const 4)
+     )
     )
-    (return)
    )
-  )
-  (i32.store
-   (i32.const 12)
-   (local.get $b)
-  )
-  (i32.store
-   (i32.const 16)
-   (local.get $c#0)
-  )
-  (f64.store
-   (i32.const 20)
-   (local.get $c#1)
+   (return)
   )
  )
  (func $_start
@@ -225,41 +182,10 @@
    )
   )
   (block
-   (block
-   )
-   (i32.store
-    (i32.const 0)
+   (call $create
     (global.get $b)
-   )
-   (block
-    (i32.store
-     (i32.const 4)
-     (global.get $c#0)
-    )
-    (f64.store
-     (i32.const 8)
-     (global.get $c#1)
-    )
-   )
-   (call $create)
-   (block
-   )
-   (global.set $b
-    (i32.load
-     (i32.const 12)
-    )
-   )
-   (block
-    (global.set $c#0
-     (i32.load
-      (i32.const 16)
-     )
-    )
-    (global.set $c#1
-     (f64.load
-      (i32.const 20)
-     )
-    )
+    (global.get $c#0)
+    (global.get $c#1)
    )
    (global.set $v#0
     (i32.load

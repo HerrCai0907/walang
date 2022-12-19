@@ -48,6 +48,20 @@ public:
   virtual BinaryenExpressionRef assignToLocal(BinaryenModuleRef module, Local const &local) const = 0;
   virtual BinaryenExpressionRef assignToGlobal(BinaryenModuleRef module, Global const &global) const = 0;
   virtual BinaryenExpressionRef assignToStack(BinaryenModuleRef module) const = 0;
+  std::vector<BinaryenExpressionRef> assignToStacks(BinaryenModuleRef module) const {
+    // TODO(refactor later)
+    auto ref = assignToStack(module);
+    std::vector<BinaryenExpressionRef> ret{};
+    if (BinaryenExpressionGetId(ref) == BinaryenBlockId()) {
+      ret.resize(BinaryenBlockGetNumChildren(ref));
+      for (BinaryenIndex index = 0; index < ret.size(); index++) {
+        ret[index] = BinaryenBlockGetChildAt(ref, index);
+      }
+    } else {
+      ret.push_back(ref);
+    }
+    return ret;
+  }
 
 protected:
   std::string name_;
@@ -159,6 +173,9 @@ public:
   BinaryenFunctionRef finalize(BinaryenModuleRef module, BinaryenExpressionRef body);
   std::vector<BinaryenExpressionRef> finalizeReturn(BinaryenModuleRef module, BinaryenExpressionRef returnExpr);
 
+  void checkArgumentAndReturnType(std::vector<std::shared_ptr<ast::Expression>> const &argumentExpressions,
+                                  std::shared_ptr<ir::VariantType> const &expectedReturnType) const;
+
 private:
   std::string name_;
   uint32_t argumentSize_;
@@ -173,7 +190,6 @@ private:
   std::stack<std::string> currentContinueLabel_{};
   uint32_t continueLabelIndex_{0U};
 
-  std::vector<BinaryenExpressionRef> prefixExprRefs_{};
   std::vector<BinaryenExpressionRef> postExprRefs_{};
 };
 
