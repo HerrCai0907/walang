@@ -11,8 +11,6 @@
  (func $foo2 (param $a i32) (param $b f64)
  )
  (func $_start
-  (nop)
-  (nop)
   (call $foo1)
   (global.set $v
    (f64.const 2.5)
@@ -40,7 +38,6 @@
   )
  )
  (func $_start
-  (nop)
   (global.set $c
    (call $add
     (i32.const 1)
@@ -72,10 +69,8 @@
   )
  )
  (func $createA
-  (block
-   (call $A#constructor)
-   (return)
-  )
+  (call $A#constructor)
+  (return)
  )
  (func $createB (result i32)
   (return
@@ -83,32 +78,22 @@
   )
  )
  (func $createC
-  (block
-   (block
-    (call $C#constructor)
-    (i32.store
-     (i32.const 0)
-     (i32.load
-      (i32.const 0)
-     )
-    )
-    (f64.store
-     (i32.const 4)
-     (f64.load
-      (i32.const 4)
-     )
-    )
+  (call $C#constructor)
+  (i32.store
+   (i32.const 0)
+   (i32.load
+    (i32.const 0)
    )
-   (return)
   )
+  (f64.store
+   (i32.const 4)
+   (f64.load
+    (i32.const 4)
+   )
+  )
+  (return)
  )
  (func $_start
-  (nop)
-  (nop)
-  (nop)
-  (nop)
-  (nop)
-  (nop)
  )
 )
 </ReturnClass>
@@ -140,62 +125,50 @@
   )
  )
  (func $create (param $b i32) (param $c#0 i32) (param $c#1 f64)
-  (block
-   (block
-    (call $C#constructor)
-    (i32.store
-     (i32.const 0)
-     (i32.load
-      (i32.const 0)
-     )
-    )
-    (f64.store
-     (i32.const 4)
-     (f64.load
-      (i32.const 4)
-     )
-    )
+  (call $C#constructor)
+  (i32.store
+   (i32.const 0)
+   (i32.load
+    (i32.const 0)
    )
-   (return)
   )
+  (f64.store
+   (i32.const 4)
+   (f64.load
+    (i32.const 4)
+   )
+  )
+  (return)
  )
  (func $_start
-  (nop)
-  (nop)
-  (nop)
-  (nop)
   (call $A#constructor)
   (global.set $b
    (call $B#constructor)
   )
-  (block
-   (call $C#constructor)
-   (global.set $c#0
-    (i32.load
-     (i32.const 0)
-    )
-   )
-   (global.set $c#1
-    (f64.load
-     (i32.const 4)
-    )
+  (call $C#constructor)
+  (global.set $c#0
+   (i32.load
+    (i32.const 0)
    )
   )
-  (block
-   (call $create
-    (global.get $b)
-    (global.get $c#0)
-    (global.get $c#1)
+  (global.set $c#1
+   (f64.load
+    (i32.const 4)
    )
-   (global.set $v#0
-    (i32.load
-     (i32.const 0)
-    )
+  )
+  (call $create
+   (global.get $b)
+   (global.get $c#0)
+   (global.get $c#1)
+  )
+  (global.set $v#0
+   (i32.load
+    (i32.const 0)
    )
-   (global.set $v#1
-    (f64.load
-     (i32.const 4)
-    )
+  )
+  (global.set $v#1
+   (f64.load
+    (i32.const 4)
    )
   )
  )

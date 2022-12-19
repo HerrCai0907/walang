@@ -30,22 +30,23 @@ public:
   [[nodiscard]] std::string wat() const;
 
 private:
-  BinaryenExpressionRef compileStatement(std::shared_ptr<ast::Statement> const &statement);
-  BinaryenExpressionRef compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement);
-  BinaryenExpressionRef compileAssignStatement(std::shared_ptr<ast::AssignStatement> const &statement);
-  BinaryenExpressionRef compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> const &statement);
-  BinaryenExpressionRef compileBlockStatement(std::shared_ptr<ast::BlockStatement> const &statement);
-  BinaryenExpressionRef compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement);
-  BinaryenExpressionRef compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement);
-  BinaryenExpressionRef compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement);
-  BinaryenExpressionRef compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement);
-  BinaryenExpressionRef compileReturnStatement(std::shared_ptr<ast::ReturnStatement> const &statement);
-  BinaryenExpressionRef compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileStatement(std::shared_ptr<ast::Statement> const &statement);
+  std::vector<BinaryenExpressionRef> compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileAssignStatement(std::shared_ptr<ast::AssignStatement> const &statement);
+  std::vector<BinaryenExpressionRef>
+  compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileBlockStatement(std::shared_ptr<ast::BlockStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileReturnStatement(std::shared_ptr<ast::ReturnStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement);
+  std::vector<BinaryenExpressionRef> compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement);
+
   std::shared_ptr<ir::Function> compileClassMethod(std::shared_ptr<ir::Class> const &classType,
                                                    std::shared_ptr<ast::FunctionStatement> const &statement);
   void compileClassConstructor(std::shared_ptr<ir::Class> const &classType);
-
-  BinaryenExpressionRef compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement);
 
   BinaryenExpressionRef compileExpressionToExpressionRef(std::shared_ptr<ast::Expression> const &expression,
                                                          std::shared_ptr<ir::VariantType> const &expectedType);

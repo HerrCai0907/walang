@@ -43,25 +43,12 @@ public:
 
   [[nodiscard]] std::string name() const noexcept { return name_; }
 
-  BinaryenExpressionRef assignTo(BinaryenModuleRef module, Variant const *to) const;
-  virtual BinaryenExpressionRef assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const = 0;
-  virtual BinaryenExpressionRef assignToLocal(BinaryenModuleRef module, Local const &local) const = 0;
-  virtual BinaryenExpressionRef assignToGlobal(BinaryenModuleRef module, Global const &global) const = 0;
-  virtual BinaryenExpressionRef assignToStack(BinaryenModuleRef module) const = 0;
-  std::vector<BinaryenExpressionRef> assignToStacks(BinaryenModuleRef module) const {
-    // TODO(refactor later)
-    auto ref = assignToStack(module);
-    std::vector<BinaryenExpressionRef> ret{};
-    if (BinaryenExpressionGetId(ref) == BinaryenBlockId()) {
-      ret.resize(BinaryenBlockGetNumChildren(ref));
-      for (BinaryenIndex index = 0; index < ret.size(); index++) {
-        ret[index] = BinaryenBlockGetChildAt(ref, index);
-      }
-    } else {
-      ret.push_back(ref);
-    }
-    return ret;
-  }
+  std::vector<BinaryenExpressionRef> assignTo(BinaryenModuleRef module, Variant const *to) const;
+  virtual std::vector<BinaryenExpressionRef> assignToMemory(BinaryenModuleRef module,
+                                                            MemoryData const &memoryData) const = 0;
+  virtual std::vector<BinaryenExpressionRef> assignToLocal(BinaryenModuleRef module, Local const &local) const = 0;
+  virtual std::vector<BinaryenExpressionRef> assignToGlobal(BinaryenModuleRef module, Global const &global) const = 0;
+  virtual std::vector<BinaryenExpressionRef> assignToStack(BinaryenModuleRef module) const = 0;
 
 protected:
   std::string name_;
@@ -77,10 +64,11 @@ public:
   void makeDefinition(BinaryenModuleRef module);
   [[nodiscard]] std::shared_ptr<Global> findMemberByName(std::string const &name) const;
 
-  BinaryenExpressionRef assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const override;
-  BinaryenExpressionRef assignToLocal(BinaryenModuleRef module, Local const &local) const override;
-  BinaryenExpressionRef assignToGlobal(BinaryenModuleRef module, Global const &global) const override;
-  BinaryenExpressionRef assignToStack(BinaryenModuleRef module) const override;
+  std::vector<BinaryenExpressionRef> assignToMemory(BinaryenModuleRef module,
+                                                    MemoryData const &memoryData) const override;
+  std::vector<BinaryenExpressionRef> assignToLocal(BinaryenModuleRef module, Local const &local) const override;
+  std::vector<BinaryenExpressionRef> assignToGlobal(BinaryenModuleRef module, Global const &global) const override;
+  std::vector<BinaryenExpressionRef> assignToStack(BinaryenModuleRef module) const override;
 
 private:
   std::map<std::string, std::shared_ptr<Global>> members_{};
@@ -101,10 +89,11 @@ public:
   [[nodiscard]] uint32_t index() const noexcept { return index_; }
   [[nodiscard]] std::shared_ptr<Local> findMemberByName(std::string const &name) const;
 
-  BinaryenExpressionRef assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const override;
-  BinaryenExpressionRef assignToLocal(BinaryenModuleRef module, Local const &local) const override;
-  BinaryenExpressionRef assignToGlobal(BinaryenModuleRef module, Global const &global) const override;
-  BinaryenExpressionRef assignToStack(BinaryenModuleRef module) const override;
+  std::vector<BinaryenExpressionRef> assignToMemory(BinaryenModuleRef module,
+                                                    MemoryData const &memoryData) const override;
+  std::vector<BinaryenExpressionRef> assignToLocal(BinaryenModuleRef module, Local const &local) const override;
+  std::vector<BinaryenExpressionRef> assignToGlobal(BinaryenModuleRef module, Global const &global) const override;
+  std::vector<BinaryenExpressionRef> assignToStack(BinaryenModuleRef module) const override;
 
 private:
   uint32_t index_;
@@ -119,10 +108,11 @@ public:
 
   [[nodiscard]] uint32_t memoryPosition() const noexcept { return memoryPosition_; }
 
-  BinaryenExpressionRef assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const override;
-  BinaryenExpressionRef assignToLocal(BinaryenModuleRef module, Local const &local) const override;
-  BinaryenExpressionRef assignToGlobal(BinaryenModuleRef module, Global const &global) const override;
-  BinaryenExpressionRef assignToStack(BinaryenModuleRef module) const override;
+  std::vector<BinaryenExpressionRef> assignToMemory(BinaryenModuleRef module,
+                                                    MemoryData const &memoryData) const override;
+  std::vector<BinaryenExpressionRef> assignToLocal(BinaryenModuleRef module, Local const &local) const override;
+  std::vector<BinaryenExpressionRef> assignToGlobal(BinaryenModuleRef module, Global const &global) const override;
+  std::vector<BinaryenExpressionRef> assignToStack(BinaryenModuleRef module) const override;
 
 private:
   uint32_t memoryPosition_;
@@ -131,17 +121,20 @@ private:
 class StackData : public Variant {
 public:
   StackData(BinaryenExpressionRef exprRef, std::shared_ptr<VariantType> const &type)
-      : Variant("StackData", Type::TypeStackData, type), exprRef_(exprRef) {}
+      : StackData(std::vector<BinaryenExpressionRef>{exprRef}, type) {}
+  StackData(std::vector<BinaryenExpressionRef> exprRef, std::shared_ptr<VariantType> const &type)
+      : Variant("StackData", Type::TypeStackData, type), exprRef_(std::move(exprRef)) {}
 
-  [[nodiscard]] BinaryenExpressionRef exprRef() const noexcept { return exprRef_; }
+  [[nodiscard]] std::vector<BinaryenExpressionRef> exprRef() const noexcept { return exprRef_; }
 
-  BinaryenExpressionRef assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const override;
-  BinaryenExpressionRef assignToLocal(BinaryenModuleRef module, Local const &local) const override;
-  BinaryenExpressionRef assignToGlobal(BinaryenModuleRef module, Global const &global) const override;
-  BinaryenExpressionRef assignToStack(BinaryenModuleRef module) const override { return exprRef_; }
+  std::vector<BinaryenExpressionRef> assignToMemory(BinaryenModuleRef module,
+                                                    MemoryData const &memoryData) const override;
+  std::vector<BinaryenExpressionRef> assignToLocal(BinaryenModuleRef module, Local const &local) const override;
+  std::vector<BinaryenExpressionRef> assignToGlobal(BinaryenModuleRef module, Global const &global) const override;
+  std::vector<BinaryenExpressionRef> assignToStack(BinaryenModuleRef module) const override { return exprRef_; }
 
 private:
-  BinaryenExpressionRef exprRef_;
+  std::vector<BinaryenExpressionRef> exprRef_;
 };
 
 class Function : public Symbol {

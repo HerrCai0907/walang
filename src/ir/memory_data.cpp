@@ -1,9 +1,11 @@
 #include "binaryen/utils.hpp"
 #include "variant.hpp"
+#include <vector>
 
 namespace walang::ir {
 
-BinaryenExpressionRef MemoryData::assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const {
+std::vector<BinaryenExpressionRef> MemoryData::assignToMemory(BinaryenModuleRef module,
+                                                              MemoryData const &memoryData) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
   auto underlyingTypes = variantType_->underlyingTypes();
   uint32_t offset = 0;
@@ -19,9 +21,9 @@ BinaryenExpressionRef MemoryData::assignToMemory(BinaryenModuleRef module, Memor
     exprRefs.push_back(storeExpr);
     offset += bytes;
   }
-  return binaryen::Utils::combineExprRef(module, exprRefs);
+  return exprRefs;
 }
-BinaryenExpressionRef MemoryData::assignToLocal(BinaryenModuleRef module, Local const &local) const {
+std::vector<BinaryenExpressionRef> MemoryData::assignToLocal(BinaryenModuleRef module, Local const &local) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
   auto underlyingTypes = variantType_->underlyingTypes();
   uint32_t offset = 0;
@@ -34,9 +36,9 @@ BinaryenExpressionRef MemoryData::assignToLocal(BinaryenModuleRef module, Local 
     exprRefs.push_back(storeExpr);
     offset += bytes;
   }
-  return binaryen::Utils::combineExprRef(module, exprRefs);
+  return exprRefs;
 }
-BinaryenExpressionRef MemoryData::assignToGlobal(BinaryenModuleRef module, Global const &global) const {
+std::vector<BinaryenExpressionRef> MemoryData::assignToGlobal(BinaryenModuleRef module, Global const &global) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
   auto underlyingTypes = variantType_->underlyingTypes();
   uint32_t offset = 0;
@@ -50,9 +52,9 @@ BinaryenExpressionRef MemoryData::assignToGlobal(BinaryenModuleRef module, Globa
     exprRefs.push_back(storeExpr);
     offset += bytes;
   }
-  return binaryen::Utils::combineExprRef(module, exprRefs);
+  return exprRefs;
 }
-BinaryenExpressionRef MemoryData::assignToStack(BinaryenModuleRef module) const {
+std::vector<BinaryenExpressionRef> MemoryData::assignToStack(BinaryenModuleRef module) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
   auto underlyingTypes = variantType_->underlyingTypes();
   uint32_t offset = 0;
@@ -64,7 +66,7 @@ BinaryenExpressionRef MemoryData::assignToStack(BinaryenModuleRef module) const 
     exprRefs.push_back(loadExpr);
     offset += bytes;
   }
-  return binaryen::Utils::combineExprRef(module, exprRefs);
+  return exprRefs;
 }
 
 } // namespace walang::ir

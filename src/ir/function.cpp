@@ -25,8 +25,8 @@ Function::Function(std::string name, std::vector<std::string> const &argumentNam
   }
   if (!argumentNames.empty() && argumentNames[0] == "this") {
     // any change for `this` should be assigned back
-    postExprRefs_.push_back(locals_[0]->assignToMemory(
-        module, MemoryData{ir::VariantType::getSize(returnType->underlyingType()), locals_[0]->variantType()}));
+    postExprRefs_ = locals_[0]->assignToMemory(
+        module, MemoryData{ir::VariantType::getSize(returnType->underlyingType()), locals_[0]->variantType()});
   }
 }
 

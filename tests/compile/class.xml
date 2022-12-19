@@ -19,33 +19,28 @@
  (func $A#foo (param $this#0 i32) (param $this#1 f32)
   (block
   )
-  (block
-   (i32.store
-    (i32.const 0)
-    (local.get $this#0)
-   )
-   (f32.store
-    (i32.const 4)
-    (local.get $this#1)
-   )
+  (i32.store
+   (i32.const 0)
+   (local.get $this#0)
+  )
+  (f32.store
+   (i32.const 4)
+   (local.get $this#1)
   )
  )
  (func $A#foo2 (param $this#0 i32) (param $this#1 f32) (param $a i32)
   (block
   )
-  (block
-   (i32.store
-    (i32.const 0)
-    (local.get $this#0)
-   )
-   (f32.store
-    (i32.const 4)
-    (local.get $this#1)
-   )
+  (i32.store
+   (i32.const 0)
+   (local.get $this#0)
+  )
+  (f32.store
+   (i32.const 4)
+   (local.get $this#1)
   )
  )
  (func $_start
-  (nop)
  )
 )
 </Basis>
@@ -77,17 +72,15 @@
   (local $la#0 f64)
   (local $la#1 i32)
   (local $lc i64)
-  (block
-   (call $A#constructor)
-   (local.set $la#0
-    (f64.load
-     (i32.const 0)
-    )
+  (call $A#constructor)
+  (local.set $la#0
+   (f64.load
+    (i32.const 0)
    )
-   (local.set $la#1
-    (i32.load
-     (i32.const 8)
-    )
+  )
+  (local.set $la#1
+   (i32.load
+    (i32.const 8)
    )
   )
   (call $B#constructor)
@@ -96,27 +89,21 @@
   )
  )
  (func $_start
-  (nop)
-  (nop)
-  (nop)
-  (block
-   (call $A#constructor)
-   (global.set $ga#0
-    (f64.load
-     (i32.const 0)
-    )
+  (call $A#constructor)
+  (global.set $ga#0
+   (f64.load
+    (i32.const 0)
    )
-   (global.set $ga#1
-    (i32.load
-     (i32.const 8)
-    )
+  )
+  (global.set $ga#1
+   (i32.load
+    (i32.const 8)
    )
   )
   (call $B#constructor)
   (global.set $gc
    (call $C#constructor)
   )
-  (nop)
  )
 )
 </Declare>
@@ -173,20 +160,16 @@
     (local.get $this#1)
    )
   )
-  (block
-   (f64.store
-    (i32.const 0)
-    (local.get $this#0)
-   )
-   (i32.store
-    (i32.const 8)
-    (local.get $this#1)
-   )
+  (f64.store
+   (i32.const 0)
+   (local.get $this#0)
+  )
+  (i32.store
+   (i32.const 8)
+   (local.get $this#1)
   )
  )
  (func $_start
-  (nop)
-  (nop)
  )
 )
 </CallMethod>

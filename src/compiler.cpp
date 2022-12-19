@@ -26,6 +26,10 @@
 
 namespace walang {
 
+template <class T> static void concat(std::vector<T> &a, std::vector<T> const &b) {
+  a.insert(a.end(), b.begin(), b.end());
+}
+
 Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files)
     : module_{BinaryenModuleCreate()}, files_{std::move(files)}, variantTypeMap_{std::make_shared<VariantTypeMap>()},
       resolver_(variantTypeMap_) {
@@ -42,7 +46,7 @@ void Compiler::compile() {
     resolver_.setCurrentFunction(currentFunction());
     std::vector<BinaryenExpressionRef> expressions{};
     for (auto &statement : file->statement()) {
-      expressions.emplace_back(compileStatement(statement));
+      concat(expressions, compileStatement(statement));
     }
     BinaryenExpressionRef body = BinaryenBlock(module_, nullptr, expressions.data(), expressions.size(),
                                                startFunction_->signature()->returnType()->underlyingType());
@@ -72,7 +76,7 @@ std::string Compiler::wat() const {
 //      ██    ██    ██   ██    ██    ██      ██  ██  ██ ██      ██  ██ ██    ██
 // ███████    ██    ██   ██    ██    ███████ ██      ██ ███████ ██   ████    ██
 
-BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement> const &statement) {
+std::vector<BinaryenExpressionRef> Compiler::compileStatement(std::shared_ptr<ast::Statement> const &statement) {
   try {
     switch (statement->type()) {
     case ast::StatementType::TypeDeclareStatement:
@@ -103,7 +107,8 @@ BinaryenExpressionRef Compiler::compileStatement(std::shared_ptr<ast::Statement>
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
-BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
+std::vector<BinaryenExpressionRef>
+Compiler::compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement) {
   std::shared_ptr<ir::VariantType> const &variantType =
       statement->variantType().empty() ? resolver_.resolveTypeExpression(statement->init())
                                        : variantTypeMap_->findVariantType(statement->variantType());
@@ -122,7 +127,8 @@ BinaryenExpressionRef Compiler::compileDeclareStatement(std::shared_ptr<ast::Dec
   }
   return initVariant->assignTo(module_, assignedVariant);
 }
-BinaryenExpressionRef Compiler::compileAssignStatement(std::shared_ptr<ast::AssignStatement> const &statement) {
+std::vector<BinaryenExpressionRef>
+Compiler::compileAssignStatement(std::shared_ptr<ast::AssignStatement> const &statement) {
   auto assignedVariant = resolver_.resolveExpression(statement->variant());
   auto valueVariant = compileExpression(statement->value(), assignedVariant->variantType());
   switch (assignedVariant->type()) {
@@ -137,31 +143,38 @@ BinaryenExpressionRef Compiler::compileAssignStatement(std::shared_ptr<ast::Assi
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
-BinaryenExpressionRef Compiler::compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> const &statement) {
+std::vector<BinaryenExpressionRef>
+Compiler::compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> const &statement) {
   auto expectedType = std::make_shared<ir::TypeAuto>();
   auto valueVariant = compileExpressionToExpressionRef(statement->expr(), expectedType);
   if (expectedType->underlyingType() != BinaryenTypeNone()) {
-    return BinaryenDrop(module_, valueVariant);
+    return {BinaryenDrop(module_, valueVariant)};
   } else {
-    return valueVariant;
+    return {valueVariant};
   }
 }
-BinaryenExpressionRef Compiler::compileBlockStatement(std::shared_ptr<ast::BlockStatement> const &statement) {
+std::vector<BinaryenExpressionRef>
+Compiler::compileBlockStatement(std::shared_ptr<ast::BlockStatement> const &statement) {
   std::vector<BinaryenExpressionRef> statementRefs{};
   auto statements = statement->statements();
-  std::transform(
-      statements.cbegin(), statements.cend(), std::back_inserter(statementRefs),
-      [this](std::shared_ptr<ast::Statement> const &innerStatement) { return compileStatement(innerStatement); });
-  return BinaryenBlock(module_, nullptr, statementRefs.data(), statementRefs.size(), BinaryenTypeNone());
+  for (auto &statement : statements) {
+    concat(statementRefs, compileStatement(statement));
+  }
+  return {BinaryenBlock(module_, nullptr, statementRefs.data(), statementRefs.size(), BinaryenTypeNone())};
 }
-BinaryenExpressionRef Compiler::compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement) {
+std::vector<BinaryenExpressionRef> Compiler::compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement) {
   BinaryenExpressionRef condition =
       compileExpressionToExpressionRef(statement->condition(), std::make_shared<ir::TypeCondition>());
-  BinaryenExpressionRef ifTrue = compileBlockStatement(statement->thenBlock());
-  BinaryenExpressionRef ifElse = statement->elseBlock() == nullptr ? nullptr : compileStatement(statement->elseBlock());
-  return BinaryenIf(module_, condition, ifTrue, ifElse);
+  BinaryenExpressionRef ifTrue =
+      binaryen::Utils::combineExprRef(module_, compileBlockStatement(statement->thenBlock()));
+  BinaryenExpressionRef ifElse =
+      statement->elseBlock() == nullptr
+          ? nullptr
+          : binaryen::Utils::combineExprRef(module_, compileStatement(statement->elseBlock()));
+  return {BinaryenIf(module_, condition, ifTrue, ifElse)};
 }
-BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement) {
+std::vector<BinaryenExpressionRef>
+Compiler::compileWhileStatement(std::shared_ptr<ast::WhileStatement> const &statement) {
   /**
     loop A (
       if (
@@ -177,43 +190,47 @@ BinaryenExpressionRef Compiler::compileWhileStatement(std::shared_ptr<ast::While
   auto continueLabel = currentFunction()->createContinueLabel("while");
   BinaryenExpressionRef condition =
       compileExpressionToExpressionRef(statement->condition(), std::make_shared<ir::TypeCondition>());
-  std::vector<BinaryenExpressionRef> block = {
-      compileBlockStatement(statement->block()),
-      BinaryenBreak(module_, continueLabel.c_str(), nullptr, nullptr),
-  };
+  std::vector<BinaryenExpressionRef> block = compileBlockStatement(statement->block());
+  block.push_back(BinaryenBreak(module_, continueLabel.c_str(), nullptr, nullptr));
   BinaryenExpressionRef body = BinaryenIf(
       module_, condition, BinaryenBlock(module_, nullptr, block.data(), block.size(), BinaryenTypeNone()), nullptr);
   currentFunction()->freeBreakLabel();
   currentFunction()->freeContinueLabel();
   BinaryenExpressionRef loop = BinaryenLoop(module_, continueLabel.c_str(), body);
-  return BinaryenBlock(module_, breakLabel.c_str(), &loop, 1U, BinaryenTypeNone());
+  return {BinaryenBlock(module_, breakLabel.c_str(), &loop, 1U, BinaryenTypeNone())};
 }
-BinaryenExpressionRef Compiler::compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement) {
-  return BinaryenBreak(module_, currentFunction()->topBreakLabel().c_str(), nullptr, nullptr);
+std::vector<BinaryenExpressionRef>
+Compiler::compileBreakStatement(std::shared_ptr<ast::BreakStatement> const &statement) {
+  return {BinaryenBreak(module_, currentFunction()->topBreakLabel().c_str(), nullptr, nullptr)};
 }
-BinaryenExpressionRef Compiler::compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement) {
-  return BinaryenBreak(module_, currentFunction()->topContinueLabel().c_str(), nullptr, nullptr);
+std::vector<BinaryenExpressionRef>
+Compiler::compileContinueStatement(std::shared_ptr<ast::ContinueStatement> const &statement) {
+  return {BinaryenBreak(module_, currentFunction()->topContinueLabel().c_str(), nullptr, nullptr)};
 }
-BinaryenExpressionRef Compiler::compileReturnStatement(std::shared_ptr<ast::ReturnStatement> const &statement) {
+std::vector<BinaryenExpressionRef>
+Compiler::compileReturnStatement(std::shared_ptr<ast::ReturnStatement> const &statement) {
   auto signature = currentFunction()->signature();
   auto returnValue = compileExpression(statement->expr(), signature->returnType());
   switch (signature->returnType()->underlyingReturnTypeStatus()) {
   case ir::VariantType::UnderlyingReturnTypeStatus::None:
   case ir::VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
-    auto exprRefs = currentFunction()->finalizeReturn(module_, BinaryenReturn(module_, nullptr));
-    exprRefs.insert(exprRefs.begin(), returnValue->assignToMemory(module_, ir::MemoryData{0, signature->returnType()}));
-    return binaryen::Utils::combineExprRef(module_, exprRefs);
+    auto exprRefs = returnValue->assignToMemory(module_, ir::MemoryData{0, signature->returnType()});
+    auto returnExprRefs = currentFunction()->finalizeReturn(module_, BinaryenReturn(module_, nullptr));
+    concat(exprRefs, returnExprRefs);
+    return exprRefs;
   }
   case ir::VariantType::UnderlyingReturnTypeStatus::ByReturnValue: {
-    auto exprRefs =
-        currentFunction()->finalizeReturn(module_, BinaryenReturn(module_, returnValue->assignToStack(module_)));
-    return binaryen::Utils::combineExprRef(module_, exprRefs);
+    auto exprRefs = currentFunction()->finalizeReturn(
+        module_,
+        BinaryenReturn(module_, binaryen::Utils::combineExprRef(module_, returnValue->assignToStack(module_))));
+    return exprRefs;
   }
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
 }
 
-BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement) {
+std::vector<BinaryenExpressionRef>
+Compiler::compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement) {
   std::vector<std::string> argumentNames{};
   std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
   for (auto const &argument : statement->arguments()) {
@@ -228,13 +245,14 @@ BinaryenExpressionRef Compiler::compileFunctionStatement(std::shared_ptr<ast::Fu
   resolver_.addFunction(statement->name(), functionIr);
   currentFunction_.push(functionIr);
   resolver_.setCurrentFunction(currentFunction());
-  BinaryenExpressionRef body = compileBlockStatement(statement->body());
+  BinaryenExpressionRef body = binaryen::Utils::combineExprRef(module_, compileBlockStatement(statement->body()));
   currentFunction()->finalize(module_, body);
   currentFunction_.pop();
   resolver_.setCurrentFunction(currentFunction());
-  return BinaryenNop(module_);
+  return {};
 }
-BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement) {
+std::vector<BinaryenExpressionRef>
+Compiler::compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement) {
   if (currentFunction() != startFunction_) {
     throw std::runtime_error("class should only be defined in top scope");
   }
@@ -268,7 +286,7 @@ BinaryenExpressionRef Compiler::compileClassStatement(std::shared_ptr<ast::Class
     }
   }
   classType->setMethodMap(methodMap);
-  return BinaryenNop(module_);
+  return {};
 }
 std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::Class> const &classType,
                                                            std::shared_ptr<ast::FunctionStatement> const &statement) {
@@ -289,7 +307,7 @@ std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::C
   resolver_.addFunction(classType->className() + "#" + statement->name(), functionIr);
   currentFunction_.push(functionIr);
   resolver_.setCurrentFunction(currentFunction());
-  BinaryenExpressionRef body = compileBlockStatement(statement->body());
+  BinaryenExpressionRef body = binaryen::Utils::combineExprRef(module_, compileBlockStatement(statement->body()));
   currentFunction()->finalize(module_, body);
   currentFunction_.pop();
   resolver_.setCurrentFunction(currentFunction());
@@ -305,13 +323,12 @@ void Compiler::compileClassConstructor(std::shared_ptr<ir::Class> const &classTy
     body = BinaryenBlock(module_, nullptr, nullptr, 0, BinaryenTypeNone());
     break;
   case ir::VariantType::UnderlyingReturnTypeStatus::LoadFromMemory: {
-    std::vector<BinaryenExpressionRef> refs{};
+    std::vector<BinaryenExpressionRef> exprRef{};
     for (auto underlyingType : classType->underlyingTypes()) {
-      refs.push_back(ir::VariantType::from(underlyingType)->underlyingDefaultValue(module_));
-    }
-    BinaryenExpressionRef initValueRef = BinaryenBlock(module_, nullptr, refs.data(), refs.size(), BinaryenTypeAuto());
-    ir::StackData initValue{initValueRef, classType};
-    body = initValue.assignToMemory(module_, ir::MemoryData{0, classType});
+      exprRef.push_back(ir::VariantType::from(underlyingType)->underlyingDefaultValue(module_));
+    };
+    body = binaryen::Utils::combineExprRef(
+        module_, ir::StackData{exprRef, classType}.assignToMemory(module_, ir::MemoryData{0, classType}));
     break;
   }
   case ir::VariantType::UnderlyingReturnTypeStatus::ByReturnValue:
@@ -330,14 +347,14 @@ void Compiler::compileClassConstructor(std::shared_ptr<ir::Class> const &classTy
 
 BinaryenExpressionRef Compiler::compileExpressionToExpressionRef(std::shared_ptr<ast::Expression> const &expression,
                                                                  std::shared_ptr<ir::VariantType> const &expectedType) {
-  auto valueVariant = compileExpression(expression, expectedType);
-  return valueVariant->assignToStack(module_);
+
+  return binaryen::Utils::combineExprRef(module_, compileExpressionToExpressionRefs(expression, expectedType));
 }
 std::vector<BinaryenExpressionRef>
 Compiler::compileExpressionToExpressionRefs(std::shared_ptr<ast::Expression> const &expression,
                                             std::shared_ptr<ir::VariantType> const &expectedType) {
   auto valueVariant = compileExpression(expression, expectedType);
-  return valueVariant->assignToStacks(module_);
+  return valueVariant->assignToStack(module_);
 }
 
 std::shared_ptr<ir::Variant> Compiler::compileExpression(std::shared_ptr<ast::Expression> const &expression,
@@ -476,12 +493,8 @@ std::shared_ptr<ir::Variant> Compiler::compileCallExpression(std::shared_ptr<ast
         BinaryenCall(module_, functionCaller->name().c_str(), operands.data(), operands.size(), BinaryenTypeNone());
     exprRefs.push_back(callExprRef);
     exprRefs.insert(exprRefs.end(), postPrecessExprRefs.begin(), postPrecessExprRefs.end());
-    auto assign = (ir::MemoryData{0, expectedType}.assignToStack(module_));
-    auto assignSize = BinaryenBlockGetNumChildren(assign);
-    for (uint32_t i = 0; i < assignSize; i++) {
-      exprRefs.push_back(BinaryenBlockGetChildAt(assign, i));
-    }
-    return std::make_shared<ir::StackData>(binaryen::Utils::combineExprRef(module_, exprRefs), expectedType);
+    concat(exprRefs, ir::MemoryData{0, expectedType}.assignToStack(module_));
+    return std::make_shared<ir::StackData>(exprRefs, expectedType);
   }
   }
   throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));

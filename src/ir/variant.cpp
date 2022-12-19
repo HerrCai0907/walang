@@ -3,7 +3,7 @@
 
 namespace walang::ir {
 
-BinaryenExpressionRef Variant::assignTo(BinaryenModuleRef module, Variant const *to) const {
+std::vector<BinaryenExpressionRef> Variant::assignTo(BinaryenModuleRef module, Variant const *to) const {
   switch (to->type()) {
   case Symbol::Type::TypeGlobal:
     return assignToGlobal(module, *dynamic_cast<Global const *>(to));
