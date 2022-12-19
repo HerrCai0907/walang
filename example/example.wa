@@ -1,5 +1,15 @@
-class C {
-  v1:i32;
-  v2:f64;
+class U8 {
+  v:u32;
+  function getValue():u32{
+    return this.v;
+  }
+  function setValue(value:u32):void{
+    this.v = value;
+  }
 }
-let c = C();
+
+function add(a:U8,b:U8):U8 {
+  let ret = U8();
+  ret.setValue(a.getValue() + b.getValue());
+  return ret;
+}
