@@ -20,6 +20,7 @@ class A {
   memberB:f32;
   function foo(): void {}
   function foo2(a:i32): void {}
+  @readonly function foo3(): void {}
 }
     )");
   auto file = parser.parse();
@@ -141,4 +142,17 @@ class A {
         snapshot.check(compile.wat());
       }(),
       RecursiveDefinedSymbol);
+
+  EXPECT_THROW(
+      [] {
+        FileParser parser("test.wa", R"(
+          @readonly function f():void{}
+    )");
+        auto file = parser.parse();
+        Compiler compile{{file}};
+        compile.compile();
+        ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+        snapshot.check(compile.wat());
+      }(),
+      ErrorDecorator);
 }

@@ -39,9 +39,9 @@ Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files)
 
 void Compiler::compile() {
   for (auto const &file : files_) {
-    startFunction_ = std::make_shared<ir::Function>("_start", std::vector<std::string>{},
-                                                    std::vector<std::shared_ptr<ir::VariantType>>{},
-                                                    variantTypeMap_->findVariantType("void"), module_);
+    startFunction_ = std::make_shared<ir::Function>(
+        "_start", std::vector<std::string>{}, std::vector<std::shared_ptr<ir::VariantType>>{},
+        variantTypeMap_->findVariantType("void"), std::set<ir::Function::Flag>{}, module_);
     currentFunction_.push(startFunction_);
     resolver_.setCurrentFunction(currentFunction());
     std::vector<BinaryenExpressionRef> expressions{};
@@ -240,17 +240,55 @@ Compiler::compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const
   std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
                                                     ? variantTypeMap_->findVariantType(statement->returnType().value())
                                                     : std::make_shared<ir::TypeAuto>();
-  auto functionIr =
-      std::make_shared<ir::Function>(statement->name(), argumentNames, argumentTypes, returnType, module_);
-  resolver_.addFunction(statement->name(), functionIr);
-  currentFunction_.push(functionIr);
-  resolver_.setCurrentFunction(currentFunction());
-  BinaryenExpressionRef body = binaryen::Utils::combineExprRef(module_, compileBlockStatement(statement->body()));
-  currentFunction()->finalize(module_, body);
-  currentFunction_.pop();
-  resolver_.setCurrentFunction(currentFunction());
+  doCompileFunction(statement->name(), argumentNames, argumentTypes, returnType, statement->body(), nullptr,
+                    statement->decorators());
   return {};
 }
+
+std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::Class> const &classType,
+                                                           std::shared_ptr<ast::FunctionStatement> const &statement) {
+  std::vector<std::string> argumentNames{};
+  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
+  for (auto const &argument : statement->arguments()) {
+    argumentNames.emplace_back(argument.name_);
+    argumentTypes.emplace_back(variantTypeMap_->findVariantType(argument.type_));
+  }
+  std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
+                                                    ? variantTypeMap_->findVariantType(statement->returnType().value())
+                                                    : std::make_shared<ir::TypeAuto>();
+  return doCompileFunction(classType->className() + "#" + statement->name(), argumentNames, argumentTypes, returnType,
+                           statement->body(), classType, statement->decorators());
+}
+std::shared_ptr<ir::Function> Compiler::doCompileFunction(std::string const &name,
+                                                          std::vector<std::string> argumentNames,
+                                                          std::vector<std::shared_ptr<ir::VariantType>> argumentTypes,
+                                                          std::shared_ptr<ir::VariantType> returnType,
+                                                          std::shared_ptr<ast::BlockStatement> const &body,
+                                                          std::shared_ptr<ir::Class> const &classType,
+                                                          std::vector<std::string> const &decorators) {
+  std::set<ir::Function::Flag> flags{};
+  if (std::count(decorators.begin(), decorators.end(), "readonly") > 0) {
+    if (classType == nullptr) {
+      throw ErrorDecorator{"readonly"};
+    }
+    flags.insert(ir::Function::Flag::Readonly);
+  }
+  if (classType != nullptr) {
+    argumentNames.emplace_back("this");
+    argumentTypes.emplace_back(classType);
+    flags.insert(ir::Function::Flag::Method);
+  }
+  auto functionIr = std::make_shared<ir::Function>(name, argumentNames, argumentTypes, returnType, flags, module_);
+  resolver_.addFunction(name, functionIr);
+  currentFunction_.push(functionIr);
+  resolver_.setCurrentFunction(currentFunction());
+  BinaryenExpressionRef bodyRef = binaryen::Utils::combineExprRef(module_, compileBlockStatement(body));
+  currentFunction()->finalize(module_, bodyRef);
+  currentFunction_.pop();
+  resolver_.setCurrentFunction(currentFunction());
+  return functionIr;
+}
+
 std::vector<BinaryenExpressionRef>
 Compiler::compileClassStatement(std::shared_ptr<ast::ClassStatement> const &statement) {
   if (currentFunction() != startFunction_) {
@@ -288,35 +326,11 @@ Compiler::compileClassStatement(std::shared_ptr<ast::ClassStatement> const &stat
   classType->setMethodMap(methodMap);
   return {};
 }
-std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::Class> const &classType,
-                                                           std::shared_ptr<ast::FunctionStatement> const &statement) {
-  std::vector<std::string> argumentNames{};
-  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
-  argumentNames.emplace_back("this");
-  argumentTypes.emplace_back(classType);
-  for (auto const &argument : statement->arguments()) {
-    argumentNames.emplace_back(argument.name_);
-    argumentTypes.emplace_back(variantTypeMap_->findVariantType(argument.type_));
-  }
-  std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
-                                                    ? variantTypeMap_->findVariantType(statement->returnType().value())
-                                                    : std::make_shared<ir::TypeAuto>();
-  auto functionIr = std::make_shared<ir::Function>(classType->className() + "#" + statement->name(), argumentNames,
-                                                   argumentTypes, returnType, module_);
-  functionIr->setThisClassType(classType);
-  resolver_.addFunction(classType->className() + "#" + statement->name(), functionIr);
-  currentFunction_.push(functionIr);
-  resolver_.setCurrentFunction(currentFunction());
-  BinaryenExpressionRef body = binaryen::Utils::combineExprRef(module_, compileBlockStatement(statement->body()));
-  currentFunction()->finalize(module_, body);
-  currentFunction_.pop();
-  resolver_.setCurrentFunction(currentFunction());
-  return functionIr;
-}
+
 void Compiler::compileClassConstructor(std::shared_ptr<ir::Class> const &classType) {
-  auto constructor =
-      std::make_shared<ir::Function>(classType->className() + "#constructor", std::vector<std::string>{},
-                                     std::vector<std::shared_ptr<ir::VariantType>>{}, classType, module_);
+  auto constructor = std::make_shared<ir::Function>(classType->className() + "#constructor", std::vector<std::string>{},
+                                                    std::vector<std::shared_ptr<ir::VariantType>>{}, classType,
+                                                    std::set<ir::Function::Flag>{}, module_);
   BinaryenExpressionRef body;
   switch (classType->underlyingReturnTypeStatus()) {
   case ir::VariantType::UnderlyingReturnTypeStatus::None:

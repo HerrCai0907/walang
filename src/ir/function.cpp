@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <deque>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -15,7 +16,8 @@ namespace walang::ir {
 
 Function::Function(std::string name, std::vector<std::string> const &argumentNames,
                    std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
-                   std::shared_ptr<VariantType> const &returnType, BinaryenModuleRef module)
+                   std::shared_ptr<VariantType> const &returnType, std::set<Flag> const &flags,
+                   BinaryenModuleRef module)
     : Symbol(Type::TypeFunction, std::make_shared<Signature>(argumentTypes, returnType)), name_(std::move(name)),
       argumentSize_(argumentNames.size()) {
   assert(argumentNames.size() == argumentTypes.size());
@@ -23,9 +25,10 @@ Function::Function(std::string name, std::vector<std::string> const &argumentNam
   for (std::size_t i = 0; i < argumentSize_; i++) {
     addLocal(argumentNames[i], argumentTypes[i]);
   }
-  if (!argumentNames.empty() && argumentNames[0] == "this") {
+  if (flags.count(Flag::Method) == 1 && flags.count(Flag::Readonly) == 0) {
+    assert(!locals_.empty() && "local should not be empty");
     // any change for `this` should be assigned back
-    postExprRefs_ = locals_[0]->assignToMemory(
+    postExprRefs_ = locals_[locals_.size() - 1]->assignToMemory(
         module, MemoryData{ir::VariantType::getSize(returnType->underlyingType()), locals_[0]->variantType()});
   }
 }

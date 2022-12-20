@@ -15,6 +15,9 @@ FunctionStatement::FunctionStatement(walangParser::FunctionStatementContext *ctx
     : Statement(StatementType::TypeFunctionStatement) {
   name_ = ctx->Identifier()->getText();
 
+  for (auto decorator : ctx->decorator()) {
+    decorators_.push_back(decorator->Identifier()->getText());
+  }
   auto parameterContexts = ctx->parameterList()->parameter();
   std::transform(parameterContexts.cbegin(), parameterContexts.cend(), std::back_inserter(arguments_),
                  [](walangParser::ParameterContext *parameterCtx) {
@@ -26,6 +29,7 @@ FunctionStatement::FunctionStatement(walangParser::FunctionStatementContext *ctx
   assert(map.count(ctx->blockStatement()) == 1);
   body_ = std::dynamic_pointer_cast<BlockStatement>(map.find(ctx->blockStatement())->second);
 }
+
 std::string FunctionStatement::to_string() const {
   std::vector<std::string> argumentStrings{};
   std::transform(arguments_.cbegin(), arguments_.cend(), std::back_inserter(argumentStrings),

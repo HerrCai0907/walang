@@ -4,6 +4,7 @@
 #include "ir/variant_type.hpp"
 #include <binaryen-c.h>
 #include <cstdint>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -139,9 +140,12 @@ private:
 
 class Function : public Symbol {
 public:
+  enum class Flag { Method, Readonly };
+
+public:
   Function(std::string name, std::vector<std::string> const &argumentNames,
            std::vector<std::shared_ptr<VariantType>> const &argumentTypes,
-           std::shared_ptr<VariantType> const &returnType, BinaryenModuleRef module);
+           std::shared_ptr<VariantType> const &returnType, std::set<Flag> const &flags, BinaryenModuleRef module);
 
   [[nodiscard]] std::string name() const noexcept { return name_; }
   [[nodiscard]] std::shared_ptr<Signature> signature() const noexcept {

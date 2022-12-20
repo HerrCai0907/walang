@@ -3,7 +3,7 @@
 (module
  (type $none_=&gt;_none (func))
  (type $i32_f32_=&gt;_none (func (param i32 f32)))
- (type $i32_f32_i32_=&gt;_none (func (param i32 f32 i32)))
+ (type $i32_i32_f32_=&gt;_none (func (param i32 i32 f32)))
  (memory $0 0 1)
  (start $_start)
  (func $A#constructor
@@ -28,7 +28,7 @@
    (local.get $this#1)
   )
  )
- (func $A#foo2 (param $this#0 i32) (param $this#1 f32) (param $a i32)
+ (func $A#foo2 (param $a i32) (param $this#0 i32) (param $this#1 f32)
   (block
   )
   (i32.store
@@ -39,6 +39,8 @@
    (i32.const 4)
    (local.get $this#1)
   )
+ )
+ (func $A#foo3 (param $this#0 i32) (param $this#1 f32)
  )
  (func $_start
  )

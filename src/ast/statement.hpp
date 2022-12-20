@@ -164,10 +164,12 @@ public:
   [[nodiscard]] std::vector<Argument> const &arguments() const noexcept { return arguments_; }
   [[nodiscard]] std::optional<std::string> const &returnType() const noexcept { return returnType_; }
   [[nodiscard]] std::shared_ptr<BlockStatement> const &body() const noexcept { return body_; };
+  [[nodiscard]] std::vector<std::string> const &decorators() const noexcept { return decorators_; };
 
 private:
   std::string name_;
   std::vector<Argument> arguments_;
+  std::vector<std::string> decorators_;
   std::optional<std::string> returnType_;
   std::shared_ptr<BlockStatement> body_;
 };

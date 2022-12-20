@@ -124,4 +124,14 @@ private:
   void generateErrorMessage() override;
 };
 
+class ErrorDecorator : public CompilerError<ErrorDecorator> {
+public:
+  explicit ErrorDecorator(std::string decorator);
+
+private:
+  std::string decorator_;
+
+  void generateErrorMessage() override;
+};
+
 } // namespace walang

@@ -48,6 +48,13 @@ private:
                                                    std::shared_ptr<ast::FunctionStatement> const &statement);
   void compileClassConstructor(std::shared_ptr<ir::Class> const &classType);
 
+  std::shared_ptr<ir::Function> doCompileFunction(std::string const &name, std::vector<std::string> argumentNames,
+                                                  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes,
+                                                  std::shared_ptr<ir::VariantType> returnType,
+                                                  std::shared_ptr<ast::BlockStatement> const &body,
+                                                  std::shared_ptr<ir::Class> const &classType,
+                                                  std::vector<std::string> const &decorators);
+
   BinaryenExpressionRef compileExpressionToExpressionRef(std::shared_ptr<ast::Expression> const &expression,
                                                          std::shared_ptr<ir::VariantType> const &expectedType);
   std::vector<BinaryenExpressionRef>
