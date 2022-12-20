@@ -116,9 +116,9 @@ private:
   void generateErrorMessage() override;
 };
 
-class CannotInferType : public CompilerError<CannotInferType> {
+class CannotResolveSymbol : public CompilerError<CannotResolveSymbol> {
 public:
-  explicit CannotInferType();
+  explicit CannotResolveSymbol();
 
 private:
   void generateErrorMessage() override;

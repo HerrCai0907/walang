@@ -23,14 +23,14 @@ std::shared_ptr<ir::Symbol> Resolver::resolveExpression(std::shared_ptr<ast::Exp
   case ast::ExpressionType::TypeMemberExpression:
     return resolveMemberExpression(std::dynamic_pointer_cast<ast::MemberExpression>(expression));
   }
-  throw CannotInferType{};
+  throw CannotResolveSymbol{};
 }
 std::shared_ptr<ir::Symbol> Resolver::resolveIdentifier(std::shared_ptr<ast::Identifier> const &expression) {
   return std::visit(overloaded{[&expression](uint64_t i) -> std::shared_ptr<ir::Symbol> {
-                                 CannotInferType{}.setRangeAndThrow(expression->range());
+                                 CannotResolveSymbol{}.setRangeAndThrow(expression->range());
                                },
                                [&expression](double d) -> std::shared_ptr<ir::Symbol> {
-                                 CannotInferType{}.setRangeAndThrow(expression->range());
+                                 CannotResolveSymbol{}.setRangeAndThrow(expression->range());
                                },
                                [&expression, this](const std::string &s) -> std::shared_ptr<ir::Symbol> {
                                  auto locals = currentFunction_->locals();
@@ -48,7 +48,7 @@ std::shared_ptr<ir::Symbol> Resolver::resolveIdentifier(std::shared_ptr<ast::Ide
                                  if (functionIt != functions_.end()) {
                                    return functionIt->second;
                                  }
-                                 CannotInferType{}.setRangeAndThrow(expression->range());
+                                 CannotResolveSymbol{}.setRangeAndThrow(expression->range());
                                }},
                     expression->identifier());
 }
@@ -71,7 +71,7 @@ Resolver::resolveTernaryExpression(std::shared_ptr<ast::TernaryExpression> const
 std::shared_ptr<ir::Symbol> Resolver::resolveCallExpression(std::shared_ptr<ast::CallExpression> const &expression) {
   static_cast<void>(this);
   static_cast<void>(expression);
-  throw CannotInferType{};
+  throw CannotResolveSymbol{};
 }
 
 std::shared_ptr<ir::Symbol>
@@ -108,7 +108,7 @@ Resolver::resolveMemberExpression(std::shared_ptr<ast::MemberExpression> const &
   case ir::Symbol::Type::TypeStackData:
     break;
   }
-  throw CannotInferType{};
+  throw CannotResolveSymbol{};
 }
 
 std::shared_ptr<ir::VariantType> Resolver::resolveTypeExpression(std::shared_ptr<ast::Expression> const &expression) {
@@ -126,7 +126,7 @@ std::shared_ptr<ir::VariantType> Resolver::resolveTypeExpression(std::shared_ptr
   case ast::ExpressionType::TypeMemberExpression:
     return resolveTypeMemberExpression(std::dynamic_pointer_cast<ast::MemberExpression>(expression));
   }
-  throw CannotInferType{};
+  throw CannotResolveSymbol{};
 }
 std::shared_ptr<ir::VariantType> Resolver::resolveTypeIdentifier(std::shared_ptr<ast::Identifier> const &expression) {
   return std::visit(
@@ -162,7 +162,7 @@ Resolver::resolveTypeCallExpression(std::shared_ptr<ast::CallExpression> const &
   case ir::Symbol::Type::TypeStackData:
     break;
   }
-  throw CannotInferType{};
+  throw CannotResolveSymbol{};
 }
 std::shared_ptr<ir::VariantType>
 Resolver::resolveTypeMemberExpression(std::shared_ptr<ast::MemberExpression> const &expression) {
@@ -177,7 +177,7 @@ Resolver::resolveTypeMemberExpression(std::shared_ptr<ast::MemberExpression> con
       return it->memberType_;
     }
   }
-  throw CannotInferType{};
+  throw CannotResolveSymbol{};
 }
 
 } // namespace walang
