@@ -42,11 +42,16 @@ whileStatement: 'while' '(' expression ')' blockStatement;
 breakStatement: 'break' ';';
 continueStatement: 'continue' ';';
 
+// decorder
+decorator: '@' Identifier;
+
 // function statement
 parameter: Identifier ':' type;
 parameterList: (parameter (',' parameter)*)?;
 functionStatement:
-	'function' Identifier '(' parameterList ')' (':' type)? blockStatement;
+	decorator* 'function' Identifier '(' parameterList ')' (
+		':' type
+	)? blockStatement;
 
 member: Identifier ':' type ';';
 classStatement:
@@ -180,6 +185,8 @@ Equal: '==';
 NotEqual: '!=';
 
 Dot: '.';
+
+At: '@';
 
 // Token
 

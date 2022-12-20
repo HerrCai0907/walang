@@ -116,11 +116,21 @@ private:
   void generateErrorMessage() override;
 };
 
-class CannotInferType : public CompilerError<CannotInferType> {
+class CannotResolveSymbol : public CompilerError<CannotResolveSymbol> {
 public:
-  explicit CannotInferType();
+  explicit CannotResolveSymbol();
 
 private:
+  void generateErrorMessage() override;
+};
+
+class ErrorDecorator : public CompilerError<ErrorDecorator> {
+public:
+  explicit ErrorDecorator(std::string decorator);
+
+private:
+  std::string decorator_;
+
   void generateErrorMessage() override;
 };
 

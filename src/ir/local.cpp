@@ -1,3 +1,4 @@
+#include "binaryen/utils.hpp"
 #include "variant.hpp"
 
 namespace walang::ir {
@@ -19,7 +20,7 @@ std::shared_ptr<Local> Local::findMemberByName(std::string const &name) const {
   return it->second;
 }
 
-BinaryenExpressionRef Local::assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const {
+std::vector<BinaryenExpressionRef> Local::assignToMemory(BinaryenModuleRef module, MemoryData const &memoryData) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
   auto underlyingTypes = variantType_->underlyingTypes();
   uint32_t offset = 0;
@@ -33,10 +34,9 @@ BinaryenExpressionRef Local::assignToMemory(BinaryenModuleRef module, MemoryData
     exprRefs.push_back(storeExpr);
     offset += dataSize;
   }
-  return exprRefs.size() == 1 ? exprRefs.front()
-                              : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
+  return exprRefs;
 }
-BinaryenExpressionRef Local::assignToLocal(BinaryenModuleRef module, Local const &local) const {
+std::vector<BinaryenExpressionRef> Local::assignToLocal(BinaryenModuleRef module, Local const &local) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
   auto underlyingTypes = variantType_->underlyingTypes();
   uint32_t offset = 0;
@@ -47,10 +47,9 @@ BinaryenExpressionRef Local::assignToLocal(BinaryenModuleRef module, Local const
     exprRefs.push_back(storeExpr);
     offset += dataSize;
   }
-  return exprRefs.size() == 1 ? exprRefs.front()
-                              : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
+  return exprRefs;
 }
-BinaryenExpressionRef Local::assignToGlobal(BinaryenModuleRef module, Global const &global) const {
+std::vector<BinaryenExpressionRef> Local::assignToGlobal(BinaryenModuleRef module, Global const &global) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
   auto underlyingTypes = variantType_->underlyingTypes();
   uint32_t offset = 0;
@@ -62,10 +61,9 @@ BinaryenExpressionRef Local::assignToGlobal(BinaryenModuleRef module, Global con
     exprRefs.push_back(storeExpr);
     offset += dataSize;
   }
-  return exprRefs.size() == 1 ? exprRefs.front()
-                              : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
+  return exprRefs;
 }
-BinaryenExpressionRef Local::assignToStack(BinaryenModuleRef module) const {
+std::vector<BinaryenExpressionRef> Local::assignToStack(BinaryenModuleRef module) const {
   std::vector<BinaryenExpressionRef> exprRefs{};
   auto underlyingTypes = variantType_->underlyingTypes();
   for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
@@ -73,8 +71,7 @@ BinaryenExpressionRef Local::assignToStack(BinaryenModuleRef module) const {
     auto loadExpr = BinaryenLocalGet(module, index_ + index, underlyingTypes[index]);
     exprRefs.push_back(loadExpr);
   }
-  return exprRefs.size() == 1 ? exprRefs.front()
-                              : BinaryenBlock(module, nullptr, exprRefs.data(), exprRefs.size(), BinaryenTypeNone());
+  return exprRefs;
 }
 
 } // namespace walang::ir

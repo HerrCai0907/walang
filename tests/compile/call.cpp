@@ -1,3 +1,4 @@
+#include "binaryen-c.h"
 #include "compiler.hpp"
 #include "helper/diagnose.hpp"
 #include "helper/snapshot.hpp"
@@ -35,6 +36,56 @@ function add(a:i32,b:i32):i32{
   return a+b;
 }
 let c = add(1,2);
+    )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(compile.wat());
+}
+TEST_F(CompileCallTest, ReturnClass) {
+  FileParser parser("test.wa", R"(
+class A {}
+class B {
+  v:i32;
+}
+class C {
+  v1:i32;
+  v2:f64;
+}
+function createA():A{
+  return A();
+}
+function createB():B{
+  return B();
+}
+function createC():C{
+  return C();
+}
+    )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(compile.wat());
+}
+TEST_F(CompileCallTest, ClassAsParameter) {
+  FileParser parser("test.wa", R"(
+class A {}
+class B {
+  v:i32;
+}
+class C {
+  v1:i32;
+  v2:f64;
+}
+function create(a:A,b:B,c:C):C{
+  return C();
+}
+let a = A();
+let b = B();
+let c = C();
+let v:C = create(a,b,c);
     )");
   auto file = parser.parse();
   Compiler compile{{file}};

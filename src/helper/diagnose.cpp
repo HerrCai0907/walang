@@ -40,7 +40,16 @@ void RecursiveDefinedSymbol::generateErrorMessage() {
   errorMessage_ = fmt::format("recursive defined symbol {0} \n\t{1}", symbol_, range_);
 }
 
-CannotInferType::CannotInferType() : CompilerError() {}
-void CannotInferType::generateErrorMessage() { errorMessage_ = fmt::format("cannot infer type\n\t{}", range_); }
+CannotResolveSymbol::CannotResolveSymbol() : CompilerError() {}
+void CannotResolveSymbol::generateErrorMessage() { errorMessage_ = fmt::format("cannot resolve symbol\n\t{}", range_); }
+
+ErrorDecorator::ErrorDecorator(std::string decorator) : CompilerError(), decorator_(std::move(decorator)) {}
+void ErrorDecorator::generateErrorMessage() {
+  if (decorator_ == "readonly") {
+    errorMessage_ = fmt::format("'readonly' decorator can only be used in class method \n\t{}", range_);
+  } else {
+    errorMessage_ = fmt::format("error decorator '{}' \n\t{}", decorator_, range_);
+  }
+}
 
 } // namespace walang

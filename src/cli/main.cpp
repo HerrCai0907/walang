@@ -1,3 +1,4 @@
+#include "binaryen-c.h"
 #include "compiler.hpp"
 #include "fmt/color.h"
 #include "fmt/core.h"
@@ -28,6 +29,7 @@ std::string readFile(std::string const &path) {
 int main(int argc, const char *argv[]) {
   std::string inputFilePath;
   std::string outputFilePath;
+  bool optimize = false;
 
   std::list<std::string> arguments{};
   for (int i = 1; i < argc; i++) {
@@ -36,16 +38,22 @@ int main(int argc, const char *argv[]) {
   if (std::count(arguments.cbegin(), arguments.cend(), "-o") > 1) {
     printHelpAndExit();
   }
-  auto it = std::find(arguments.cbegin(), arguments.cend(), "-o");
-  if (it != arguments.end()) {
-    it = arguments.erase(it);
-    if (it != arguments.end()) {
-      outputFilePath = *it;
-      arguments.erase(it);
+  auto outputIt = std::find(arguments.cbegin(), arguments.cend(), "-o");
+  if (outputIt != arguments.end()) {
+    outputIt = arguments.erase(outputIt);
+    if (outputIt != arguments.end()) {
+      outputFilePath = *outputIt;
+      arguments.erase(outputIt);
     } else {
       printHelpAndExit();
     }
   }
+  auto optimizeIt = std::find(arguments.cbegin(), arguments.cend(), "-O2");
+  if (optimizeIt != arguments.end()) {
+    optimize = true;
+    arguments.erase(optimizeIt);
+  }
+
   if (arguments.size() != 1) {
     printHelpAndExit();
   }
@@ -67,6 +75,12 @@ int main(int argc, const char *argv[]) {
   if (!outputFile.is_open()) {
     std::cerr << "output path invalid " << outputFilePath << std::endl;
   }
-  outputFile << compiler.wat();
-  BinaryenModuleValidate(compiler.module());
+  if (optimize) {
+    BinaryenModuleValidate(compiler.module());
+    BinaryenModuleOptimize(compiler.module());
+    outputFile << compiler.wat();
+  } else {
+    outputFile << compiler.wat();
+    BinaryenModuleValidate(compiler.module());
+  }
 }

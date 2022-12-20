@@ -1,17 +1,20 @@
-class A {
-  a1 : f64;
-  function setA():void{
-    this.a1 = 10;
-    let a1:f64 = this.a1;
+class U8 {
+  v:u32;
+  @readonly function getValue():u32{
+    return this.v;
+  }
+  function setValue(value:u32):void{
+    this.v = value;
   }
 }
-class B {
-  b1 : f64;
-  b2 : i32;
-  function setA():void{
-    this.b1 = 10;
-    this.b2 = 11;
-    let b1 = this.b1;
-    let b2 = this.b2;
-  }
+
+function add(a:U8,b:U8):U8 {
+  let ret = U8();
+  ret.setValue((a.getValue() + b.getValue()) & 0xff);
+  return ret;
 }
+
+
+let a = U8();
+let b = U8();
+let c = add(a,b);
