@@ -194,4 +194,17 @@
  )
 )
 </CallMethod>
+    <SubClass>
+(module
+ (type $none_=&gt;_none (func))
+ (memory $0 0 1)
+ (start $_start)
+ (func $B#constructor
+ )
+ (func $A#constructor
+ )
+ (func $_start
+ )
+)
+</SubClass>
 </snapshots>

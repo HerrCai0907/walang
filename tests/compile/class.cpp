@@ -58,6 +58,21 @@ function foo2():void{
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(compile.wat());
 }
+
+TEST_F(CompileClassTest, SubClass) {
+  FileParser parser("test.wa", R"(
+    class A {
+      b:B;
+    }
+    class B {}
+  )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(compile.wat());
+}
+
 TEST_F(CompileClassTest, CallMethod) {
   FileParser parser("test.wa", R"(
 class A {

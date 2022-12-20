@@ -41,11 +41,38 @@ Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files)
 void Compiler::compile() {
   for (auto const &file : files_) {
     // prepare
+    std::vector<ast::ClassStatement *> pendingClasses{};
     for (auto &statement : file->statement()) {
       if (statement->type() == ast::TypeClassStatement) {
-        prepareClassStatementLevel1(*std::dynamic_pointer_cast<ast::ClassStatement>(statement));
+        try {
+          prepareClassStatementLevel1(*std::dynamic_pointer_cast<ast::ClassStatement>(statement));
+        } catch (UnknownSymbol const &) {
+          pendingClasses.push_back(std::dynamic_pointer_cast<ast::ClassStatement>(statement).get());
+        }
       }
     }
+    fmt::print("pendingClasses1 {}\n", pendingClasses.size());
+    bool isResolved = true;
+    while (!pendingClasses.empty() && isResolved) {
+      fmt::print("pendingClasses2 {}\n", pendingClasses.size());
+      isResolved = false;
+      std::vector<ast::ClassStatement *> currentPendingClasses{};
+      std::swap(currentPendingClasses, pendingClasses);
+      for (auto &pendingClass : currentPendingClasses) {
+        try {
+          prepareClassStatementLevel1(*pendingClass);
+        } catch (UnknownSymbol const &) {
+          pendingClasses.push_back(pendingClass);
+          continue;
+        }
+        isResolved = true;
+      }
+    }
+    fmt::print("pendingClasses3 {}\n", pendingClasses.size());
+    for (auto pendingClass : pendingClasses) {
+      prepareClassStatementLevel1(*pendingClass);
+    }
+
     for (auto &statement : file->statement()) {
       if (statement->type() == ast::TypeFunctionStatement) {
         prepareFunctionStatement(*std::dynamic_pointer_cast<ast::FunctionStatement>(statement));
@@ -151,8 +178,6 @@ std::shared_ptr<ir::Function> Compiler::doPrepareFunction(std::string const &nam
 }
 
 void Compiler::prepareClassStatementLevel1(ast::ClassStatement const &statement) {
-  auto classType = std::make_shared<ir::Class>(statement.name());
-  variantTypeMap_->registerType(statement.name(), classType);
   // re-define check
   RedefinedChecker redefinedChecker{};
   for (auto const &member : statement.members()) {
@@ -172,6 +197,10 @@ void Compiler::prepareClassStatementLevel1(ast::ClassStatement const &statement)
     members.push_back(ir::Class::ClassMember{.memberName_ = member.name_,
                                              .memberType_ = variantTypeMap_->findVariantType(member.type_)});
   }
+
+  auto classType = std::make_shared<ir::Class>(statement.name());
+  variantTypeMap_->registerType(statement.name(), classType);
+
   classType->setMembers(members);
   compileClassConstructor(classType);
 }
