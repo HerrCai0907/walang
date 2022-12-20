@@ -1,6 +1,6 @@
 class U8 {
   v:u32;
-  function getValue():u32{
+  @readonly function getValue():u32{
     return this.v;
   }
   function setValue(value:u32):void{

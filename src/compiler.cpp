@@ -465,7 +465,7 @@ std::shared_ptr<ir::Variant> Compiler::compileCallExpression(std::shared_ptr<ast
       functionCaller->signature()->argumentTypes();
   std::vector<std::shared_ptr<ast::Expression>> argumentExpressions = expression->arguments();
   if (expression->caller()->type() == ast::ExpressionType::TypeMemberExpression) {
-    argumentExpressions.insert(argumentExpressions.begin(),
+    argumentExpressions.insert(argumentExpressions.end(),
                                std::dynamic_pointer_cast<ast::MemberExpression>(expression->caller())->expr());
   }
   // check

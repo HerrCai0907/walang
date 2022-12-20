@@ -114,7 +114,9 @@
  (type $none_=&gt;_none (func))
  (type $none_=&gt;_f64 (func (result f64)))
  (type $f64_=&gt;_none (func (param f64)))
+ (type $i32_f64_=&gt;_none (func (param i32 f64)))
  (type $f64_i32_=&gt;_none (func (param f64 i32)))
+ (global $a (mut f64) (f64.const 0))
  (memory $0 0 1)
  (start $_start)
  (func $A#constructor (result f64)
@@ -129,6 +131,14 @@
    (local.set $a1
     (local.get $this)
    )
+  )
+  (f64.store
+   (i32.const 0)
+   (local.get $this)
+  )
+ )
+ (func $A#foo (param $v i32) (param $this f64)
+  (block
   )
   (f64.store
    (i32.const 0)
@@ -172,6 +182,13 @@
   )
  )
  (func $_start
+  (global.set $a
+   (call $A#constructor)
+  )
+  (call $A#foo
+   (i32.const 1)
+   (global.get $a)
+  )
  )
 )
 </CallMethod>

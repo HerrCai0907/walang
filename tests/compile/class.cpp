@@ -62,6 +62,7 @@ class A {
     this.a1 = 10;
     let a1:f64 = this.a1;
   }
+  function foo(v:i32):void{}
 }
 class B {
   b1 : f64;
@@ -73,6 +74,8 @@ class B {
     let b2 = this.b2;
   }
 }
+let a = A();
+a.foo(1);
     )");
   auto file = parser.parse();
   Compiler compile{{file}};
