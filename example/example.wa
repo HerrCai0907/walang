@@ -1,3 +1,7 @@
+let a = U8();
+let b = U8();
+let c = add(a,b);
+
 class U8 {
   v:u32;
   @readonly function getValue():u32{
@@ -13,8 +17,3 @@ function add(a:U8,b:U8):U8 {
   ret.setValue((a.getValue() + b.getValue()) & 0xff);
   return ret;
 }
-
-
-let a = U8();
-let b = U8();
-let c = add(a,b);

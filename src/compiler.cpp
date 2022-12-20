@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <array>
 #include <binaryen-c.h>
+#include <cassert>
 #include <cstdint>
 #include <exception>
 #include <fmt/core.h>
@@ -39,6 +40,23 @@ Compiler::Compiler(std::vector<std::shared_ptr<ast::File>> files)
 
 void Compiler::compile() {
   for (auto const &file : files_) {
+    // prepare
+    for (auto &statement : file->statement()) {
+      if (statement->type() == ast::TypeClassStatement) {
+        prepareClassStatementLevel1(*std::dynamic_pointer_cast<ast::ClassStatement>(statement));
+      }
+    }
+    for (auto &statement : file->statement()) {
+      if (statement->type() == ast::TypeFunctionStatement) {
+        prepareFunctionStatement(*std::dynamic_pointer_cast<ast::FunctionStatement>(statement));
+      }
+    }
+    for (auto &statement : file->statement()) {
+      if (statement->type() == ast::TypeClassStatement) {
+        prepareClassStatementLevel2(*std::dynamic_pointer_cast<ast::ClassStatement>(statement));
+      }
+    }
+    // compile
     startFunction_ = std::make_shared<ir::Function>(
         "_start", std::vector<std::string>{}, std::vector<std::shared_ptr<ir::VariantType>>{},
         variantTypeMap_->findVariantType("void"), std::set<ir::Function::Flag>{}, module_);
@@ -68,6 +86,103 @@ std::string Compiler::wat() const {
     }
   }
   return watBuf;
+}
+
+// ██████  ██████  ███████ ██████   █████  ██████  ███████
+// ██   ██ ██   ██ ██      ██   ██ ██   ██ ██   ██ ██
+// ██████  ██████  █████   ██████  ███████ ██████  █████
+// ██      ██   ██ ██      ██      ██   ██ ██   ██ ██
+// ██      ██   ██ ███████ ██      ██   ██ ██   ██ ███████
+
+void Compiler::prepareFunctionStatement(ast::FunctionStatement const &statement) {
+  std::vector<std::string> argumentNames{};
+  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
+  for (auto const &argument : statement.arguments()) {
+    argumentNames.push_back(argument.name_);
+    argumentTypes.push_back(variantTypeMap_->findVariantType(argument.type_));
+  }
+  std::shared_ptr<ir::VariantType> returnType;
+  if (statement.returnType().has_value()) {
+    returnType = variantTypeMap_->findVariantType(statement.returnType().value());
+  } else {
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
+  }
+  doPrepareFunction(statement.name(), argumentNames, argumentTypes, returnType, nullptr, statement.decorators());
+}
+std::shared_ptr<ir::Function> Compiler::prepareMethod(ast::FunctionStatement const &statement,
+                                                      std::shared_ptr<ir::Class> const &classType) {
+  std::vector<std::string> argumentNames{};
+  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
+  for (auto const &argument : statement.arguments()) {
+    argumentNames.emplace_back(argument.name_);
+    argumentTypes.emplace_back(variantTypeMap_->findVariantType(argument.type_));
+  }
+  std::shared_ptr<ir::VariantType> returnType;
+  if (statement.returnType().has_value()) {
+    returnType = variantTypeMap_->findVariantType(statement.returnType().value());
+  } else {
+    throw std::runtime_error("not support " __FILE__ "#" + std::to_string(__LINE__));
+  }
+  return doPrepareFunction(classType->className() + "#" + statement.name(), argumentNames, argumentTypes, returnType,
+                           classType, statement.decorators());
+}
+
+std::shared_ptr<ir::Function> Compiler::doPrepareFunction(std::string const &name,
+                                                          std::vector<std::string> argumentNames,
+                                                          std::vector<std::shared_ptr<ir::VariantType>> argumentTypes,
+                                                          std::shared_ptr<ir::VariantType> const &returnType,
+                                                          std::shared_ptr<ir::Class> const &classType,
+                                                          std::vector<std::string> const &decorators) {
+  std::set<ir::Function::Flag> flags{};
+  if (std::count(decorators.begin(), decorators.end(), "readonly") > 0) {
+    if (classType == nullptr) {
+      throw ErrorDecorator{"readonly"};
+    }
+    flags.insert(ir::Function::Flag::Readonly);
+  }
+  if (classType != nullptr) {
+    argumentNames.emplace_back("this");
+    argumentTypes.emplace_back(classType);
+    flags.insert(ir::Function::Flag::Method);
+  }
+  auto functionIr = std::make_shared<ir::Function>(name, argumentNames, argumentTypes, returnType, flags, module_);
+  resolver_.addFunction(name, functionIr);
+  return functionIr;
+}
+
+void Compiler::prepareClassStatementLevel1(ast::ClassStatement const &statement) {
+  auto classType = std::make_shared<ir::Class>(statement.name());
+  variantTypeMap_->registerType(statement.name(), classType);
+  // re-define check
+  RedefinedChecker redefinedChecker{};
+  for (auto const &member : statement.members()) {
+    redefinedChecker.check(member.name_);
+  }
+  for (auto const &method : statement.methods()) {
+    redefinedChecker.check(method->name());
+  }
+  std::vector<ir::Class::ClassMember> members{};
+  members.reserve(statement.members().size());
+  for (auto const &member : statement.members()) {
+    if (member.type_ == statement.name()) {
+      auto e = RecursiveDefinedSymbol(member.type_);
+      e.setRange(statement.range());
+      throw e;
+    }
+    members.push_back(ir::Class::ClassMember{.memberName_ = member.name_,
+                                             .memberType_ = variantTypeMap_->findVariantType(member.type_)});
+  }
+  classType->setMembers(members);
+  compileClassConstructor(classType);
+}
+void Compiler::prepareClassStatementLevel2(ast::ClassStatement const &statement) {
+  auto classType = std::dynamic_pointer_cast<ir::Class>(variantTypeMap_->findVariantType(statement.name()));
+  assert(classType != nullptr);
+  std::map<std::string, std::shared_ptr<ir::Function>> methodMap{};
+  for (auto const &method : statement.methods()) {
+    methodMap.insert(std::make_pair(method->name(), prepareMethod(*method, classType)));
+  }
+  classType->setMethodMap(methodMap);
 }
 
 // ███████ ████████  █████  ████████ ███████ ███    ███ ███████ ███    ██ ████████
@@ -231,55 +346,18 @@ Compiler::compileReturnStatement(std::shared_ptr<ast::ReturnStatement> const &st
 
 std::vector<BinaryenExpressionRef>
 Compiler::compileFunctionStatement(std::shared_ptr<ast::FunctionStatement> const &statement) {
-  std::vector<std::string> argumentNames{};
-  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
-  for (auto const &argument : statement->arguments()) {
-    argumentNames.push_back(argument.name_);
-    argumentTypes.push_back(variantTypeMap_->findVariantType(argument.type_));
-  }
-  std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
-                                                    ? variantTypeMap_->findVariantType(statement->returnType().value())
-                                                    : std::make_shared<ir::TypeAuto>();
-  doCompileFunction(statement->name(), argumentNames, argumentTypes, returnType, statement->body(), nullptr,
-                    statement->decorators());
+  doCompileFunction(statement->name(), statement->body());
   return {};
 }
-
 std::shared_ptr<ir::Function> Compiler::compileClassMethod(std::shared_ptr<ir::Class> const &classType,
                                                            std::shared_ptr<ast::FunctionStatement> const &statement) {
-  std::vector<std::string> argumentNames{};
-  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes{};
-  for (auto const &argument : statement->arguments()) {
-    argumentNames.emplace_back(argument.name_);
-    argumentTypes.emplace_back(variantTypeMap_->findVariantType(argument.type_));
-  }
-  std::shared_ptr<ir::VariantType> returnType = statement->returnType().has_value()
-                                                    ? variantTypeMap_->findVariantType(statement->returnType().value())
-                                                    : std::make_shared<ir::TypeAuto>();
-  return doCompileFunction(classType->className() + "#" + statement->name(), argumentNames, argumentTypes, returnType,
-                           statement->body(), classType, statement->decorators());
+  return doCompileFunction(classType->className() + "#" + statement->name(), statement->body());
 }
 std::shared_ptr<ir::Function> Compiler::doCompileFunction(std::string const &name,
-                                                          std::vector<std::string> argumentNames,
-                                                          std::vector<std::shared_ptr<ir::VariantType>> argumentTypes,
-                                                          std::shared_ptr<ir::VariantType> returnType,
-                                                          std::shared_ptr<ast::BlockStatement> const &body,
-                                                          std::shared_ptr<ir::Class> const &classType,
-                                                          std::vector<std::string> const &decorators) {
-  std::set<ir::Function::Flag> flags{};
-  if (std::count(decorators.begin(), decorators.end(), "readonly") > 0) {
-    if (classType == nullptr) {
-      throw ErrorDecorator{"readonly"};
-    }
-    flags.insert(ir::Function::Flag::Readonly);
-  }
-  if (classType != nullptr) {
-    argumentNames.emplace_back("this");
-    argumentTypes.emplace_back(classType);
-    flags.insert(ir::Function::Flag::Method);
-  }
-  auto functionIr = std::make_shared<ir::Function>(name, argumentNames, argumentTypes, returnType, flags, module_);
-  resolver_.addFunction(name, functionIr);
+                                                          std::shared_ptr<ast::BlockStatement> const &body) {
+  auto it = resolver_.functions().find(name);
+  assert(it != resolver_.functions().end());
+  auto functionIr = it->second;
   currentFunction_.push(functionIr);
   resolver_.setCurrentFunction(currentFunction());
   BinaryenExpressionRef bodyRef = binaryen::Utils::combineExprRef(module_, compileBlockStatement(body));
@@ -294,36 +372,11 @@ Compiler::compileClassStatement(std::shared_ptr<ast::ClassStatement> const &stat
   if (currentFunction() != startFunction_) {
     throw std::runtime_error("class should only be defined in top scope");
   }
-  auto classType = std::make_shared<ir::Class>(statement->name());
-  variantTypeMap_->registerType(statement->name(), classType);
-
-  RedefinedChecker redefinedChecker{};
-
-  std::vector<ir::Class::ClassMember> members{};
-  members.reserve(statement->members().size());
-  for (auto const &member : statement->members()) {
-    redefinedChecker.check(member.name_);
-    if (member.type_ == statement->name()) {
-      auto e = RecursiveDefinedSymbol(member.type_);
-      e.setRange(statement->range());
-      throw e;
-    }
-    members.push_back(ir::Class::ClassMember{.memberName_ = member.name_,
-                                             .memberType_ = variantTypeMap_->findVariantType(member.type_)});
-  }
-  classType->setMembers(members);
-  compileClassConstructor(classType);
-  std::map<std::string, std::shared_ptr<ir::Function>> methodMap{};
+  auto classType = std::dynamic_pointer_cast<ir::Class>(variantTypeMap_->findVariantType(statement->name()));
+  assert(classType != nullptr);
   for (auto const &method : statement->methods()) {
-    redefinedChecker.check(method->name());
-    auto emplaceResult = methodMap.insert(std::make_pair(method->name(), compileClassMethod(classType, method)));
-    if (!emplaceResult.second) {
-      auto e = RedefinedSymbol(method->name());
-      e.setRange(method->range());
-      throw e;
-    }
+    compileClassMethod(classType, method);
   }
-  classType->setMethodMap(methodMap);
   return {};
 }
 

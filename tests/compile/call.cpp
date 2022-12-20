@@ -17,9 +17,9 @@ test_helper::SnapShot CompileCallTest::snapshot{std::filesystem::path(__FILE__).
 
 TEST_F(CompileCallTest, Basis) {
   FileParser parser("test.wa", R"(
+foo1();
 function foo1():void{}
 function foo2(a:i32,b:f64):void{}
-foo1();
 let v:f64 = 2.5;
 foo2(1,v);
     )");

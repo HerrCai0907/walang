@@ -3,7 +3,6 @@
 #include "ast/expression.hpp"
 #include "ast/file.hpp"
 #include "ast/statement.hpp"
-
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
 #include "resolver.hpp"
@@ -30,6 +29,20 @@ public:
   [[nodiscard]] std::string wat() const;
 
 private:
+  void prepareFunctionStatement(ast::FunctionStatement const &statement);
+  std::shared_ptr<ir::Function> prepareMethod(ast::FunctionStatement const &statement,
+                                              std::shared_ptr<ir::Class> const &classType);
+  std::shared_ptr<ir::Function> doPrepareFunction(std::string const &name, std::vector<std::string> argumentNames,
+                                                  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes,
+                                                  std::shared_ptr<ir::VariantType> const &returnType,
+                                                  std::shared_ptr<ir::Class> const &classType,
+                                                  std::vector<std::string> const &decorators);
+  /// @brief prepare memory layout
+  void prepareClassStatementLevel1(ast::ClassStatement const &statement);
+  /// @brief prepare method map
+  void prepareClassStatementLevel2(ast::ClassStatement const &statement);
+
+private:
   std::vector<BinaryenExpressionRef> compileStatement(std::shared_ptr<ast::Statement> const &statement);
   std::vector<BinaryenExpressionRef> compileDeclareStatement(std::shared_ptr<ast::DeclareStatement> const &statement);
   std::vector<BinaryenExpressionRef> compileAssignStatement(std::shared_ptr<ast::AssignStatement> const &statement);
@@ -48,12 +61,8 @@ private:
                                                    std::shared_ptr<ast::FunctionStatement> const &statement);
   void compileClassConstructor(std::shared_ptr<ir::Class> const &classType);
 
-  std::shared_ptr<ir::Function> doCompileFunction(std::string const &name, std::vector<std::string> argumentNames,
-                                                  std::vector<std::shared_ptr<ir::VariantType>> argumentTypes,
-                                                  std::shared_ptr<ir::VariantType> returnType,
-                                                  std::shared_ptr<ast::BlockStatement> const &body,
-                                                  std::shared_ptr<ir::Class> const &classType,
-                                                  std::vector<std::string> const &decorators);
+  std::shared_ptr<ir::Function> doCompileFunction(std::string const &name,
+                                                  std::shared_ptr<ast::BlockStatement> const &body);
 
   BinaryenExpressionRef compileExpressionToExpressionRef(std::shared_ptr<ast::Expression> const &expression,
                                                          std::shared_ptr<ir::VariantType> const &expectedType);
