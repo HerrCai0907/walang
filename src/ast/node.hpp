@@ -15,10 +15,10 @@ public:
   [[nodiscard]] virtual std::string to_string() const = 0;
 
   void setRange(std::shared_ptr<File> const &file, antlr4::ParserRuleContext *ctx) { range_ = Range{file, ctx}; }
-  Range const &range() { return range_; }
+  [[nodiscard]] Range const &range() const { return range_; }
 
 protected:
   Range range_;
 };
 
-} // namespace walang
+} // namespace walang::ast

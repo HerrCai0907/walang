@@ -222,8 +222,8 @@ public:
   BinaryenExpressionRef handleBinaryOp(BinaryenModuleRef module, ast::BinaryOp op, BinaryenExpressionRef leftRef,
                                        BinaryenExpressionRef rightRef,
                                        std::shared_ptr<Function> const &function) override;
-  [[nodiscard]] std::string const &className() { return className_; }
-  [[nodiscard]] std::vector<ClassMember> const &member() { return member_; }
+  [[nodiscard]] std::string const &className() const { return className_; }
+  [[nodiscard]] std::vector<ClassMember> const &member() const { return member_; }
   [[nodiscard]] std::map<std::string, std::shared_ptr<Function>> const &methodMap() { return methodMap_; }
 
   [[nodiscard]] std::vector<BinaryenExpressionRef> fromMemoryToLocal(BinaryenModuleRef module, uint32_t localBasisIndex,

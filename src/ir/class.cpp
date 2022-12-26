@@ -1,5 +1,6 @@
 #include "binaryen-c.h"
 #include "variant_type.hpp"
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
@@ -15,7 +16,10 @@ BinaryenType Class::underlyingType() const {
   std::vector<BinaryenType> binaryenTypes{};
   binaryenTypes.reserve(member_.size());
   for (auto const &member : member_) {
-    binaryenTypes.push_back(member.memberType_->underlyingType());
+    auto memberType = member.memberType_->underlyingType();
+    if (memberType != BinaryenTypeNone()) {
+      binaryenTypes.push_back(memberType);
+    }
   }
   return BinaryenTypeCreate(binaryenTypes.data(), binaryenTypes.size());
 }

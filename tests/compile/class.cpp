@@ -31,6 +31,11 @@ class A {
 }
 TEST_F(CompileClassTest, Declare) {
   FileParser parser("test.wa", R"(
+let ga = A();
+function foo1():void{
+  let la = A();
+}
+
 class A {
   a : f64;
   b : i32;
@@ -39,14 +44,13 @@ class B {}
 class C {
   c : i64;
 }
-let ga = A();
 let gb = B();
 let gc = C();
-function foo():void{
-  let la = A();
+function foo2():void{
   let lb = B();
   let lc = C();
 }
+
     )");
   auto file = parser.parse();
   Compiler compile{{file}};
@@ -54,6 +58,21 @@ function foo():void{
   ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
   snapshot.check(compile.wat());
 }
+
+TEST_F(CompileClassTest, SubClass) {
+  FileParser parser("test.wa", R"(
+    class A {
+      b:B;
+    }
+    class B {}
+  )");
+  auto file = parser.parse();
+  Compiler compile{{file}};
+  compile.compile();
+  ASSERT_TRUE(BinaryenModuleValidate(compile.module()));
+  snapshot.check(compile.wat());
+}
+
 TEST_F(CompileClassTest, CallMethod) {
   FileParser parser("test.wa", R"(
 class A {
