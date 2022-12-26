@@ -1,4 +1,5 @@
 #include "binaryen/utils.hpp"
+#include "fmt/core.h"
 #include "helper/diagnose.hpp"
 #include "ir/variant.hpp"
 #include "ir/variant_type.hpp"
@@ -6,6 +7,7 @@
 #include <cassert>
 #include <cstdint>
 #include <deque>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -34,7 +36,12 @@ Function::Function(std::string name, std::vector<std::string> const &argumentNam
 }
 
 std::shared_ptr<Local> Function::addLocal(std::string const &name, std::shared_ptr<VariantType> const &localType) {
-  auto local = locals_.emplace_back(std::make_shared<Local>(localIndex_, name, localType));
+  if (findLocalByName(name) != nullptr) {
+    throw RedefinedSymbol{name};
+  }
+  auto local = std::make_shared<Local>(localIndex_, name, localType);
+  locals_.push_back(local);
+  validLocals_.push_back(local);
   localIndex_ += localType->underlyingTypes().size();
   return local;
 }
@@ -44,9 +51,9 @@ std::shared_ptr<Local> Function::addTempLocal(std::shared_ptr<VariantType> const
   return local;
 }
 std::shared_ptr<Local> Function::findLocalByName(std::string const &name) const {
-  auto it = std::find_if(locals_.cbegin(), locals_.cend(),
+  auto it = std::find_if(validLocals_.cbegin(), validLocals_.cend(),
                          [&name](std::shared_ptr<Local> const &local) { return local->name() == name; });
-  if (it != locals_.cend()) {
+  if (it != validLocals_.cend()) {
     return *it;
   }
   return nullptr;
@@ -77,27 +84,41 @@ std::string const &Function::topContinueLabel() const {
 void Function::freeContinueLabel() { currentContinueLabel_.pop(); }
 void Function::freeBreakLabel() { currentBreakLabel_.pop(); }
 
+void Function::enterScope() noexcept { validLocalsIndex_.push(validLocals_.size()); }
+void Function::exitScope() noexcept {
+  validLocals_.resize(validLocalsIndex_.top());
+  validLocalsIndex_.pop();
+}
+
 BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpressionRef body) {
   std::vector<BinaryenType> argumentBinaryenTypes{};
-  std::vector<std::string> argumentNames{};
   std::vector<BinaryenType> localBinaryenTypes{};
   std::vector<std::string> localNames{};
+  std::map<std::string, uint32_t> localNamesMap{};
 
-  auto handleLocal = [](std::shared_ptr<Local> const &local, std::vector<BinaryenType> &binaryenTypes,
-                        std::vector<std::string> &names) {
+  auto handleLocal = [&localNames, &localNamesMap](std::shared_ptr<Local> const &local,
+                                                   std::vector<BinaryenType> &binaryenTypes) {
+    std::string name = local->name();
+    auto it = localNamesMap.find(name);
+    if (it != localNamesMap.end()) {
+      it->second++;
+      name += "|" + std::to_string(it->second);
+    } else {
+      it = localNamesMap.insert(std::make_pair(name, 0U)).first;
+    }
     auto underlyingTypes = local->variantType()->underlyingTypes();
     if (underlyingTypes.size() == 1) {
       binaryenTypes.push_back(local->variantType()->underlyingType());
-      names.emplace_back(local->name());
+      localNames.push_back(name);
     } else {
       for (uint32_t index = 0; index < underlyingTypes.size(); index++) {
         binaryenTypes.push_back(underlyingTypes[index]);
-        names.emplace_back(local->name() + "#" + std::to_string(index));
+        localNames.push_back(name + "#" + std::to_string(index));
       }
     }
   };
   for (uint32_t i = 0; i < argumentSize_; i++) {
-    handleLocal(locals_[i], argumentBinaryenTypes, argumentNames);
+    handleLocal(locals_[i], argumentBinaryenTypes);
   }
   BinaryenType argumentBinaryenType = BinaryenTypeCreate(argumentBinaryenTypes.data(), argumentBinaryenTypes.size());
 
@@ -112,7 +133,7 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
     break;
   }
   for (uint32_t i = argumentSize_; i < locals_.size(); i++) {
-    handleLocal(locals_[i], localBinaryenTypes, localNames);
+    handleLocal(locals_[i], localBinaryenTypes);
   }
 
   std::vector<BinaryenExpressionRef> bodyBlock{};
@@ -122,18 +143,10 @@ BinaryenFunctionRef Function::finalize(BinaryenModuleRef module, BinaryenExpress
   BinaryenFunctionRef funcRef = BinaryenAddFunction(module, name_.c_str(), argumentBinaryenType, returnType,
                                                     localBinaryenTypes.data(), localBinaryenTypes.size(), bodyBlockRef);
 
-  std::size_t i = 0;
-  for (; i < argumentNames.size(); i++) {
-    if (argumentNames[i].empty()) {
-      continue;
+  for (std::size_t i = 0; i < localNames.size(); i++) {
+    if (!localNames[i].empty()) {
+      BinaryenFunctionSetLocalName(funcRef, i, localNames[i].c_str());
     }
-    BinaryenFunctionSetLocalName(funcRef, i, argumentNames[i].c_str());
-  }
-  for (; i < localNames.size() + argumentNames.size(); i++) {
-    if (localNames[i - argumentNames.size()].empty()) {
-      continue;
-    }
-    BinaryenFunctionSetLocalName(funcRef, i, localNames[i - argumentNames.size()].c_str());
   }
 
   return funcRef;

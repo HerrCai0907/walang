@@ -1,19 +1,8 @@
-let a = U8();
-let b = U8();
-let c = add(a,b);
-
-class U8 {
-  v:u32;
-  @readonly function getValue():u32{
-    return this.v;
-  }
-  function setValue(value:u32):void{
-    this.v = value;
-  }
-}
-
-function add(a:U8,b:U8):U8 {
-  let ret = U8();
-  ret.setValue((a.getValue() + b.getValue()) & 0xff);
-  return ret;
+function foo():void{
+    {
+        let i = 0;
+    }
+    {
+        let i = 0;
+    }
 }

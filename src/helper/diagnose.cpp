@@ -28,16 +28,18 @@ void ArgumentCountError::generateErrorMessage() {
 
 JumpStatementError::JumpStatementError(std::string statement) : CompilerError(), statement_(std::move(statement)) {}
 void JumpStatementError::generateErrorMessage() {
-  errorMessage_ = fmt::format("invalid {0} statement \n\t{1}", statement_, range_);
+  errorMessage_ = fmt::format("invalid '{0}' statement \n\t{1}", statement_, range_);
 }
 
 RedefinedSymbol::RedefinedSymbol(std::string symbol) : CompilerError(), symbol_(std::move(symbol)) {}
-void RedefinedSymbol::generateErrorMessage() { errorMessage_ = fmt::format("redefined {0} \n\t{1}", symbol_, range_); }
+void RedefinedSymbol::generateErrorMessage() {
+  errorMessage_ = fmt::format("redefined '{0}' \n\t{1}", symbol_, range_);
+}
 UnknownSymbol::UnknownSymbol(std::string symbol) : CompilerError(), symbol_(std::move(symbol)) {}
-void UnknownSymbol::generateErrorMessage() { errorMessage_ = fmt::format("unknown {0} \n\t{1}", symbol_, range_); }
+void UnknownSymbol::generateErrorMessage() { errorMessage_ = fmt::format("unknown '{0}' \n\t{1}", symbol_, range_); }
 RecursiveDefinedSymbol::RecursiveDefinedSymbol(std::string symbol) : CompilerError(), symbol_(std::move(symbol)) {}
 void RecursiveDefinedSymbol::generateErrorMessage() {
-  errorMessage_ = fmt::format("recursive defined symbol {0} \n\t{1}", symbol_, range_);
+  errorMessage_ = fmt::format("recursive defined symbol '{0}' \n\t{1}", symbol_, range_);
 }
 
 CannotResolveSymbol::CannotResolveSymbol() : CompilerError() {}

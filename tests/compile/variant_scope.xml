@@ -1,0 +1,25 @@
+<snapshots>
+    <Basis>
+(module
+ (type $none_=&gt;_none (func))
+ (memory $0 0 1)
+ (start $_start)
+ (func $foo
+  (local $i i32)
+  (local $i|1 i32)
+  (block
+   (local.set $i
+    (i32.const 0)
+   )
+  )
+  (block
+   (local.set $i|1
+    (i32.const 0)
+   )
+  )
+ )
+ (func $_start
+ )
+)
+</Basis>
+</snapshots>

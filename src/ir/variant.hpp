@@ -1,10 +1,12 @@
 #pragma once
 
 #include "ast/statement.hpp"
+#include "helper/redefined_checker.hpp"
 #include "ir/variant_type.hpp"
 #include <binaryen-c.h>
 #include <cstdint>
 #include <set>
+#include <stack>
 #include <string>
 #include <utility>
 #include <vector>
@@ -42,7 +44,7 @@ public:
       : Symbol(type, variantType), name_(std::move(name)) {}
   ~Variant() override = default;
 
-  [[nodiscard]] std::string name() const noexcept { return name_; }
+  [[nodiscard]] std::string const &name() const noexcept { return name_; }
 
   std::vector<BinaryenExpressionRef> assignTo(BinaryenModuleRef module, Variant const *to) const;
   virtual std::vector<BinaryenExpressionRef> assignToMemory(BinaryenModuleRef module,
@@ -167,6 +169,9 @@ public:
   [[nodiscard]] std::string const &topContinueLabel() const;
   void freeContinueLabel();
 
+  void enterScope() noexcept;
+  void exitScope() noexcept;
+
   BinaryenFunctionRef finalize(BinaryenModuleRef module, BinaryenExpressionRef body);
   std::vector<BinaryenExpressionRef> finalizeReturn(BinaryenModuleRef module, BinaryenExpressionRef returnExpr);
 
@@ -178,6 +183,8 @@ private:
   uint32_t argumentSize_;
 
   std::vector<std::shared_ptr<Local>> locals_{};
+  std::vector<std::shared_ptr<Local>> validLocals_{};
+  std::stack<uint32_t> validLocalsIndex_{};
   uint32_t localIndex_{0U};
 
   std::weak_ptr<Class> thisClassType_{};

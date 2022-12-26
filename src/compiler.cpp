@@ -51,10 +51,8 @@ void Compiler::compile() {
         }
       }
     }
-    fmt::print("pendingClasses1 {}\n", pendingClasses.size());
     bool isResolved = true;
     while (!pendingClasses.empty() && isResolved) {
-      fmt::print("pendingClasses2 {}\n", pendingClasses.size());
       isResolved = false;
       std::vector<ast::ClassStatement *> currentPendingClasses{};
       std::swap(currentPendingClasses, pendingClasses);
@@ -68,7 +66,6 @@ void Compiler::compile() {
         isResolved = true;
       }
     }
-    fmt::print("pendingClasses3 {}\n", pendingClasses.size());
     for (auto pendingClass : pendingClasses) {
       prepareClassStatementLevel1(*pendingClass);
     }
@@ -300,10 +297,11 @@ Compiler::compileExpressionStatement(std::shared_ptr<ast::ExpressionStatement> c
 std::vector<BinaryenExpressionRef>
 Compiler::compileBlockStatement(std::shared_ptr<ast::BlockStatement> const &statement) {
   std::vector<BinaryenExpressionRef> statementRefs{};
-  auto statements = statement->statements();
-  for (auto &statement : statements) {
+  currentFunction()->enterScope();
+  for (auto &statement : statement->statements()) {
     concat(statementRefs, compileStatement(statement));
   }
+  currentFunction()->exitScope();
   return {BinaryenBlock(module_, nullptr, statementRefs.data(), statementRefs.size(), BinaryenTypeNone())};
 }
 std::vector<BinaryenExpressionRef> Compiler::compileIfStatement(std::shared_ptr<ast::IfStatement> const &statement) {

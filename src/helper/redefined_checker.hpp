@@ -1,7 +1,9 @@
 #pragma once
 
 #include "helper/diagnose.hpp"
+#include <cstdint>
 #include <set>
+#include <stack>
 #include <string>
 
 namespace walang {
@@ -11,9 +13,8 @@ public:
   void check(std::string const &name) {
     if (set_.count(name)) {
       throw RedefinedSymbol(name);
-    } else {
-      set_.insert(name);
     }
+    set_.insert(name);
   }
 
 private:
